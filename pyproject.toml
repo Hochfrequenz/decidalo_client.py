@@ -73,10 +73,8 @@ profile = "black"
 [tool.pylint."MESSAGES CONTROL"]
 max-line-length = 120
 
-[mypy]
-truethy-bool = true
-
 [tool.mypy]
+truethy-bool = true
 disable_error_code = []
 plugins = ["pydantic.mypy"]
 
