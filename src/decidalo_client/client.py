@@ -645,29 +645,25 @@ class DecidaloClient:
     async def get_absences(
         self,
         *,
-        employee_id: str | None = None,
-        user_id: int | None = None,
-        absence_code: str | None = None,
+        start_date: str | None = None,
+        end_date: str | None = None,
     ) -> AbsenceOutputResult:
         """Get absences from the API.
 
         Args:
-            employee_id: Filter by external employee ID.
-            user_id: Filter by internal user ID.
-            absence_code: Filter by absence code.
+            start_date: Filter by start date (inclusive).
+            end_date: Filter by end date (inclusive).
 
         Returns:
             An AbsenceOutputResult object containing the list of absences.
         """
         params: dict[str, str] = {}
-        if employee_id is not None:
-            params["employeeId"] = employee_id
-        if user_id is not None:
-            params["userId"] = str(user_id)
-        if absence_code is not None:
-            params["absenceCode"] = absence_code
+        if start_date:
+            params["startDate"] = start_date
+        if end_date:
+            params["endDate"] = end_date
 
-        response_text = await self._get("/importapi/Absence/Import", params or None)
+        response_text = await self._get("/importapi/Absence", params or None)
         return AbsenceOutputResult.model_validate_json(response_text)
 
     async def import_absences(
