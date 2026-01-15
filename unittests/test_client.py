@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import json
-from typing import TYPE_CHECKING
 from uuid import UUID
 
 import pytest
@@ -35,9 +33,6 @@ from decidalo_client.models import (
     UserWorkingProfileInput,
     WorkingProfileInput,
 )
-
-if TYPE_CHECKING:
-    pass
 
 BASE_URL = "https://import.decidalo.dev"
 API_KEY = "test-api-key"
@@ -78,6 +73,13 @@ class TestContextManager:
 
         async with client as ctx_client:
             assert ctx_client is client
+
+    @pytest.mark.asyncio
+    async def test_request_without_context_raises_error(self) -> None:
+        """Test that making requests without context manager raises RuntimeError."""
+        client = DecidaloClient(api_key=API_KEY, base_url=BASE_URL)
+        with pytest.raises(RuntimeError, match="must be used within an async context manager"):
+            await client.get_users()
 
 
 # =============================================================================
