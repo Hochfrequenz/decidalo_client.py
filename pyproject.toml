@@ -74,7 +74,6 @@ profile = "black"
 max-line-length = 120
 
 [tool.mypy]
-truethy-bool = true
 disable_error_code = []
 plugins = ["pydantic.mypy"]
 

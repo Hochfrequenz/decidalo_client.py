@@ -86,9 +86,7 @@ class TestContextManager:
 class TestAuthentication:
     """Tests for authentication functionality."""
 
-    async def test_api_key_header_included(
-        self, mock_aiohttp: aioresponses
-    ) -> None:
+    async def test_api_key_header_included(self, mock_aiohttp: aioresponses) -> None:
         """Test that X-Api-Key header is included in requests."""
         mock_aiohttp.get(
             f"{BASE_URL}/importapi/User",
@@ -106,9 +104,7 @@ class TestAuthentication:
         # aioresponses stores kwargs, headers are in kwargs
         assert request.kwargs["headers"]["X-Api-Key"] == API_KEY
 
-    async def test_401_raises_authentication_error(
-        self, mock_aiohttp: aioresponses
-    ) -> None:
+    async def test_401_raises_authentication_error(self, mock_aiohttp: aioresponses) -> None:
         """Test that 401 status raises DecidaloAuthenticationError."""
         mock_aiohttp.get(
             f"{BASE_URL}/importapi/User",
@@ -122,9 +118,7 @@ class TestAuthentication:
 
         assert exc_info.value.status_code == 401
 
-    async def test_403_raises_authentication_error(
-        self, mock_aiohttp: aioresponses
-    ) -> None:
+    async def test_403_raises_authentication_error(self, mock_aiohttp: aioresponses) -> None:
         """Test that 403 status raises DecidaloAuthenticationError."""
         mock_aiohttp.get(
             f"{BASE_URL}/importapi/User",
@@ -147,9 +141,7 @@ class TestAuthentication:
 class TestErrorHandling:
     """Tests for error handling functionality."""
 
-    async def test_500_raises_api_error(
-        self, mock_aiohttp: aioresponses
-    ) -> None:
+    async def test_500_raises_api_error(self, mock_aiohttp: aioresponses) -> None:
         """Test that 500 status raises DecidaloAPIError."""
         mock_aiohttp.get(
             f"{BASE_URL}/importapi/User",
@@ -164,9 +156,7 @@ class TestErrorHandling:
         assert exc_info.value.status_code == 500
         assert "Internal Server Error" in exc_info.value.message
 
-    async def test_400_raises_api_error(
-        self, mock_aiohttp: aioresponses
-    ) -> None:
+    async def test_400_raises_api_error(self, mock_aiohttp: aioresponses) -> None:
         """Test that 400 status raises DecidaloAPIError."""
         mock_aiohttp.post(
             f"{BASE_URL}/importapi/User",
@@ -190,9 +180,7 @@ class TestErrorHandling:
 class TestCustomBaseUrl:
     """Tests for custom base URL functionality."""
 
-    async def test_custom_base_url_is_used(
-        self, mock_aiohttp: aioresponses
-    ) -> None:
+    async def test_custom_base_url_is_used(self, mock_aiohttp: aioresponses) -> None:
         """Test that a custom base_url parameter works."""
         custom_url = "https://custom.api.example.com"
         mock_aiohttp.get(
@@ -206,9 +194,7 @@ class TestCustomBaseUrl:
 
         assert result == []
 
-    async def test_trailing_slash_is_stripped(
-        self, mock_aiohttp: aioresponses
-    ) -> None:
+    async def test_trailing_slash_is_stripped(self, mock_aiohttp: aioresponses) -> None:
         """Test that trailing slash in base_url is stripped."""
         mock_aiohttp.get(
             f"{BASE_URL}/importapi/User",
@@ -216,9 +202,7 @@ class TestCustomBaseUrl:
             status=200,
         )
 
-        async with DecidaloClient(
-            api_key=API_KEY, base_url=f"{BASE_URL}/"
-        ) as client:
+        async with DecidaloClient(api_key=API_KEY, base_url=f"{BASE_URL}/") as client:
             result = await client.get_users()
 
         assert result == []
@@ -232,9 +216,7 @@ class TestCustomBaseUrl:
 class TestGetUsers:
     """Tests for get_users method."""
 
-    async def test_get_users_empty_list(
-        self, mock_aiohttp: aioresponses
-    ) -> None:
+    async def test_get_users_empty_list(self, mock_aiohttp: aioresponses) -> None:
         """Test get_users returns empty list when no users exist."""
         mock_aiohttp.get(
             f"{BASE_URL}/importapi/User",
@@ -247,9 +229,7 @@ class TestGetUsers:
 
         assert result == []
 
-    async def test_get_users_with_data(
-        self, mock_aiohttp: aioresponses
-    ) -> None:
+    async def test_get_users_with_data(self, mock_aiohttp: aioresponses) -> None:
         """Test get_users returns parsed user data."""
         user_data = [
             {
@@ -292,9 +272,7 @@ class TestGetUsers:
         assert result[1].userID == 2
         assert result[1].displayName == "Jane Smith"
 
-    async def test_get_users_with_email_filter(
-        self, mock_aiohttp: aioresponses
-    ) -> None:
+    async def test_get_users_with_email_filter(self, mock_aiohttp: aioresponses) -> None:
         """Test get_users with email filter parameter."""
         user_data = [
             {
@@ -325,9 +303,7 @@ class TestGetUsers:
 class TestImportUsersAsync:
     """Tests for import_users_async method."""
 
-    async def test_import_users_async(
-        self, mock_aiohttp: aioresponses
-    ) -> None:
+    async def test_import_users_async(self, mock_aiohttp: aioresponses) -> None:
         """Test import_users_async returns batch ID."""
         batch_id = "550e8400-e29b-41d4-a716-446655440000"
         mock_aiohttp.post(
@@ -355,9 +331,7 @@ class TestImportUsersAsync:
 class TestGetUserImportStatus:
     """Tests for get_user_import_status method."""
 
-    async def test_get_user_import_status(
-        self, mock_aiohttp: aioresponses
-    ) -> None:
+    async def test_get_user_import_status(self, mock_aiohttp: aioresponses) -> None:
         """Test get_user_import_status returns batch status."""
         batch_id = "550e8400-e29b-41d4-a716-446655440000"
         mock_aiohttp.get(
@@ -387,9 +361,7 @@ class TestGetUserImportStatus:
 class TestGetTeams:
     """Tests for get_teams method."""
 
-    async def test_get_teams_empty_list(
-        self, mock_aiohttp: aioresponses
-    ) -> None:
+    async def test_get_teams_empty_list(self, mock_aiohttp: aioresponses) -> None:
         """Test get_teams returns empty list when no teams exist."""
         mock_aiohttp.get(
             f"{BASE_URL}/importapi/Team",
@@ -402,9 +374,7 @@ class TestGetTeams:
 
         assert result == []
 
-    async def test_get_teams_with_data(
-        self, mock_aiohttp: aioresponses
-    ) -> None:
+    async def test_get_teams_with_data(self, mock_aiohttp: aioresponses) -> None:
         """Test get_teams returns parsed team data."""
         team_data = [
             {
@@ -438,9 +408,7 @@ class TestGetTeams:
 class TestImportTeamsAsync:
     """Tests for import_teams_async method."""
 
-    async def test_import_teams_async(
-        self, mock_aiohttp: aioresponses
-    ) -> None:
+    async def test_import_teams_async(self, mock_aiohttp: aioresponses) -> None:
         """Test import_teams_async returns batch ID."""
         batch_id = "660e8400-e29b-41d4-a716-446655440001"
         mock_aiohttp.post(
@@ -467,9 +435,7 @@ class TestImportTeamsAsync:
 class TestImportTeamsSync:
     """Tests for import_teams_sync method."""
 
-    async def test_import_teams_sync(
-        self, mock_aiohttp: aioresponses
-    ) -> None:
+    async def test_import_teams_sync(self, mock_aiohttp: aioresponses) -> None:
         """Test import_teams_sync returns imported teams."""
         team_data = [
             {
@@ -502,9 +468,7 @@ class TestImportTeamsSync:
 class TestGetTeamImportStatus:
     """Tests for get_team_import_status method."""
 
-    async def test_get_team_import_status(
-        self, mock_aiohttp: aioresponses
-    ) -> None:
+    async def test_get_team_import_status(self, mock_aiohttp: aioresponses) -> None:
         """Test get_team_import_status returns batch metadata."""
         batch_id = "660e8400-e29b-41d4-a716-446655440001"
         mock_aiohttp.get(
@@ -532,9 +496,7 @@ class TestGetTeamImportStatus:
 class TestGetCompanies:
     """Tests for get_companies method."""
 
-    async def test_get_companies_empty_list(
-        self, mock_aiohttp: aioresponses
-    ) -> None:
+    async def test_get_companies_empty_list(self, mock_aiohttp: aioresponses) -> None:
         """Test get_companies returns empty list."""
         mock_aiohttp.get(
             f"{BASE_URL}/importapi/Company/Import",
@@ -547,9 +509,7 @@ class TestGetCompanies:
 
         assert result == []
 
-    async def test_get_companies_with_data(
-        self, mock_aiohttp: aioresponses
-    ) -> None:
+    async def test_get_companies_with_data(self, mock_aiohttp: aioresponses) -> None:
         """Test get_companies returns parsed company data."""
         company_data = [
             {
@@ -583,9 +543,7 @@ class TestGetCompanies:
 class TestImportCompany:
     """Tests for import_company method."""
 
-    async def test_import_company(
-        self, mock_aiohttp: aioresponses
-    ) -> None:
+    async def test_import_company(self, mock_aiohttp: aioresponses) -> None:
         """Test import_company returns import result."""
         mock_aiohttp.post(
             f"{BASE_URL}/importapi/Company/Import",
@@ -619,9 +577,7 @@ class TestImportCompany:
 class TestGetProject:
     """Tests for get_project method."""
 
-    async def test_get_project_by_id(
-        self, mock_aiohttp: aioresponses
-    ) -> None:
+    async def test_get_project_by_id(self, mock_aiohttp: aioresponses) -> None:
         """Test get_project returns project data by ID."""
         project_data = {
             "identifier": {
@@ -649,9 +605,7 @@ class TestGetProject:
 class TestGetAllProjects:
     """Tests for get_all_projects method."""
 
-    async def test_get_all_projects_empty(
-        self, mock_aiohttp: aioresponses
-    ) -> None:
+    async def test_get_all_projects_empty(self, mock_aiohttp: aioresponses) -> None:
         """Test get_all_projects returns empty list."""
         mock_aiohttp.get(
             f"{BASE_URL}/importapi/Project/AllProjects",
@@ -664,9 +618,7 @@ class TestGetAllProjects:
 
         assert result == []
 
-    async def test_get_all_projects_with_data(
-        self, mock_aiohttp: aioresponses
-    ) -> None:
+    async def test_get_all_projects_with_data(self, mock_aiohttp: aioresponses) -> None:
         """Test get_all_projects returns multiple projects."""
         project_data = [
             {
@@ -697,9 +649,7 @@ class TestGetAllProjects:
 class TestImportProject:
     """Tests for import_project method."""
 
-    async def test_import_project(
-        self, mock_aiohttp: aioresponses
-    ) -> None:
+    async def test_import_project(self, mock_aiohttp: aioresponses) -> None:
         """Test import_project returns import result."""
         mock_aiohttp.post(
             f"{BASE_URL}/importapi/Project",
@@ -728,9 +678,7 @@ class TestImportProject:
 class TestProjectExists:
     """Tests for project_exists method."""
 
-    async def test_project_exists_true(
-        self, mock_aiohttp: aioresponses
-    ) -> None:
+    async def test_project_exists_true(self, mock_aiohttp: aioresponses) -> None:
         """Test project_exists returns True when project exists."""
         mock_aiohttp.head(
             f"{BASE_URL}/importapi/Project?projectCode=PROJ001",
@@ -742,9 +690,7 @@ class TestProjectExists:
 
         assert result is True
 
-    async def test_project_exists_false(
-        self, mock_aiohttp: aioresponses
-    ) -> None:
+    async def test_project_exists_false(self, mock_aiohttp: aioresponses) -> None:
         """Test project_exists returns False when project doesn't exist."""
         mock_aiohttp.head(
             f"{BASE_URL}/importapi/Project?projectCode=NONEXISTENT",
@@ -765,9 +711,7 @@ class TestProjectExists:
 class TestGetBookings:
     """Tests for get_bookings method."""
 
-    async def test_get_bookings_empty(
-        self, mock_aiohttp: aioresponses
-    ) -> None:
+    async def test_get_bookings_empty(self, mock_aiohttp: aioresponses) -> None:
         """Test get_bookings returns empty list."""
         mock_aiohttp.get(
             f"{BASE_URL}/importapi/Booking",
@@ -780,9 +724,7 @@ class TestGetBookings:
 
         assert result == []
 
-    async def test_get_bookings_with_data(
-        self, mock_aiohttp: aioresponses
-    ) -> None:
+    async def test_get_bookings_with_data(self, mock_aiohttp: aioresponses) -> None:
         """Test get_bookings returns parsed booking data."""
         booking_data = [
             {
@@ -814,9 +756,7 @@ class TestGetBookings:
 class TestGetBookingsByProject:
     """Tests for get_bookings_by_project method."""
 
-    async def test_get_bookings_by_project(
-        self, mock_aiohttp: aioresponses
-    ) -> None:
+    async def test_get_bookings_by_project(self, mock_aiohttp: aioresponses) -> None:
         """Test get_bookings_by_project returns bookings for a project."""
         booking_data = [
             {
@@ -843,9 +783,7 @@ class TestGetBookingsByProject:
 class TestImportBookingsAsync:
     """Tests for import_bookings_async method."""
 
-    async def test_import_bookings_async(
-        self, mock_aiohttp: aioresponses
-    ) -> None:
+    async def test_import_bookings_async(self, mock_aiohttp: aioresponses) -> None:
         """Test import_bookings_async returns import results."""
         mock_aiohttp.post(
             f"{BASE_URL}/importapi/Booking/ImportAsync",
@@ -882,9 +820,7 @@ class TestImportBookingsAsync:
 class TestGetAbsences:
     """Tests for get_absences method."""
 
-    async def test_get_absences(
-        self, mock_aiohttp: aioresponses
-    ) -> None:
+    async def test_get_absences(self, mock_aiohttp: aioresponses) -> None:
         """Test get_absences returns absence data."""
         mock_aiohttp.get(
             f"{BASE_URL}/importapi/Absence",
@@ -913,9 +849,7 @@ class TestGetAbsences:
 class TestImportAbsences:
     """Tests for import_absences method."""
 
-    async def test_import_absences(
-        self, mock_aiohttp: aioresponses
-    ) -> None:
+    async def test_import_absences(self, mock_aiohttp: aioresponses) -> None:
         """Test import_absences returns import results."""
         mock_aiohttp.post(
             f"{BASE_URL}/importapi/Absence/Import",
@@ -957,9 +891,7 @@ class TestImportAbsences:
 class TestGetResourceRequest:
     """Tests for get_resource_request method."""
 
-    async def test_get_resource_request(
-        self, mock_aiohttp: aioresponses
-    ) -> None:
+    async def test_get_resource_request(self, mock_aiohttp: aioresponses) -> None:
         """Test get_resource_request returns request data."""
         mock_aiohttp.get(
             f"{BASE_URL}/importapi/ResourceRequest/123",
@@ -985,9 +917,7 @@ class TestGetResourceRequest:
 class TestImportResourceRequest:
     """Tests for import_resource_request method."""
 
-    async def test_import_resource_request(
-        self, mock_aiohttp: aioresponses
-    ) -> None:
+    async def test_import_resource_request(self, mock_aiohttp: aioresponses) -> None:
         """Test import_resource_request returns import result."""
         mock_aiohttp.post(
             f"{BASE_URL}/importapi/ResourceRequest",
@@ -1020,9 +950,7 @@ class TestImportResourceRequest:
 class TestImportRole:
     """Tests for import_role method."""
 
-    async def test_import_role(
-        self, mock_aiohttp: aioresponses
-    ) -> None:
+    async def test_import_role(self, mock_aiohttp: aioresponses) -> None:
         """Test import_role returns import result."""
         mock_aiohttp.post(
             f"{BASE_URL}/importapi/Role",
@@ -1055,9 +983,7 @@ class TestImportRole:
 class TestGetWorkingTimePatterns:
     """Tests for get_working_time_patterns method."""
 
-    async def test_get_working_time_patterns_empty(
-        self, mock_aiohttp: aioresponses
-    ) -> None:
+    async def test_get_working_time_patterns_empty(self, mock_aiohttp: aioresponses) -> None:
         """Test get_working_time_patterns returns empty list."""
         mock_aiohttp.get(
             f"{BASE_URL}/importapi/WorkingTimePattern/Import",
@@ -1070,9 +996,7 @@ class TestGetWorkingTimePatterns:
 
         assert result == []
 
-    async def test_get_working_time_patterns_with_data(
-        self, mock_aiohttp: aioresponses
-    ) -> None:
+    async def test_get_working_time_patterns_with_data(self, mock_aiohttp: aioresponses) -> None:
         """Test get_working_time_patterns returns pattern data."""
         pattern_data = [
             {
@@ -1104,9 +1028,7 @@ class TestGetWorkingTimePatterns:
 class TestImportWorkingTimePattern:
     """Tests for import_working_time_pattern method."""
 
-    async def test_import_working_time_pattern(
-        self, mock_aiohttp: aioresponses
-    ) -> None:
+    async def test_import_working_time_pattern(self, mock_aiohttp: aioresponses) -> None:
         """Test import_working_time_pattern returns import result."""
         mock_aiohttp.post(
             f"{BASE_URL}/importapi/WorkingTimePattern/Import",

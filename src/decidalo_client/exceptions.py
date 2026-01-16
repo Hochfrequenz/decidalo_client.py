@@ -6,8 +6,6 @@ from __future__ import annotations
 class DecidaloClientError(Exception):
     """Base exception for all Decidalo client errors."""
 
-    pass
-
 
 class DecidaloAPIError(DecidaloClientError):
     """Exception raised when the API returns an error response.
@@ -31,12 +29,3 @@ class DecidaloAPIError(DecidaloClientError):
 
 class DecidaloAuthenticationError(DecidaloAPIError):
     """Exception raised when authentication fails (401/403 errors)."""
-
-    def __init__(self, status_code: int, message: str) -> None:
-        """Initialize the authentication error.
-
-        Args:
-            status_code: The HTTP status code (401 or 403).
-            message: A human-readable error message.
-        """
-        super().__init__(status_code, message)

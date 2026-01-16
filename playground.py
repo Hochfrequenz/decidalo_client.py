@@ -99,10 +99,7 @@ async def demo_get_bookings(client: DecidaloClient) -> None:
         bookings = await client.get_bookings()
         print(f"    Found {len(bookings)} bookings")
         for booking in bookings[:5]:  # Show first 5
-            print(
-                f"    - {booking.subject} (ID: {booking.bookingID}, "
-                f"User: {booking.userID})"
-            )
+            print(f"    - {booking.subject} (ID: {booking.bookingID}, " f"User: {booking.userID})")
         if len(bookings) > 5:
             print(f"    ... and {len(bookings) - 5} more")
     except DecidaloAuthenticationError as e:
@@ -139,9 +136,7 @@ async def demo_get_working_time_patterns(client: DecidaloClient) -> None:
         print(f"    Found {len(patterns)} user working time profiles")
         for pattern in patterns[:5]:  # Show first 5
             user_id = pattern.userIdentity.userID if pattern.userIdentity else "N/A"
-            num_patterns = (
-                len(pattern.workingTimePatterns) if pattern.workingTimePatterns else 0
-            )
+            num_patterns = len(pattern.workingTimePatterns) if pattern.workingTimePatterns else 0
             print(f"    - User {user_id}: {num_patterns} working time pattern(s)")
         if len(patterns) > 5:
             print(f"    ... and {len(patterns) - 5} more")

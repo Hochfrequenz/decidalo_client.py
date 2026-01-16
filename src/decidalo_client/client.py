@@ -51,7 +51,7 @@ if TYPE_CHECKING:
 DEFAULT_BASE_URL = "https://import.decidalo.dev"
 
 
-class DecidaloClient:
+class DecidaloClient:  # pylint: disable=too-many-public-methods
     """Async client for the Decidalo Import API.
 
     This client provides methods to interact with the Decidalo Import API,
@@ -172,14 +172,10 @@ class DecidaloClient:
             RuntimeError: If the client is not in a context manager.
         """
         if self._session is None:
-            raise RuntimeError(
-                "Client must be used within an async context manager (async with)"
-            )
+            raise RuntimeError("Client must be used within an async context manager (async with)")
 
         url = f"{self._base_url}{path}"
-        async with self._session.get(
-            url, headers=self._get_headers(), params=params
-        ) as response:
+        async with self._session.get(url, headers=self._get_headers(), params=params) as response:
             return await self._handle_response(response)
 
     async def _post(self, path: str, data: str | None = None) -> str:
@@ -196,14 +192,10 @@ class DecidaloClient:
             RuntimeError: If the client is not in a context manager.
         """
         if self._session is None:
-            raise RuntimeError(
-                "Client must be used within an async context manager (async with)"
-            )
+            raise RuntimeError("Client must be used within an async context manager (async with)")
 
         url = f"{self._base_url}{path}"
-        async with self._session.post(
-            url, headers=self._get_headers(), data=data
-        ) as response:
+        async with self._session.post(url, headers=self._get_headers(), data=data) as response:
             return await self._handle_response(response)
 
     async def _head(self, path: str) -> int:
@@ -219,9 +211,7 @@ class DecidaloClient:
             RuntimeError: If the client is not in a context manager.
         """
         if self._session is None:
-            raise RuntimeError(
-                "Client must be used within an async context manager (async with)"
-            )
+            raise RuntimeError("Client must be used within an async context manager (async with)")
 
         url = f"{self._base_url}{path}"
         async with self._session.head(url, headers=self._get_headers()) as response:
@@ -238,7 +228,7 @@ class DecidaloClient:
     # User Methods
     # =========================================================================
 
-    async def get_users(
+    async def get_users(  # pylint: disable=too-many-arguments
         self,
         *,
         employee_id: str | None = None,
@@ -306,9 +296,7 @@ class DecidaloClient:
         Returns:
             A UserImportBatchResult with the current status.
         """
-        response_text = await self._get(
-            "/importapi/User/ImportStatus", {"batchId": str(batch_id)}
-        )
+        response_text = await self._get("/importapi/User/ImportStatus", {"batchId": str(batch_id)})
         return UserImportBatchResult.model_validate_json(response_text)
 
     # =========================================================================
@@ -399,9 +387,7 @@ class DecidaloClient:
         Returns:
             A UserBatchImportMetadata with the current status.
         """
-        response_text = await self._get(
-            "/importapi/Team/ImportStatus", {"batchId": str(batch_id)}
-        )
+        response_text = await self._get("/importapi/Team/ImportStatus", {"batchId": str(batch_id)})
         return UserBatchImportMetadata.model_validate_json(response_text)
 
     # =========================================================================
@@ -554,7 +540,7 @@ class DecidaloClient:
     # Booking Methods
     # =========================================================================
 
-    async def get_bookings(
+    async def get_bookings(  # pylint: disable=too-many-arguments
         self,
         *,
         employee_id: str | None = None,
@@ -763,9 +749,7 @@ class DecidaloClient:
         if user_id is not None:
             params["userId"] = str(user_id)
 
-        response_text = await self._get(
-            "/importapi/WorkingTimePattern/Import", params or None
-        )
+        response_text = await self._get("/importapi/WorkingTimePattern/Import", params or None)
         adapter = TypeAdapter(list[GetImportUserWorkingProfileResult])
         return adapter.validate_json(response_text)
 
