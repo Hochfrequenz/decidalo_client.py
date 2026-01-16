@@ -46,7 +46,6 @@ API_KEY = "test-api-key"
 class TestContextManager:
     """Tests for async context manager functionality."""
 
-    @pytest.mark.asyncio
     async def test_aenter_creates_session(self) -> None:
         """Test that __aenter__ creates an aiohttp session."""
         client = DecidaloClient(api_key=API_KEY, base_url=BASE_URL)
@@ -55,7 +54,6 @@ class TestContextManager:
         async with client:
             assert client._session is not None
 
-    @pytest.mark.asyncio
     async def test_aexit_closes_session(self) -> None:
         """Test that __aexit__ closes the session."""
         client = DecidaloClient(api_key=API_KEY, base_url=BASE_URL)
@@ -66,7 +64,6 @@ class TestContextManager:
 
         assert client._session is None
 
-    @pytest.mark.asyncio
     async def test_context_manager_returns_client(self) -> None:
         """Test that the context manager returns the client instance."""
         client = DecidaloClient(api_key=API_KEY, base_url=BASE_URL)
@@ -74,7 +71,6 @@ class TestContextManager:
         async with client as ctx_client:
             assert ctx_client is client
 
-    @pytest.mark.asyncio
     async def test_request_without_context_raises_error(self) -> None:
         """Test that making requests without context manager raises RuntimeError."""
         client = DecidaloClient(api_key=API_KEY, base_url=BASE_URL)
@@ -90,7 +86,6 @@ class TestContextManager:
 class TestAuthentication:
     """Tests for authentication functionality."""
 
-    @pytest.mark.asyncio
     async def test_api_key_header_included(
         self, mock_aiohttp: aioresponses
     ) -> None:
@@ -111,7 +106,6 @@ class TestAuthentication:
         # aioresponses stores kwargs, headers are in kwargs
         assert request.kwargs["headers"]["X-Api-Key"] == API_KEY
 
-    @pytest.mark.asyncio
     async def test_401_raises_authentication_error(
         self, mock_aiohttp: aioresponses
     ) -> None:
@@ -128,7 +122,6 @@ class TestAuthentication:
 
         assert exc_info.value.status_code == 401
 
-    @pytest.mark.asyncio
     async def test_403_raises_authentication_error(
         self, mock_aiohttp: aioresponses
     ) -> None:
@@ -154,7 +147,6 @@ class TestAuthentication:
 class TestErrorHandling:
     """Tests for error handling functionality."""
 
-    @pytest.mark.asyncio
     async def test_500_raises_api_error(
         self, mock_aiohttp: aioresponses
     ) -> None:
@@ -172,7 +164,6 @@ class TestErrorHandling:
         assert exc_info.value.status_code == 500
         assert "Internal Server Error" in exc_info.value.message
 
-    @pytest.mark.asyncio
     async def test_400_raises_api_error(
         self, mock_aiohttp: aioresponses
     ) -> None:
@@ -199,7 +190,6 @@ class TestErrorHandling:
 class TestCustomBaseUrl:
     """Tests for custom base URL functionality."""
 
-    @pytest.mark.asyncio
     async def test_custom_base_url_is_used(
         self, mock_aiohttp: aioresponses
     ) -> None:
@@ -216,7 +206,6 @@ class TestCustomBaseUrl:
 
         assert result == []
 
-    @pytest.mark.asyncio
     async def test_trailing_slash_is_stripped(
         self, mock_aiohttp: aioresponses
     ) -> None:
@@ -243,7 +232,6 @@ class TestCustomBaseUrl:
 class TestGetUsers:
     """Tests for get_users method."""
 
-    @pytest.mark.asyncio
     async def test_get_users_empty_list(
         self, mock_aiohttp: aioresponses
     ) -> None:
@@ -259,7 +247,6 @@ class TestGetUsers:
 
         assert result == []
 
-    @pytest.mark.asyncio
     async def test_get_users_with_data(
         self, mock_aiohttp: aioresponses
     ) -> None:
@@ -305,7 +292,6 @@ class TestGetUsers:
         assert result[1].userID == 2
         assert result[1].displayName == "Jane Smith"
 
-    @pytest.mark.asyncio
     async def test_get_users_with_email_filter(
         self, mock_aiohttp: aioresponses
     ) -> None:
@@ -339,7 +325,6 @@ class TestGetUsers:
 class TestImportUsersAsync:
     """Tests for import_users_async method."""
 
-    @pytest.mark.asyncio
     async def test_import_users_async(
         self, mock_aiohttp: aioresponses
     ) -> None:
@@ -370,7 +355,6 @@ class TestImportUsersAsync:
 class TestGetUserImportStatus:
     """Tests for get_user_import_status method."""
 
-    @pytest.mark.asyncio
     async def test_get_user_import_status(
         self, mock_aiohttp: aioresponses
     ) -> None:
@@ -403,7 +387,6 @@ class TestGetUserImportStatus:
 class TestGetTeams:
     """Tests for get_teams method."""
 
-    @pytest.mark.asyncio
     async def test_get_teams_empty_list(
         self, mock_aiohttp: aioresponses
     ) -> None:
@@ -419,7 +402,6 @@ class TestGetTeams:
 
         assert result == []
 
-    @pytest.mark.asyncio
     async def test_get_teams_with_data(
         self, mock_aiohttp: aioresponses
     ) -> None:
@@ -456,7 +438,6 @@ class TestGetTeams:
 class TestImportTeamsAsync:
     """Tests for import_teams_async method."""
 
-    @pytest.mark.asyncio
     async def test_import_teams_async(
         self, mock_aiohttp: aioresponses
     ) -> None:
@@ -486,7 +467,6 @@ class TestImportTeamsAsync:
 class TestImportTeamsSync:
     """Tests for import_teams_sync method."""
 
-    @pytest.mark.asyncio
     async def test_import_teams_sync(
         self, mock_aiohttp: aioresponses
     ) -> None:
@@ -522,7 +502,6 @@ class TestImportTeamsSync:
 class TestGetTeamImportStatus:
     """Tests for get_team_import_status method."""
 
-    @pytest.mark.asyncio
     async def test_get_team_import_status(
         self, mock_aiohttp: aioresponses
     ) -> None:
@@ -553,7 +532,6 @@ class TestGetTeamImportStatus:
 class TestGetCompanies:
     """Tests for get_companies method."""
 
-    @pytest.mark.asyncio
     async def test_get_companies_empty_list(
         self, mock_aiohttp: aioresponses
     ) -> None:
@@ -569,7 +547,6 @@ class TestGetCompanies:
 
         assert result == []
 
-    @pytest.mark.asyncio
     async def test_get_companies_with_data(
         self, mock_aiohttp: aioresponses
     ) -> None:
@@ -606,7 +583,6 @@ class TestGetCompanies:
 class TestImportCompany:
     """Tests for import_company method."""
 
-    @pytest.mark.asyncio
     async def test_import_company(
         self, mock_aiohttp: aioresponses
     ) -> None:
@@ -643,7 +619,6 @@ class TestImportCompany:
 class TestGetProject:
     """Tests for get_project method."""
 
-    @pytest.mark.asyncio
     async def test_get_project_by_id(
         self, mock_aiohttp: aioresponses
     ) -> None:
@@ -674,7 +649,6 @@ class TestGetProject:
 class TestGetAllProjects:
     """Tests for get_all_projects method."""
 
-    @pytest.mark.asyncio
     async def test_get_all_projects_empty(
         self, mock_aiohttp: aioresponses
     ) -> None:
@@ -690,7 +664,6 @@ class TestGetAllProjects:
 
         assert result == []
 
-    @pytest.mark.asyncio
     async def test_get_all_projects_with_data(
         self, mock_aiohttp: aioresponses
     ) -> None:
@@ -724,7 +697,6 @@ class TestGetAllProjects:
 class TestImportProject:
     """Tests for import_project method."""
 
-    @pytest.mark.asyncio
     async def test_import_project(
         self, mock_aiohttp: aioresponses
     ) -> None:
@@ -756,7 +728,6 @@ class TestImportProject:
 class TestProjectExists:
     """Tests for project_exists method."""
 
-    @pytest.mark.asyncio
     async def test_project_exists_true(
         self, mock_aiohttp: aioresponses
     ) -> None:
@@ -771,7 +742,6 @@ class TestProjectExists:
 
         assert result is True
 
-    @pytest.mark.asyncio
     async def test_project_exists_false(
         self, mock_aiohttp: aioresponses
     ) -> None:
@@ -795,7 +765,6 @@ class TestProjectExists:
 class TestGetBookings:
     """Tests for get_bookings method."""
 
-    @pytest.mark.asyncio
     async def test_get_bookings_empty(
         self, mock_aiohttp: aioresponses
     ) -> None:
@@ -811,7 +780,6 @@ class TestGetBookings:
 
         assert result == []
 
-    @pytest.mark.asyncio
     async def test_get_bookings_with_data(
         self, mock_aiohttp: aioresponses
     ) -> None:
@@ -846,7 +814,6 @@ class TestGetBookings:
 class TestGetBookingsByProject:
     """Tests for get_bookings_by_project method."""
 
-    @pytest.mark.asyncio
     async def test_get_bookings_by_project(
         self, mock_aiohttp: aioresponses
     ) -> None:
@@ -876,7 +843,6 @@ class TestGetBookingsByProject:
 class TestImportBookingsAsync:
     """Tests for import_bookings_async method."""
 
-    @pytest.mark.asyncio
     async def test_import_bookings_async(
         self, mock_aiohttp: aioresponses
     ) -> None:
@@ -916,7 +882,6 @@ class TestImportBookingsAsync:
 class TestGetAbsences:
     """Tests for get_absences method."""
 
-    @pytest.mark.asyncio
     async def test_get_absences(
         self, mock_aiohttp: aioresponses
     ) -> None:
@@ -948,7 +913,6 @@ class TestGetAbsences:
 class TestImportAbsences:
     """Tests for import_absences method."""
 
-    @pytest.mark.asyncio
     async def test_import_absences(
         self, mock_aiohttp: aioresponses
     ) -> None:
@@ -993,7 +957,6 @@ class TestImportAbsences:
 class TestGetResourceRequest:
     """Tests for get_resource_request method."""
 
-    @pytest.mark.asyncio
     async def test_get_resource_request(
         self, mock_aiohttp: aioresponses
     ) -> None:
@@ -1022,7 +985,6 @@ class TestGetResourceRequest:
 class TestImportResourceRequest:
     """Tests for import_resource_request method."""
 
-    @pytest.mark.asyncio
     async def test_import_resource_request(
         self, mock_aiohttp: aioresponses
     ) -> None:
@@ -1058,7 +1020,6 @@ class TestImportResourceRequest:
 class TestImportRole:
     """Tests for import_role method."""
 
-    @pytest.mark.asyncio
     async def test_import_role(
         self, mock_aiohttp: aioresponses
     ) -> None:
@@ -1094,7 +1055,6 @@ class TestImportRole:
 class TestGetWorkingTimePatterns:
     """Tests for get_working_time_patterns method."""
 
-    @pytest.mark.asyncio
     async def test_get_working_time_patterns_empty(
         self, mock_aiohttp: aioresponses
     ) -> None:
@@ -1110,7 +1070,6 @@ class TestGetWorkingTimePatterns:
 
         assert result == []
 
-    @pytest.mark.asyncio
     async def test_get_working_time_patterns_with_data(
         self, mock_aiohttp: aioresponses
     ) -> None:
@@ -1145,7 +1104,6 @@ class TestGetWorkingTimePatterns:
 class TestImportWorkingTimePattern:
     """Tests for import_working_time_pattern method."""
 
-    @pytest.mark.asyncio
     async def test_import_working_time_pattern(
         self, mock_aiohttp: aioresponses
     ) -> None:
