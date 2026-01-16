@@ -37,7 +37,7 @@ async def main() -> None:
         # Get all projects
         projects = await client.get_all_projects()
         for project in projects:
-            print(f"{project.name}")
+            print(f"{project.properties.name.value}")
 
 if __name__ == "__main__":
     asyncio.run(main())
