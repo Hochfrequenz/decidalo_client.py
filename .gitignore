@@ -138,3 +138,6 @@ src/_your_package_version.py
 /nul
 
 .claude/settings.local.json
+
+# Local test script with API key
+try_api.py

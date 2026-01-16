@@ -239,10 +239,13 @@ class DecidaloClient:  # pylint: disable=too-many-public-methods
     ) -> list[UserOverview]:
         """Get users from the API.
 
+        Returns all users in the system. The returned list may be empty if no users
+        match the given criteria.
+
         Args:
             employee_id: Filter by external employee ID.
-            user_id: Filter by internal user ID.
-            email: Filter by email address.
+            user_id: Filter by internal user ID. If provided, the email filter is ignored.
+            email: Filter by email address. Must be an exact match (case insensitive).
             created_since: Filter users created since this date (ISO format).
             edited_since: Filter users edited since this date (ISO format).
 
@@ -271,8 +274,9 @@ class DecidaloClient:  # pylint: disable=too-many-public-methods
     ) -> UserImportAcceptedResponse:
         """Import users asynchronously.
 
-        This method submits a batch of users for import and returns immediately.
-        Use get_user_import_status() to check the status of the import.
+        The import is processed asynchronously. The caller can provide a callback URL
+        in the batch to be notified about the completion of the import. Otherwise,
+        use get_user_import_status() with the returned batch ID to poll the status.
 
         Args:
             batch: The batch of users to import.
@@ -313,6 +317,8 @@ class DecidaloClient:  # pylint: disable=too-many-public-methods
     ) -> list[TeamOverview]:
         """Get teams from the API.
 
+        Returns all teams in the system.
+
         Args:
             team_id: Filter by internal team ID.
             team_code: Filter by external team code.
@@ -342,8 +348,9 @@ class DecidaloClient:  # pylint: disable=too-many-public-methods
     ) -> TeamImportAcceptedResponse:
         """Import teams asynchronously.
 
-        This method submits a batch of teams for import and returns immediately.
-        Use get_team_import_status() to check the status of the import.
+        The import is processed asynchronously. The caller can provide a callback URL
+        in the batch to be notified about the completion of the import. Otherwise,
+        use get_team_import_status() with the returned batch ID to poll the status.
 
         Args:
             batch: The batch of teams to import.
@@ -361,7 +368,8 @@ class DecidaloClient:  # pylint: disable=too-many-public-methods
     ) -> list[TeamOverview]:
         """Import teams synchronously.
 
-        This method imports a batch of teams and waits for the import to complete.
+        The import is processed synchronously. This method waits for the import
+        to complete before returning. Any callback URL in the batch is ignored.
 
         Args:
             teams: The list of teams to import.
@@ -403,6 +411,8 @@ class DecidaloClient:  # pylint: disable=too-many-public-methods
     ) -> list[CompanyCompleteOutput]:
         """Get companies from the API.
 
+        Returns all companies in the system.
+
         Args:
             company_id: Filter by internal company ID.
             company_code: Filter by external company code.
@@ -427,7 +437,10 @@ class DecidaloClient:  # pylint: disable=too-many-public-methods
         self,
         company: ImportCompanyCommand,
     ) -> ImportCompanyResult:
-        """Import or update a company.
+        """Create or update a company.
+
+        The endpoint uses the company ID, the company code, and the company name
+        to match with existing companies.
 
         Args:
             company: The company data to import.
@@ -451,8 +464,11 @@ class DecidaloClient:  # pylint: disable=too-many-public-methods
     ) -> ProjectReferenceOutput:
         """Get a single project from the API.
 
+        Returns the core project data. Either project_id or project_code must be provided.
+        For a quick existence check, use project_exists() instead.
+
         Args:
-            project_id: The internal project ID.
+            project_id: The internal decidalo project ID.
             project_code: The external project code.
 
         Returns:
@@ -474,6 +490,8 @@ class DecidaloClient:  # pylint: disable=too-many-public-methods
         edited_since: str | None = None,
     ) -> list[ProjectReferenceOutput]:
         """Get all projects from the API.
+
+        Returns the core project data for all existing projects.
 
         Args:
             created_since: Filter projects created since this date (ISO format).
@@ -516,8 +534,11 @@ class DecidaloClient:  # pylint: disable=too-many-public-methods
     ) -> bool:
         """Check if a project exists.
 
+        Only checks if the project exists, but does not return any project data.
+        If you need the project data, use get_project() instead.
+
         Args:
-            project_id: The internal project ID.
+            project_id: The internal decidalo project ID.
             project_code: The external project code.
 
         Returns:
@@ -610,7 +631,10 @@ class DecidaloClient:  # pylint: disable=too-many-public-methods
         self,
         bookings: list[BookingInput],
     ) -> list[BookingImportResult]:
-        """Import bookings asynchronously.
+        """Import a batch of bookings.
+
+        When the booking type property is not set, it won't be changed through the import.
+        The default value on creation is 'Reservation'.
 
         Args:
             bookings: The list of bookings to import.
@@ -636,9 +660,12 @@ class DecidaloClient:  # pylint: disable=too-many-public-methods
     ) -> AbsenceOutputResult:
         """Get absences from the API.
 
+        Returns all absences within the given timeframe.
+        If no timeframe is provided, all absences are returned.
+
         Args:
-            start_date: Filter by start date (inclusive).
-            end_date: Filter by end date (inclusive).
+            start_date: If provided, only absences occurring after this date will be returned.
+            end_date: If provided, only absences occurring before this date will be returned.
 
         Returns:
             An AbsenceOutputResult object containing the list of absences.
@@ -656,7 +683,10 @@ class DecidaloClient:  # pylint: disable=too-many-public-methods
         self,
         absences: ImportAbsencesCommand,
     ) -> list[AbsenceImportResult]:
-        """Import or update absences.
+        """Import absences.
+
+        Can be used to create, update, or delete absences. Set the 'delete' flag
+        on individual AbsenceImportItem objects to True to delete them.
 
         Args:
             absences: The absences to import.
@@ -692,7 +722,7 @@ class DecidaloClient:  # pylint: disable=too-many-public-methods
         self,
         resource_request: ResourceRequestInput,
     ) -> ImportResourceRequestCommandResult:
-        """Import or update a resource request.
+        """Create, update, or delete a resource request.
 
         Args:
             resource_request: The resource request data to import.
@@ -712,7 +742,9 @@ class DecidaloClient:  # pylint: disable=too-many-public-methods
         self,
         role: RoleImportInput,
     ) -> ImportRoleResult:
-        """Import or update a role.
+        """Create or update a role and set the corresponding skills and certificates.
+
+        Can also create new skills and certificates if the name is provided.
 
         Args:
             role: The role data to import.
@@ -734,11 +766,11 @@ class DecidaloClient:  # pylint: disable=too-many-public-methods
         employee_id: str | None = None,
         user_id: int | None = None,
     ) -> list[GetImportUserWorkingProfileResult]:
-        """Get working time patterns from the API.
+        """Get all working time patterns from the API.
 
         Args:
             employee_id: Filter by external employee ID.
-            user_id: Filter by internal user ID.
+            user_id: Optional filter by internal user ID.
 
         Returns:
             A list of GetImportUserWorkingProfileResult objects.
@@ -757,7 +789,11 @@ class DecidaloClient:  # pylint: disable=too-many-public-methods
         self,
         pattern: UserWorkingProfileInput,
     ) -> ImportUserWorkingProfileResult:
-        """Import or update a working time pattern.
+        """Create or update a working time pattern.
+
+        The input allows only for start dates and no end dates. All working time patterns
+        will be created/updated with the given start dates, and then the corresponding
+        end dates will be calculated automatically to one day before the next start date.
 
         Args:
             pattern: The working time pattern data to import.
