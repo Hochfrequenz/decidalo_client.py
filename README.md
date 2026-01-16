@@ -1,24 +1,24 @@
 # decidalo_client.py
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-![Python Versions (officially) supported](https://img.shields.io/pypi/pyversions/decidalo_client.svg)
-![Pypi status badge](https://img.shields.io/pypi/v/decidalo_client)
+![Python Versions (officially) supported](https://img.shields.io/pypi/pyversions/decidalo-client.svg)
+![Pypi status badge](https://img.shields.io/pypi/v/decidalo-client)
 
 ![Unittests status badge](https://github.com/Hochfrequenz/decidalo_client.py/workflows/Unittests/badge.svg)
 ![Coverage status badge](https://github.com/Hochfrequenz/decidalo_client.py/workflows/Coverage/badge.svg)
 ![Linting status badge](https://github.com/Hochfrequenz/decidalo_client.py/workflows/Linting/badge.svg)
 ![Formatting status badge](https://github.com/Hochfrequenz/decidalo_client.py/workflows/Formatting/badge.svg)
 
-An async Python client for the [decidalo](https://decidalo.de/) V3 Import API.
+An async Python client for the [decidalo](https://decidalo.de/) V3 Import API ([Swagger UI](https://import.decidalo.dev/index.html))
 
 > [!IMPORTANT]
-> This is a community project and is not an official decidalo client.
-> It is not affiliated with or endorsed by decidalo GmbH.
+> This is a community project and is NOT an official decidalo client.
+> It is not affiliated with or endorsed by Data Assessment Solutions GmbH.
 
 ## Installation
 
 ```bash
-pip install decidalo_client
+pip install decidalo-client
 ```
 
 ## Usage
