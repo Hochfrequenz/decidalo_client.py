@@ -31,7 +31,7 @@ tests = [
     "aioresponses==0.7.8",
 ]
 linting = [
-    "pylint==4.0.4",
+    "pylint==4.0.5",
 ]
 type_check = [
     "mypy==1.19.1",
