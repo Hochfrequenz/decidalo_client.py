@@ -52,7 +52,7 @@ packaging = [
     "twine==6.2.0",
 ]
 codegen = [
-    "datamodel-code-generator==0.54.1",
+    "datamodel-code-generator==0.55.0",
 ]
 dev = [
     "pip-tools",
