@@ -23,9 +23,7 @@ class TestProfileGetHeader:
     async def test_returns_profile_header(self, mock_aiohttp: aioresponses) -> None:
         payload = {
             "avatarImageUrl": "https://example.com/avatar.jpg",
-            "viewMetamodelResult": [
-                {"columnName": "FirstName", "columnID": 1, "data": "Max", "label": "Vorname"}
-            ],
+            "viewMetamodelResult": [{"columnName": "FirstName", "columnID": 1, "data": "Max", "label": "Vorname"}],
             "lastEditor": "Admin",
             "lastEditDate": "2026-02-10T10:34:40.417Z",
             "approvedBy": None,
@@ -45,10 +43,18 @@ class TestProfileGetHeader:
 class TestProfileGetCertificates:
     async def test_returns_certificate_list(self, mock_aiohttp: aioresponses) -> None:
         payload = [
-            {"userCertificateID": 86, "certificateID": 124,
-             "certificateName": "SAP Certified", "standardCertificateID": None,
-             "issueMonth": 1, "issueYear": 2018, "issuerOrganizationName": "",
-             "expirationMonth": None, "expirationYear": None, "credentialUrl": None}
+            {
+                "userCertificateID": 86,
+                "certificateID": 124,
+                "certificateName": "SAP Certified",
+                "standardCertificateID": None,
+                "issueMonth": 1,
+                "issueYear": 2018,
+                "issuerOrganizationName": "",
+                "expirationMonth": None,
+                "expirationYear": None,
+                "credentialUrl": None,
+            }
         ]
         mock_aiohttp.get(f"{BASE_URL}/api/Profile/{USER_ID}/Certificates", body=json.dumps(payload), status=200)
         async with DecidaloAppClient(token=TOKEN) as client:

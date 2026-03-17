@@ -50,9 +50,12 @@ class ProjectsDomain:
 
     async def get_all_team_members_for_user(self, user_id: int) -> list[Any]:
         """Get all projects + members visible to a user."""
-        return cast(list[Any], json.loads(
-            await self._http.get(f"/api/ProjectReference/GetAllVisibleProjectTeamMembersForContact/{user_id}")
-        ))
+        return cast(
+            list[Any],
+            json.loads(
+                await self._http.get(f"/api/ProjectReference/GetAllVisibleProjectTeamMembersForContact/{user_id}")
+            ),
+        )
 
     async def get_references(self, data: dict[str, Any] | None = None) -> MetamodelGrid:
         """Get paginated project list (uses integer-keyed data pattern)."""

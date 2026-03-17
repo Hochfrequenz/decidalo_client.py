@@ -16,11 +16,12 @@ PROJECT_ID = 1462
 
 class TestProjectsGetHeader:
     async def test_returns_project_header(self, mock_aiohttp: aioresponses) -> None:
-        payload = {"viewMetamodelResult": [
-            {"columnName": "ProjectName", "columnID": 10, "data": "My Project", "label": "Projektname"}
-        ]}
-        mock_aiohttp.get(f"{BASE_URL}/api/ProjectReference/{PROJECT_ID}/Header",
-                         body=json.dumps(payload), status=200)
+        payload = {
+            "viewMetamodelResult": [
+                {"columnName": "ProjectName", "columnID": 10, "data": "My Project", "label": "Projektname"}
+            ]
+        }
+        mock_aiohttp.get(f"{BASE_URL}/api/ProjectReference/{PROJECT_ID}/Header", body=json.dumps(payload), status=200)
         async with DecidaloAppClient(token=TOKEN) as client:
             result = await client.projects.get_header(project_id=PROJECT_ID)
         assert isinstance(result, ProjectHeader)
@@ -29,8 +30,7 @@ class TestProjectsGetHeader:
 
 class TestProjectsGetTeam:
     async def test_returns_empty_list_for_no_members(self, mock_aiohttp: aioresponses) -> None:
-        mock_aiohttp.get(f"{BASE_URL}/api/ProjectReference/{PROJECT_ID}/TeamMembers",
-                         body="[]", status=200)
+        mock_aiohttp.get(f"{BASE_URL}/api/ProjectReference/{PROJECT_ID}/TeamMembers", body="[]", status=200)
         async with DecidaloAppClient(token=TOKEN) as client:
             result = await client.projects.get_team(project_id=PROJECT_ID)
         assert result == []
@@ -49,8 +49,7 @@ class TestProjectsGetOverview:
             "salesResponsible": None,
             "viewMetamodelResult": [],
         }
-        mock_aiohttp.get(f"{BASE_URL}/api/ProjectReference/{PROJECT_ID}/Overview",
-                         body=json.dumps(payload), status=200)
+        mock_aiohttp.get(f"{BASE_URL}/api/ProjectReference/{PROJECT_ID}/Overview", body=json.dumps(payload), status=200)
         async with DecidaloAppClient(token=TOKEN) as client:
             result = await client.projects.get_overview(project_id=PROJECT_ID)
         assert isinstance(result, ProjectOverview)

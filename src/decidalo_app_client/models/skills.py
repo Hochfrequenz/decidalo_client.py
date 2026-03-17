@@ -37,6 +37,7 @@ class SkillCategory(BaseModel):
 
 class SkillMapping(BaseModel):
     """Synonym/mapping entry for a skill."""
+
     # Response shape not fully known from HAR — use flexible model
     skillId: int | None = None
     skillName: str | None = None

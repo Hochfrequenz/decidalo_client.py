@@ -46,9 +46,7 @@ class SearchDomain:
 
     async def autocomplete_user(self, pattern: str) -> list[UserForAutocomplete]:
         """Autocomplete user names by pattern."""
-        response_text = await self._http.get(
-            "/api/Search/GetSearchUsersForAutocomplete", params={"pattern": pattern}
-        )
+        response_text = await self._http.get("/api/Search/GetSearchUsersForAutocomplete", params={"pattern": pattern})
         adapter = TypeAdapter(list[UserForAutocomplete])
         return adapter.validate_json(response_text)
 

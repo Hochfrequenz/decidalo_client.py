@@ -1,6 +1,7 @@
 """Tests for decidalo_app_client exceptions and metamodel parsing."""
 
 from __future__ import annotations
+
 # pylint: disable=wrong-import-position,wrong-import-order,reimported,ungrouped-imports,import-outside-toplevel
 
 import pytest
@@ -22,6 +23,7 @@ class TestExceptions:
 
     def test_exceptions_are_independent_of_decidalo_client(self) -> None:
         from decidalo_client.exceptions import DecidaloClientError
+
         assert not issubclass(AppAPIError, DecidaloClientError)
         assert not issubclass(AppAuthError, DecidaloClientError)
 
@@ -33,7 +35,6 @@ from aioresponses import aioresponses
 
 from decidalo_app_client._http import HttpHelper
 from decidalo_app_client.exceptions import AppAPIError, AppAuthError
-
 
 BASE_URL = "https://api.decidalo.app"
 TOKEN = "test-bearer-token"
@@ -117,6 +118,7 @@ class TestDecidaloAppClientContextManager:
             from decidalo_app_client.domains.certificates import CertsDomain
             from decidalo_app_client.domains.roles import RolesDomain
             from decidalo_app_client.domains.teams import TeamsDomain
+
             assert isinstance(client.search, SearchDomain)
             assert isinstance(client.skills, SkillsDomain)
             assert isinstance(client.profile, ProfileDomain)
@@ -133,6 +135,7 @@ class TestDecidaloAppClientContextManager:
     async def test_token_response_enables_refresh(self) -> None:
         from datetime import datetime, timezone
         from decidalo_app_client.auth import TokenResponse
+
         tr = TokenResponse(
             access_token="abc",
             refresh_token="refresh-xyz",

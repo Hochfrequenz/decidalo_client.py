@@ -105,6 +105,7 @@ class CoreCompetency(BaseModel):
 class ProfileSkillPreview(BaseModel):
     """PROVISIONAL: skillId and skillName are missing from HAR sample (truncated).
     Verify actual response shape against a live API call."""
+
     skillId: int | None = None
     skillName: str | None = None
     lastUsed: str | None = None

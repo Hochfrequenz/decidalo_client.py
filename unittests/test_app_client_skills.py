@@ -15,8 +15,15 @@ TOKEN = "test-token"
 
 class TestSkillsAutocomplete:
     async def test_returns_skill_list(self, mock_aiohttp: aioresponses) -> None:
-        payload = [{"skillId": 21873, "skillName": "Python", "categoryName": "IT Skills",
-                    "languageID": 7, "alreadyUsed": False}]
+        payload = [
+            {
+                "skillId": 21873,
+                "skillName": "Python",
+                "categoryName": "IT Skills",
+                "languageID": 7,
+                "alreadyUsed": False,
+            }
+        ]
         url = f"{BASE_URL}/api/Skill/AutocompleteSkill?pattern=Py&useClientLanguage=false&showMoreResults=false&onlyCoreSkills=false"
         mock_aiohttp.get(url, body=json.dumps(payload), status=200)
         async with DecidaloAppClient(token=TOKEN) as client:
@@ -28,8 +35,9 @@ class TestSkillsAutocomplete:
 
 class TestSkillsGetLevels:
     async def test_returns_skill_levels(self, mock_aiohttp: aioresponses) -> None:
-        payload = [{"skillLevelID": 1, "displayName": "Grundkenntnisse",
-                    "description": "Beginner", "numericalValue": 1}]
+        payload = [
+            {"skillLevelID": 1, "displayName": "Grundkenntnisse", "description": "Beginner", "numericalValue": 1}
+        ]
         mock_aiohttp.get(f"{BASE_URL}/api/Skill/SkillLevels", body=json.dumps(payload), status=200)
         async with DecidaloAppClient(token=TOKEN) as client:
             result = await client.skills.get_levels()
@@ -40,8 +48,7 @@ class TestSkillsGetLevels:
 
 class TestSkillsGetCategories:
     async def test_returns_categories(self, mock_aiohttp: aioresponses) -> None:
-        payload = [{"categoryId": 4157, "categoryName": "Apple",
-                    "parentCategoryId": None, "parentCategoryName": None}]
+        payload = [{"categoryId": 4157, "categoryName": "Apple", "parentCategoryId": None, "parentCategoryName": None}]
         mock_aiohttp.get(f"{BASE_URL}/api/Skill/Categories", body=json.dumps(payload), status=200)
         async with DecidaloAppClient(token=TOKEN) as client:
             result = await client.skills.get_categories()

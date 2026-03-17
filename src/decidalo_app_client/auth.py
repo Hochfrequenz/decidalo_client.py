@@ -83,9 +83,7 @@ class DecidaloAuth:
         from decidalo_app_client.exceptions import AppAuthError
 
         app = msal.PublicClientApplication(cls.CLIENT_ID, authority=cls.AUTHORITY)
-        result = await asyncio.to_thread(
-            app.acquire_token_by_refresh_token, refresh_token, cls.SCOPES
-        )
+        result = await asyncio.to_thread(app.acquire_token_by_refresh_token, refresh_token, cls.SCOPES)
         if "access_token" not in result:
             raise AppAuthError(f"Token refresh failed: {result.get('error_description', result)}")
         expires_at = datetime.now(timezone.utc) + timedelta(seconds=int(result["expires_in"]))

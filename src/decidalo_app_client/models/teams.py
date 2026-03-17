@@ -28,5 +28,6 @@ class TeamDetails(BaseModel):
 
 class SimpleTeamMember(BaseModel):
     """Minimal team member representation (from TeamMembersUnderCurrentUser)."""
+
     userId: int
     displayName: str

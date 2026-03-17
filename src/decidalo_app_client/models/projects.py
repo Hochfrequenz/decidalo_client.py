@@ -47,6 +47,7 @@ class ProjectDetails(BaseModel):
 
 class ProjectTeamMember(BaseModel):
     """Team member on a project. Shape confirmed from HAR only as empty list — model is best-effort."""
+
     userId: int | None = None
     displayName: str | None = None
     jobPosition: str | None = None
