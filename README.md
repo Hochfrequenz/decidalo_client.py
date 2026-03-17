@@ -110,7 +110,7 @@ It is used for reading data from decidalo — searching for people, viewing prof
 The App Client authenticates via OAuth2 (Microsoft SSO) through `login.decidalo.app`.
 There are two authentication flows:
 
-1. **Device Code Flow** (interactive, for first-time setup) — opens a browser for login and returns tokens.
+1. **Device Code Flow** (interactive, for first-time setup) — prints a URL and code to the console for you to open in a browser.
 2. **Refresh Token Flow** (headless, for automation) — reuses a previously obtained refresh token.
 
 ```python
@@ -149,17 +149,17 @@ async def main() -> None:
     async with DecidaloAppClient(token=token) as client:
         # Search for people with specific skills
         results = await client.search.find_people(keywords=["SAP", "Python"])
-        for user in results.users:
-            print(f"{user.displayName} (Score: {user.matchScore})")
+        for user in results.usersWithMatchedQualities:
+            print(f"User {user.userId} (Score: {user.score})")
 
         # Get a user's profile header
         header = await client.profile.get_header(user_id=42)
-        print(f"Profile: {header.firstName} {header.lastName}")
+        print(f"Profile quality: {header.profileQuality}, last edited by: {header.lastEditor}")
 
         # Browse available skill categories
         categories = await client.skills.get_categories()
         for cat in categories:
-            print(f"Category: {cat.name}")
+            print(f"Category: {cat.categoryName}")
 
 asyncio.run(main())
 ```
@@ -175,7 +175,7 @@ async with DecidaloAppClient(token="your-bearer-token") as client:
 
 - Async HTTP client built on `aiohttp` with automatic token refresh
 - OAuth2 Device Code Flow and Refresh Token Flow via `msal`
-- Type-safe Pydantic models for all responses
+- Type-safe Pydantic models for most responses
 - Domain-based API structure:
   - **Search** — Find people by skills/keywords, autocomplete user names, get filter fields
   - **Profile** — Read profile headers, skills, certificates, languages, industries, roles, competencies, projects
