@@ -10,10 +10,14 @@ from decidalo_app_client.models.metamodel import ViewMetamodelEntry
 
 
 class ProjectHeader(BaseModel):
+    """Header metadata for a project."""
+
     viewMetamodelResult: list[ViewMetamodelEntry] = []
 
 
 class ProjectProfileEntry(BaseModel):
+    """A profile entry (person) associated with a project."""
+
     id: int | None = None
     avatarImageUrl: str | None = None
     name: str | None = None
@@ -22,6 +26,8 @@ class ProjectProfileEntry(BaseModel):
 
 
 class ProjectOverview(BaseModel):
+    """Overview data for a project including team and planning dates."""
+
     profileEntries: list[ProjectProfileEntry] = []
     planningStartDate: str | None = None
     planningEndDate: str | None = None
@@ -34,6 +40,8 @@ class ProjectOverview(BaseModel):
 
 
 class ProjectDetails(BaseModel):
+    """Detailed metadata fields for a project."""
+
     viewMetamodelResult: list[ViewMetamodelEntry] = []
 
 

@@ -6,11 +6,15 @@ from pydantic import BaseModel
 
 
 class CertificateAutocomplete(BaseModel):
+    """Autocomplete entry for a certificate."""
+
     certificateID: int
     certificateName: str
 
 
 class CertificateHolder(BaseModel):
+    """A user who holds a certificate."""
+
     userID: int
     displayName: str
     expirationMonth: int | None = None
@@ -19,5 +23,7 @@ class CertificateHolder(BaseModel):
 
 
 class CertificateHoldersResponse(BaseModel):
+    """Paginated response containing certificate holders."""
+
     certificateHolders: list[CertificateHolder]
     totalCount: int

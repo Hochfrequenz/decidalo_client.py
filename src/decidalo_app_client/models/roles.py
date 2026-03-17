@@ -8,6 +8,8 @@ from pydantic import BaseModel
 
 
 class Role(BaseModel):
+    """A role definition in the Decidalo system."""
+
     roleID: int
     roleSkillsCount: int = 0
     roleCertificatesCount: int = 0
@@ -19,12 +21,16 @@ class Role(BaseModel):
 
 
 class RoleSkillCheck(BaseModel):
+    """Result of checking whether a user fulfils the skill requirements of a role."""
+
     isFulfilled: bool
     matchedUserSkillRoles: list[Any] = []
     missingRoleSkills: list[Any] = []
 
 
 class RoleCertCheck(BaseModel):
+    """Result of checking whether a user fulfils the certificate requirements of a role."""
+
     isFulfilled: bool
     matchedUserRoleCertificates: list[Any] = []
     missingUserRoleCertificates: list[Any] = []

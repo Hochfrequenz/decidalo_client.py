@@ -20,6 +20,7 @@ class SearchDomain:
     def __init__(self, http: HttpHelper) -> None:
         self._http = http
 
+    # pylint: disable=too-many-arguments
     async def find_people(
         self,
         keywords: list[str],

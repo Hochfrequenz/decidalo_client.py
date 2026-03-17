@@ -6,6 +6,8 @@ from pydantic import BaseModel
 
 
 class TeamMember(BaseModel):
+    """A member of a team."""
+
     teamMemberID: int
     teamMemberName: str
     teamMemberPosition: str | None = None
@@ -14,6 +16,8 @@ class TeamMember(BaseModel):
 
 
 class TeamDetails(BaseModel):
+    """Full details for a team including manager and members."""
+
     teamID: int
     teamName: str
     parentTeamID: int | None = None

@@ -8,6 +8,8 @@ from pydantic import BaseModel
 
 
 class SkillAutocomplete(BaseModel):
+    """Autocomplete entry for a skill."""
+
     skillId: int
     skillName: str
     categoryName: str | None = None
@@ -16,6 +18,8 @@ class SkillAutocomplete(BaseModel):
 
 
 class SkillLevel(BaseModel):
+    """Proficiency level definition for a skill."""
+
     skillLevelID: int
     displayName: str
     description: str | None = None
@@ -23,6 +27,8 @@ class SkillLevel(BaseModel):
 
 
 class SkillCategory(BaseModel):
+    """A skill category in the Decidalo taxonomy."""
+
     categoryId: int
     categoryName: str
     parentCategoryId: int | None = None

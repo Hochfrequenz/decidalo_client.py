@@ -10,6 +10,8 @@ from decidalo_app_client.models.metamodel import ViewMetamodelEntry
 
 
 class ProfileHeader(BaseModel):
+    """Header metadata for a user profile."""
+
     avatarImageUrl: str | None = None
     viewMetamodelResult: list[ViewMetamodelEntry] = []
     lastEditor: str | None = None
@@ -21,6 +23,8 @@ class ProfileHeader(BaseModel):
 
 
 class ProfileCertificate(BaseModel):
+    """A certificate entry on a user's profile."""
+
     userCertificateID: int
     certificateID: int
     certificateName: str
@@ -34,24 +38,32 @@ class ProfileCertificate(BaseModel):
 
 
 class LanguageLevel(BaseModel):
+    """Proficiency level definition for a language."""
+
     languageLevelID: int
     displayName: str
     numericalValue: int
 
 
 class ProfileLanguage(BaseModel):
+    """A language entry on a user's profile."""
+
     standardLanguageID: int | None = None
     name: str
     languageLevelID: int | None = None
 
 
 class ProfileLanguageSection(BaseModel):
+    """Section of a profile containing language entries."""
+
     languages: list[ProfileLanguage]
     suggestedLanguages: list[ProfileLanguage] = []
     languageLevels: list[LanguageLevel] = []
 
 
 class ProfileIndustry(BaseModel):
+    """An industry entry on a user's profile."""
+
     industryID: int | None = None
     industryName: str
     industryCode: str | None = None
@@ -61,11 +73,15 @@ class ProfileIndustry(BaseModel):
 
 
 class ProfileIndustrySection(BaseModel):
+    """Section of a profile containing industry entries."""
+
     industries: list[ProfileIndustry]
     suggestedIndustries: list[ProfileIndustry] = []
 
 
 class ProfileRole(BaseModel):
+    """A role entry on a user's profile."""
+
     roleID: int
     roleSkillsCount: int = 0
     roleCertificatesCount: int = 0
@@ -74,10 +90,14 @@ class ProfileRole(BaseModel):
 
 
 class ProfileRolesSection(BaseModel):
+    """Section of a profile containing role entries."""
+
     roles: list[ProfileRole]
 
 
 class CoreCompetency(BaseModel):
+    """A core competency entry on a user's profile."""
+
     coreCompetencyID: str
     displayText: str
 
@@ -100,5 +120,7 @@ class ProfileSkillPreview(BaseModel):
 
 
 class ProfileEmployeeInfoSection(BaseModel):
+    """Section of a profile containing employee info fields."""
+
     viewMetamodelResult: list[ViewMetamodelEntry] = []
     isSummaryTutorialCompleted: bool | None = None

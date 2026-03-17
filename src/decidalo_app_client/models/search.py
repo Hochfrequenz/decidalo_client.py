@@ -8,10 +8,14 @@ from pydantic import BaseModel
 
 
 class SearchKeyword(BaseModel):
+    """A single keyword used in a global search request."""
+
     keyword: str
 
 
 class MetamodelFilter(BaseModel):
+    """A filter on a metamodel entry used in global search."""
+
     viewMetamodelEntryID: int
     filterValues: list[str] = []
     rangeStart: str | None = None
@@ -19,6 +23,8 @@ class MetamodelFilter(BaseModel):
 
 
 class GlobalSearchRequest(BaseModel):
+    """Request body for the GlobalSearch endpoint."""
+
     keywords: list[SearchKeyword]
     startDate: str | None = None
     endDate: str | None = None
@@ -28,6 +34,8 @@ class GlobalSearchRequest(BaseModel):
 
 
 class SearchUser(BaseModel):
+    """A user returned in a global search result."""
+
     userId: int
     userData: Any = None
     highlights: Any = None
@@ -40,6 +48,8 @@ class SearchUser(BaseModel):
 
 
 class KeywordWithSynonyms(BaseModel):
+    """A search keyword enriched with synonym and category information."""
+
     keyword: str
     skillWithSynonyms: Any = None
     certificateWithSynonyms: Any = None
@@ -48,12 +58,16 @@ class KeywordWithSynonyms(BaseModel):
 
 
 class GlobalSearchResponse(BaseModel):
+    """Response from the GlobalSearch endpoint."""
+
     usersWithMatchedQualities: list[SearchUser]
     keywordsWithSynonyms: list[KeywordWithSynonyms]
     globalSearchSessionID: int
 
 
 class UserForAutocomplete(BaseModel):
+    """A user entry returned by the autocomplete endpoint."""
+
     userID: int
     displayName: str
     jobPosition: str | None = None

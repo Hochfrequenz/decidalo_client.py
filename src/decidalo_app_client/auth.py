@@ -5,10 +5,10 @@ Note: Device Code Flow requires manual testing against a live OIDC server.
 This module is excluded from automated test coverage.
 """
 
+# pylint: disable=import-outside-toplevel
 from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
-from typing import Callable
 
 from pydantic import BaseModel
 

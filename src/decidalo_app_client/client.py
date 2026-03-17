@@ -23,6 +23,7 @@ if TYPE_CHECKING:
 DEFAULT_BASE_URL = "https://api.decidalo.app"
 
 
+# pylint: disable=too-many-instance-attributes
 class DecidaloAppClient:
     """Async client for the Decidalo App API (api.decidalo.app).
 
