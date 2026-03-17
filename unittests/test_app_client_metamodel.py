@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
-# pylint: disable=wrong-import-position,wrong-import-order,reimported,ungrouped-imports,import-outside-toplevel
-
 import pytest
 
 from decidalo_app_client.exceptions import AppAPIError, AppAuthError
+
+# pylint: disable=wrong-import-position,wrong-import-order,reimported,ungrouped-imports,import-outside-toplevel
 
 
 class TestExceptions:
@@ -29,6 +29,7 @@ class TestExceptions:
 
 
 from unittest.mock import MagicMock
+
 import aiohttp
 import pytest
 from aioresponses import aioresponses
@@ -111,12 +112,12 @@ class TestDecidaloAppClientContextManager:
 
     async def test_domains_are_accessible(self) -> None:
         async with DecidaloAppClient(token="abc") as client:
-            from decidalo_app_client.domains.search import SearchDomain
-            from decidalo_app_client.domains.skills import SkillsDomain
+            from decidalo_app_client.domains.certificates import CertsDomain
             from decidalo_app_client.domains.profile import ProfileDomain
             from decidalo_app_client.domains.projects import ProjectsDomain
-            from decidalo_app_client.domains.certificates import CertsDomain
             from decidalo_app_client.domains.roles import RolesDomain
+            from decidalo_app_client.domains.search import SearchDomain
+            from decidalo_app_client.domains.skills import SkillsDomain
             from decidalo_app_client.domains.teams import TeamsDomain
 
             assert isinstance(client.search, SearchDomain)
@@ -134,6 +135,7 @@ class TestDecidaloAppClientContextManager:
 
     async def test_token_response_enables_refresh(self) -> None:
         from datetime import datetime, timezone
+
         from decidalo_app_client.auth import TokenResponse
 
         tr = TokenResponse(
@@ -151,7 +153,8 @@ class TestDecidaloAppClientAutoRefresh:
         """Auto-refresh is called before a request when the token is expired."""
         from datetime import datetime, timezone
         from unittest.mock import AsyncMock, patch
-        from decidalo_app_client.auth import TokenResponse, DecidaloAuth
+
+        from decidalo_app_client.auth import DecidaloAuth, TokenResponse
 
         expired = TokenResponse(
             access_token="old-token",
@@ -173,6 +176,7 @@ class TestDecidaloAppClientAutoRefresh:
     async def test_static_token_never_refreshes(self, mock_aiohttp: aioresponses) -> None:
         """Static str token never triggers refresh even if it would be expired."""
         from unittest.mock import AsyncMock, patch
+
         from decidalo_app_client.auth import DecidaloAuth
 
         mock_aiohttp.get(f"https://api.decidalo.app/api/Skill/SkillLevels", body="[]", status=200)
@@ -185,6 +189,7 @@ class TestDecidaloAppClientAutoRefresh:
     async def test_expired_token_without_refresh_token_raises(self) -> None:
         """If token is expired and no refresh_token is available, AppAuthError is raised."""
         from datetime import datetime, timezone
+
         from decidalo_app_client.auth import TokenResponse
         from decidalo_app_client.exceptions import AppAuthError
 
