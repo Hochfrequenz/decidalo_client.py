@@ -1,6 +1,7 @@
 """Tests for decidalo_app_client exceptions and metamodel parsing."""
 
 from __future__ import annotations
+# pylint: disable=wrong-import-position,wrong-import-order,reimported,ungrouped-imports,import-outside-toplevel
 
 import pytest
 
@@ -25,8 +26,7 @@ class TestExceptions:
         assert not issubclass(AppAuthError, DecidaloClientError)
 
 
-import json
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import MagicMock
 import aiohttp
 import pytest
 from aioresponses import aioresponses

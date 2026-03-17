@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import json
 
-import pytest
 from aioresponses import aioresponses
 
 from decidalo_app_client import DecidaloAppClient

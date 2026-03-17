@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import json
 
-import pytest
 from aioresponses import aioresponses
 
 from decidalo_app_client import DecidaloAppClient
@@ -18,7 +17,8 @@ class TestSkillsAutocomplete:
     async def test_returns_skill_list(self, mock_aiohttp: aioresponses) -> None:
         payload = [{"skillId": 21873, "skillName": "Python", "categoryName": "IT Skills",
                     "languageID": 7, "alreadyUsed": False}]
-        mock_aiohttp.get(f"{BASE_URL}/api/Skill/AutocompleteSkill?pattern=Py&useClientLanguage=false&showMoreResults=false&onlyCoreSkills=false", body=json.dumps(payload), status=200)
+        url = f"{BASE_URL}/api/Skill/AutocompleteSkill?pattern=Py&useClientLanguage=false&showMoreResults=false&onlyCoreSkills=false"
+        mock_aiohttp.get(url, body=json.dumps(payload), status=200)
         async with DecidaloAppClient(token=TOKEN) as client:
             result = await client.skills.autocomplete(pattern="Py")
         assert len(result) == 1

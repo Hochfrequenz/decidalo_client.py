@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import json
 
-import pytest
 from aioresponses import aioresponses
 
 from decidalo_app_client import DecidaloAppClient
@@ -12,9 +11,7 @@ from decidalo_app_client.models.profile import (
     CoreCompetency,
     ProfileCertificate,
     ProfileHeader,
-    ProfileIndustrySection,
     ProfileLanguageSection,
-    ProfileRolesSection,
 )
 
 BASE_URL = "https://api.decidalo.app"
