@@ -193,3 +193,45 @@ class TestDecidaloAppClientAutoRefresh:
         async with DecidaloAppClient(token=expired) as client:
             with pytest.raises(AppAuthError, match="refresh_token"):
                 await client.skills.get_levels()
+
+
+from decidalo_app_client.models.metamodel import EntityColumn, MetamodelColumn, resolve_row
+
+
+class TestResolveRow:
+    def _make_columns(self) -> list[EntityColumn]:
+        return [
+            EntityColumn(
+                viewMetamodelEntryID=181,
+                column=MetamodelColumn(columnName="StartDate"),
+            ),
+            EntityColumn(
+                viewMetamodelEntryID=221,
+                column=MetamodelColumn(columnName="EndDate"),
+            ),
+            EntityColumn(
+                viewMetamodelEntryID=27,
+                column=MetamodelColumn(columnName="ProjectName"),
+            ),
+        ]
+
+    def test_resolves_known_keys(self) -> None:
+        columns = self._make_columns()
+        row = {"181": "2024-01-01", "221": "2024-12-31", "27": "Projekt XYZ"}
+        result = resolve_row(columns, row)
+        assert result == {"StartDate": "2024-01-01", "EndDate": "2024-12-31", "ProjectName": "Projekt XYZ"}
+
+    def test_raises_on_unknown_key(self) -> None:
+        columns = self._make_columns()
+        row = {"181": "2024-01-01", "999": "unexpected"}
+        with pytest.raises(KeyError):
+            resolve_row(columns, row)
+
+    def test_empty_row_returns_empty_dict(self) -> None:
+        columns = self._make_columns()
+        assert resolve_row(columns, {}) == {}
+
+    def test_negative_key_resolves_if_in_columns(self) -> None:
+        columns = [EntityColumn(viewMetamodelEntryID=-8, column=MetamodelColumn(columnName="ID"))]
+        row = {"-8": "42"}
+        assert resolve_row(columns, row) == {"ID": "42"}
