@@ -6,7 +6,7 @@ from typing import Any
 
 from pydantic import BaseModel
 
-from decidalo_app_client.models.metamodel import MetamodelGrid, ViewMetamodelEntry
+from decidalo_app_client.models.metamodel import ViewMetamodelEntry
 
 
 class ProfileHeader(BaseModel):

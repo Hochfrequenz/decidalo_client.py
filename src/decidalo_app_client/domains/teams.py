@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from typing import Any
-
 from pydantic import TypeAdapter
 
 from decidalo_app_client._http import HttpHelper

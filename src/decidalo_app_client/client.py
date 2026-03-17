@@ -47,6 +47,7 @@ class DecidaloAppClient:
             self._token_response = token
 
         self._http = HttpHelper(base_url=base_url)
+        self._session: aiohttp.ClientSession | None = None
         self.search = SearchDomain(self._http)
         self.skills = SkillsDomain(self._http)
         self.profile = ProfileDomain(self._http)

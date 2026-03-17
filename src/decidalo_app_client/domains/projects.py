@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import json
-from typing import Any
+from typing import Any, cast
 
 from pydantic import TypeAdapter
 
@@ -46,13 +46,13 @@ class ProjectsDomain:
 
     async def get_contacts(self, project_id: int) -> list[Any]:
         """Get project contacts. Returns raw list (shape only observed as empty in HAR)."""
-        return json.loads(await self._http.get(f"/api/ProjectReference/{project_id}/ProjectContacts"))
+        return cast(list[Any], json.loads(await self._http.get(f"/api/ProjectReference/{project_id}/ProjectContacts")))
 
     async def get_all_team_members_for_user(self, user_id: int) -> list[Any]:
         """Get all projects + members visible to a user."""
-        return json.loads(
+        return cast(list[Any], json.loads(
             await self._http.get(f"/api/ProjectReference/GetAllVisibleProjectTeamMembersForContact/{user_id}")
-        )
+        ))
 
     async def get_references(self, data: dict[str, Any] | None = None) -> MetamodelGrid:
         """Get paginated project list (uses integer-keyed data pattern)."""
