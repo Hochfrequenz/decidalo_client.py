@@ -50,7 +50,11 @@ class DecidaloAuth:
         """
         import asyncio
 
-        import msal
+        try:
+            import msal
+        except ImportError as import_error:
+            import_error.msg += "; The decidalo_app_client requires the 'app' extra. Install it with: pip install decidalo-client[app]"
+            raise
 
         from decidalo_app_client.exceptions import AppAuthError
 
@@ -78,7 +82,11 @@ class DecidaloAuth:
         """
         import asyncio
 
-        import msal
+        try:
+            import msal
+        except ImportError as import_error:
+            import_error.msg += "; The decidalo_app_client requires the 'app' extra. Install it with: pip install decidalo-client[app]"
+            raise
 
         from decidalo_app_client.exceptions import AppAuthError
 
