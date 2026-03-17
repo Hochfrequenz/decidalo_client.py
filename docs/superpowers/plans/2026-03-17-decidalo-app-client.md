@@ -421,7 +421,6 @@ class DecidaloAuth:
             AppAuthError: If the refresh fails.
         """
         import asyncio
-        from datetime import timedelta
 
         import msal
 
