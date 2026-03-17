@@ -38,7 +38,7 @@ class TestProjectsGetTeam:
 
 class TestProjectsGetOverview:
     async def test_returns_project_overview(self, mock_aiohttp: aioresponses) -> None:
-        payload = {
+        payload: dict[str, object] = {
             "profileEntries": [],
             "planningStartDate": "2024-01-01T00:00:00Z",
             "planningEndDate": "2027-01-03T00:00:00Z",
