@@ -92,3 +92,104 @@ class TestHttpHelper:
         helper = HttpHelper(base_url=BASE_URL)
         with pytest.raises(RuntimeError, match="context manager"):
             await helper.get("/api/test")
+
+
+from decidalo_app_client import DecidaloAppClient
+
+
+class TestDecidaloAppClientContextManager:
+    async def test_aenter_creates_session(self) -> None:
+        async with DecidaloAppClient(token="abc") as client:
+            assert client._http._session is not None
+
+    async def test_aexit_closes_session(self) -> None:
+        client = DecidaloAppClient(token="abc")
+        async with client:
+            pass
+        assert client._http._session is None
+
+    async def test_domains_are_accessible(self) -> None:
+        async with DecidaloAppClient(token="abc") as client:
+            from decidalo_app_client.domains.search import SearchDomain
+            from decidalo_app_client.domains.skills import SkillsDomain
+            from decidalo_app_client.domains.profile import ProfileDomain
+            from decidalo_app_client.domains.projects import ProjectsDomain
+            from decidalo_app_client.domains.certificates import CertsDomain
+            from decidalo_app_client.domains.roles import RolesDomain
+            from decidalo_app_client.domains.teams import TeamsDomain
+            assert isinstance(client.search, SearchDomain)
+            assert isinstance(client.skills, SkillsDomain)
+            assert isinstance(client.profile, ProfileDomain)
+            assert isinstance(client.projects, ProjectsDomain)
+            assert isinstance(client.certificates, CertsDomain)
+            assert isinstance(client.roles, RolesDomain)
+            assert isinstance(client.teams, TeamsDomain)
+
+    async def test_str_token_disables_refresh(self) -> None:
+        client = DecidaloAppClient(token="static-token")
+        assert client._token_response is None
+        assert client._static_token == "static-token"
+
+    async def test_token_response_enables_refresh(self) -> None:
+        from datetime import datetime, timezone
+        from decidalo_app_client.auth import TokenResponse
+        tr = TokenResponse(
+            access_token="abc",
+            refresh_token="refresh-xyz",
+            expires_at=datetime(2030, 1, 1, tzinfo=timezone.utc),
+        )
+        client = DecidaloAppClient(token=tr)
+        assert client._token_response is tr
+        assert client._static_token is None
+
+
+class TestDecidaloAppClientAutoRefresh:
+    async def test_expired_token_triggers_refresh(self, mock_aiohttp: aioresponses) -> None:
+        """Auto-refresh is called before a request when the token is expired."""
+        from datetime import datetime, timezone
+        from unittest.mock import AsyncMock, patch
+        from decidalo_app_client.auth import TokenResponse, DecidaloAuth
+
+        expired = TokenResponse(
+            access_token="old-token",
+            refresh_token="valid-refresh",
+            expires_at=datetime(2020, 1, 1, tzinfo=timezone.utc),  # already expired
+        )
+        fresh = TokenResponse(
+            access_token="new-token",
+            refresh_token="new-refresh",
+            expires_at=datetime(2030, 1, 1, tzinfo=timezone.utc),
+        )
+        mock_aiohttp.get(f"https://api.decidalo.app/api/Skill/SkillLevels", body="[]", status=200)
+
+        with patch.object(DecidaloAuth, "refresh", new=AsyncMock(return_value=fresh)) as mock_refresh:
+            async with DecidaloAppClient(token=expired) as client:
+                await client.skills.get_levels()
+            mock_refresh.assert_awaited_once_with("valid-refresh")
+
+    async def test_static_token_never_refreshes(self, mock_aiohttp: aioresponses) -> None:
+        """Static str token never triggers refresh even if it would be expired."""
+        from unittest.mock import AsyncMock, patch
+        from decidalo_app_client.auth import DecidaloAuth
+
+        mock_aiohttp.get(f"https://api.decidalo.app/api/Skill/SkillLevels", body="[]", status=200)
+
+        with patch.object(DecidaloAuth, "refresh", new=AsyncMock()) as mock_refresh:
+            async with DecidaloAppClient(token="static-forever") as client:
+                await client.skills.get_levels()
+            mock_refresh.assert_not_awaited()
+
+    async def test_expired_token_without_refresh_token_raises(self) -> None:
+        """If token is expired and no refresh_token is available, AppAuthError is raised."""
+        from datetime import datetime, timezone
+        from decidalo_app_client.auth import TokenResponse
+        from decidalo_app_client.exceptions import AppAuthError
+
+        expired = TokenResponse(
+            access_token="old-token",
+            refresh_token=None,  # no refresh token
+            expires_at=datetime(2020, 1, 1, tzinfo=timezone.utc),
+        )
+        async with DecidaloAppClient(token=expired) as client:
+            with pytest.raises(AppAuthError, match="refresh_token"):
+                await client.skills.get_levels()
