@@ -6,8 +6,6 @@ import pytest
 
 from decidalo_app_client.exceptions import AppAPIError, AppAuthError
 
-# pylint: disable=wrong-import-position,wrong-import-order,reimported,ungrouped-imports,import-outside-toplevel
-
 
 class TestExceptions:
     def test_app_api_error_stores_status_and_message(self) -> None:
