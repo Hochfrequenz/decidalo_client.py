@@ -239,7 +239,7 @@ class TestResolveRow:
 
     def test_empty_row_returns_empty_dict(self) -> None:
         columns = self._make_columns()
-        assert resolve_row(columns, {}) == {}
+        assert not resolve_row(columns, {})
 
     def test_negative_key_resolves_if_in_columns(self) -> None:
         columns = [EntityColumn(viewMetamodelEntryID=-8, column=MetamodelColumn(columnName="ID"))]
