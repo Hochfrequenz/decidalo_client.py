@@ -12,6 +12,7 @@ from decidalo_app_client.models.profile import (
     ProfileCertificate,
     ProfileHeader,
     ProfileLanguageSection,
+    ProfileSkillPreview,
 )
 
 BASE_URL = "https://api.decidalo.app"
@@ -79,6 +80,31 @@ class TestProfileGetLanguages:
         assert result.languages[0].name == "Deutsch"
 
 
+class TestProfileGetSkillsPreview:
+    async def test_returns_skill_list(self, mock_aiohttp: aioresponses) -> None:
+        payload = [
+            {
+                "skillID": 21667,
+                "name": "ABAP OO",
+                "categoryID": 4425,
+                "skillLevel": 2,
+                "isCoreSkill": True,
+                "isTopSkill": True,
+                "aiGenerated": False,
+                "editor": "Admin",
+                "editDate": "2025-11-11",
+            }
+        ]
+        mock_aiohttp.get(f"{BASE_URL}/api/Profile/{USER_ID}/SkillsPreview", body=json.dumps(payload), status=200)
+        async with DecidaloAppClient(token=TOKEN) as client:
+            result = await client.profile.get_skills_preview(user_id=USER_ID)
+        assert len(result) == 1
+        assert isinstance(result[0], ProfileSkillPreview)
+        assert result[0].skillID == 21667
+        assert result[0].name == "ABAP OO"
+        assert result[0].skillLevel == 2
+
+
 class TestProfileGetCoreCompetencies:
     async def test_returns_competency_list(self, mock_aiohttp: aioresponses) -> None:
         payload = [{"coreCompetencyID": "348", "displayText": "Effektive Kommunikation"}]
@@ -88,3 +114,12 @@ class TestProfileGetCoreCompetencies:
         assert len(result) == 1
         assert isinstance(result[0], CoreCompetency)
         assert result[0].displayText == "Effektive Kommunikation"
+
+    async def test_accepts_null_fields(self, mock_aiohttp: aioresponses) -> None:
+        payload = [{"coreCompetencyID": None, "displayText": None}]
+        mock_aiohttp.get(f"{BASE_URL}/api/Profile/{USER_ID}/CoreCompetencies", body=json.dumps(payload), status=200)
+        async with DecidaloAppClient(token=TOKEN) as client:
+            result = await client.profile.get_core_competencies(user_id=USER_ID)
+        assert len(result) == 1
+        assert result[0].coreCompetencyID is None
+        assert result[0].displayText is None
