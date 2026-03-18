@@ -31,7 +31,7 @@ Install the base package (Import Client only):
 pip install decidalo-client
 ```
 
-To also use the App Client, install with the `app` extra (this adds the [`msal`](https://github.com/AzureAD/microsoft-authentication-library-for-python) dependency for OAuth2 authentication):
+To also use the App Client, install with the `app` extra:
 
 ```bash
 pip install decidalo-client[app]
@@ -174,7 +174,7 @@ async with DecidaloAppClient(token="your-bearer-token") as client:
 ### App Client Features
 
 - Async HTTP client built on `aiohttp` with automatic token refresh
-- OAuth2 Device Code Flow and Refresh Token Flow via `msal`
+- OAuth2 Device Code Flow and Refresh Token Flow (direct OIDC HTTP, no extra dependency)
 - Type-safe Pydantic models for most responses
 - Domain-based API structure:
   - **Search** — Find people by skills/keywords, autocomplete user names, get filter fields
