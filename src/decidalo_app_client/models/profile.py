@@ -98,16 +98,17 @@ class ProfileRolesSection(BaseModel):
 class CoreCompetency(BaseModel):
     """A core competency entry on a user's profile."""
 
-    coreCompetencyID: str
-    displayText: str
+    coreCompetencyID: str | None = None
+    displayText: str | None = None
 
 
 class ProfileSkillPreview(BaseModel):
-    """PROVISIONAL: skillId and skillName are missing from HAR sample (truncated).
-    Verify actual response shape against a live API call."""
+    """A skill entry in the profile skills preview section."""
 
-    skillId: int | None = None
-    skillName: str | None = None
+    skillID: int | None = None
+    name: str | None = None
+    categoryID: int | None = None
+    skillLevel: int | None = None
     lastUsed: str | None = None
     accumulatedExperienceInYears: float | None = None
     skillProjectNumber: int | None = None
@@ -116,6 +117,9 @@ class ProfileSkillPreview(BaseModel):
     description: str | None = None
     isCoreSkill: bool | None = None
     isTopSkill: bool | None = None
+    isRoleSkillSuggested: bool | None = None
+    isSkillPendingApproval: bool | None = None
+    aiGenerated: bool | None = None
     editor: str | None = None
     editDate: str | None = None
 

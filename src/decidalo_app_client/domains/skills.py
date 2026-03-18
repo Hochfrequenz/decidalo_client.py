@@ -53,8 +53,14 @@ class SkillsDomain:
         return await self._http.get(f"/api/Skill/Mappings/{skill_id}")
 
     async def get_assessments(self, data: dict[str, Any] | None = None) -> str:
-        """Get skill assessment matrix. Returns raw JSON (response shape unconfirmed from HAR)."""
-        return await self._http.post("/api/SkillLists/Assessments", data=json.dumps(data or {}))
+        """Get skill assessment matrix. Returns raw JSON.
+
+        The default body returns all skills and users. Filter via:
+            {"skillIds": [], "userIds": [175], "teamIDs": [47], "pageIndex": 0, "pageSize": 25}
+        skillIds is a filter on which skills to include in the matrix columns (empty = all).
+        """
+        default = {"skillIds": [], "pageIndex": 0, "pageSize": 25, "teamIDs": [], "userIds": []}
+        return await self._http.post("/api/SkillLists/Assessments", data=json.dumps(data or default))
 
     async def get_grid(self, data: dict[str, Any] | None = None) -> str:
         """Get paginated skill grid. Returns raw JSON."""
