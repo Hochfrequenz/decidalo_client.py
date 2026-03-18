@@ -15,6 +15,8 @@ from datetime import datetime, timedelta, timezone
 import aiohttp
 from pydantic import BaseModel
 
+from decidalo_app_client.exceptions import AppAuthError
+
 
 class TokenResponse(BaseModel):
     """OAuth2 token response from login.decidalo.app."""
@@ -53,8 +55,6 @@ class DecidaloAuth:
         Raises:
             AppAuthError: If the device code flow fails.
         """
-        from decidalo_app_client.exceptions import AppAuthError
-
         async with aiohttp.ClientSession() as session:
             # Step 1: request device code
             async with session.post(
@@ -113,8 +113,6 @@ class DecidaloAuth:
         Raises:
             AppAuthError: If the refresh fails.
         """
-        from decidalo_app_client.exceptions import AppAuthError
-
         async with aiohttp.ClientSession() as session:
             async with session.post(
                 cls.TOKEN_ENDPOINT,

@@ -59,15 +59,17 @@ class TestSkillsGetCategories:
 
 class TestSkillsGetAssessments:
     async def test_sends_default_body_and_returns_json(self, mock_aiohttp: aioresponses) -> None:
-        payload = {"skills": [], "users": [], "assessments": []}
+        payload: dict[str, list[object]] = {"skills": [], "users": [], "assessments": []}
         mock_aiohttp.post(f"{BASE_URL}/api/SkillLists/Assessments", body=json.dumps(payload), status=200)
         async with DecidaloAppClient(token=TOKEN) as client:
             result = await client.skills.get_assessments()
         assert '"skills"' in result
 
     async def test_accepts_custom_body(self, mock_aiohttp: aioresponses) -> None:
-        payload = {"skills": [], "users": [], "assessments": []}
+        payload: dict[str, list[object]] = {"skills": [], "users": [], "assessments": []}
         mock_aiohttp.post(f"{BASE_URL}/api/SkillLists/Assessments", body=json.dumps(payload), status=200)
         async with DecidaloAppClient(token=TOKEN) as client:
-            result = await client.skills.get_assessments({"skillIds": [], "teamIDs": [47], "pageIndex": 0, "pageSize": 25, "userIds": []})
+            result = await client.skills.get_assessments(
+                {"skillIds": [], "teamIDs": [47], "pageIndex": 0, "pageSize": 25, "userIds": []}
+            )
         assert result is not None
