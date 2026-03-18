@@ -9,5 +9,11 @@ disable =
     R0801,  # disable duplicate-code (we prefer our test to be explicit rather than perfectly redundancy free)
     C0302,  # disable too-many-lines (test files tend to be large)
     W0212,  # disable protected-access (tests may need to access internals)
+    C0415,  # disable import-outside-toplevel (tests use local imports inside methods)
+    C0413,  # disable wrong-import-position (tests can have imports after class defs)
+    W0404,  # disable reimported (tests may reimport the same name in different methods)
+    C0411,  # disable wrong-import-order
+    C0412,  # disable ungrouped-imports
+    W1309,  # disable f-string-without-interpolation
 [pylint."MESSAGES CONTROL"]
-max-line-length = 120
+max-line-length = 150

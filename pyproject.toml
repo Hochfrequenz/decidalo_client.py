@@ -25,6 +25,9 @@ dependencies = [
 dynamic = ["readme", "version"]
 
 [project.optional-dependencies]
+app = [
+    "msal>=1.28",
+]
 tests = [
     "pytest==9.0.2",
     "pytest-asyncio==1.3.0",
