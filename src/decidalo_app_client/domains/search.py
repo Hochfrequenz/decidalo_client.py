@@ -13,6 +13,8 @@ from decidalo_app_client.models.search import (
     UserForAutocomplete,
 )
 
+_USERS_AUTOCOMPLETE_ADAPTER = TypeAdapter(list[UserForAutocomplete])
+
 
 class SearchDomain:
     """Methods for searching people and autocompleting names."""
@@ -47,8 +49,7 @@ class SearchDomain:
     async def autocomplete_user(self, pattern: str) -> list[UserForAutocomplete]:
         """Autocomplete user names by pattern."""
         response_text = await self._http.get("/api/Search/GetSearchUsersForAutocomplete", params={"pattern": pattern})
-        adapter = TypeAdapter(list[UserForAutocomplete])
-        return adapter.validate_json(response_text)
+        return _USERS_AUTOCOMPLETE_ADAPTER.validate_json(response_text)
 
     async def get_filter_fields(self) -> str:
         """Get valid filter field definitions for use in find_people() metamodelFilters."""

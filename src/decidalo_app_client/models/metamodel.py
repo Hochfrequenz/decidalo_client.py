@@ -56,6 +56,24 @@ class MetamodelGrid(BaseModel):
     total_count: int
 
 
+def resolve_rows(columns: list[EntityColumn], data: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Build the id→name map once and resolve all rows.
+
+    More efficient than calling resolve_row() per row when processing paginated results.
+    """
+    id_to_name = {str(col.viewMetamodelEntryID): col.column.columnName for col in columns}
+    result = []
+    for row in data:
+        resolved = {}
+        for k, v in row.items():
+            if k in id_to_name:
+                resolved[id_to_name[k]] = v
+            else:
+                logger.warning("Unknown column key %s in metamodel row, skipping", k)
+        result.append(resolved)
+    return result
+
+
 def resolve_row(columns: list[EntityColumn], row: dict[str, Any]) -> dict[str, Any]:
     """Map integer string keys in a data row to their columnName values.
 

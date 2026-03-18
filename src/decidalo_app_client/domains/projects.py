@@ -8,13 +8,15 @@ from typing import Any, cast
 from pydantic import TypeAdapter
 
 from decidalo_app_client._http import HttpHelper
-from decidalo_app_client.models.metamodel import EntityColumn, MetamodelGrid, resolve_row
+from decidalo_app_client.models.metamodel import EntityColumn, MetamodelGrid, resolve_rows
 from decidalo_app_client.models.projects import (
     ProjectDetails,
     ProjectHeader,
     ProjectOverview,
     ProjectTeamMember,
 )
+
+_PROJECT_TEAM_ADAPTER = TypeAdapter(list[ProjectTeamMember])
 
 
 class ProjectsDomain:
@@ -41,8 +43,7 @@ class ProjectsDomain:
     async def get_team(self, project_id: int) -> list[ProjectTeamMember]:
         """Get all team members on a project."""
         response_text = await self._http.get(f"/api/ProjectReference/{project_id}/TeamMembers")
-        adapter = TypeAdapter(list[ProjectTeamMember])
-        return adapter.validate_json(response_text)
+        return _PROJECT_TEAM_ADAPTER.validate_json(response_text)
 
     async def get_contacts(self, project_id: int) -> list[Any]:
         """Get project contacts. Returns raw list (shape only observed as empty in HAR)."""
@@ -62,9 +63,8 @@ class ProjectsDomain:
         response = json.loads(
             await self._http.post("/api/ProjectReference/GetProjectReferences", data=json.dumps(data or {}))
         )
-        columns_raw = response.get("entityColumns", [])
-        columns = [EntityColumn.model_validate(c) for c in columns_raw]
-        rows = [resolve_row(columns, row) for row in response.get("data", [])]
+        columns = [EntityColumn.model_validate(c) for c in response.get("entityColumns", [])]
+        rows = resolve_rows(columns, response.get("data", []))
         return MetamodelGrid(rows=rows, total_count=response.get("totalCount", len(rows)))
 
     async def get_filter_fields(self) -> str:

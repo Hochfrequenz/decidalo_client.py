@@ -7,6 +7,8 @@ from pydantic import TypeAdapter
 from decidalo_app_client._http import HttpHelper
 from decidalo_app_client.models.teams import SimpleTeamMember, TeamDetails
 
+_TEAM_MEMBERS_ADAPTER = TypeAdapter(list[SimpleTeamMember])
+
 
 class TeamsDomain:
     """Methods for querying teams and their members."""
@@ -26,8 +28,7 @@ class TeamsDomain:
     async def get_members_under_current_user(self) -> list[SimpleTeamMember]:
         """Get all team members visible to the currently authenticated user."""
         response_text = await self._http.get("/api/Teams/TeamMembersUnderCurrentUser")
-        adapter = TypeAdapter(list[SimpleTeamMember])
-        return adapter.validate_json(response_text)
+        return _TEAM_MEMBERS_ADAPTER.validate_json(response_text)
 
     async def get_resource_group_members(self) -> str:
         """Get resource group members by manager. Returns raw JSON (shape unconfirmed from HAR)."""

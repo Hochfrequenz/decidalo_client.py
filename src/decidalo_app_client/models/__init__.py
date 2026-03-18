@@ -33,6 +33,8 @@ from decidalo_app_client.models.roles import Role, RoleCertCheck, RoleSkillCheck
 from decidalo_app_client.models.search import (
     GlobalSearchRequest,
     GlobalSearchResponse,
+    KeywordWithSynonyms,
+    MetamodelFilter,
     SearchUser,
     UserForAutocomplete,
 )
@@ -47,7 +49,9 @@ __all__ = [
     "EntityColumn",
     "GlobalSearchRequest",
     "GlobalSearchResponse",
+    "KeywordWithSynonyms",
     "LanguageLevel",
+    "MetamodelFilter",
     "MetamodelColumn",
     "MetamodelGrid",
     "ProfileCertificate",

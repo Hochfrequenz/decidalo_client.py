@@ -7,7 +7,7 @@ import json
 from pydantic import TypeAdapter
 
 from decidalo_app_client._http import HttpHelper
-from decidalo_app_client.models.metamodel import EntityColumn, MetamodelGrid, resolve_row
+from decidalo_app_client.models.metamodel import EntityColumn, MetamodelGrid, resolve_rows
 from decidalo_app_client.models.profile import (
     CoreCompetency,
     LanguageLevel,
@@ -19,6 +19,11 @@ from decidalo_app_client.models.profile import (
     ProfileRolesSection,
     ProfileSkillPreview,
 )
+
+_SKILLS_PREVIEW_ADAPTER = TypeAdapter(list[ProfileSkillPreview])
+_CERTIFICATES_ADAPTER = TypeAdapter(list[ProfileCertificate])
+_CORE_COMPETENCY_ADAPTER = TypeAdapter(list[CoreCompetency])
+_LANGUAGE_LEVEL_ADAPTER = TypeAdapter(list[LanguageLevel])
 
 
 class ProfileDomain:
@@ -35,8 +40,7 @@ class ProfileDomain:
     async def get_skills_preview(self, user_id: int) -> list[ProfileSkillPreview]:
         """Get top/core skills preview. NOTE: skillId/skillName may be missing — model is provisional."""
         response_text = await self._http.get(f"/api/Profile/{user_id}/SkillsPreview")
-        adapter = TypeAdapter(list[ProfileSkillPreview])
-        return adapter.validate_json(response_text)
+        return _SKILLS_PREVIEW_ADAPTER.validate_json(response_text)
 
     async def get_roles(self, user_id: int) -> ProfileRolesSection:
         """Get roles assigned to the user."""
@@ -46,24 +50,21 @@ class ProfileDomain:
     async def get_projects(self, user_id: int) -> MetamodelGrid:
         """Get project history (uses integer-keyed data pattern — rows resolved by column name)."""
         response = json.loads(await self._http.get(f"/api/Profile/{user_id}/ProjectsSection"))
-        columns_raw = response.get("entityColumns", [])
-        columns = [EntityColumn.model_validate(c) for c in columns_raw]
-        rows = [resolve_row(columns, row) for row in response.get("data", [])]
+        columns = [EntityColumn.model_validate(c) for c in response.get("entityColumns", [])]
+        rows = resolve_rows(columns, response.get("data", []))
         return MetamodelGrid(rows=rows, total_count=response.get("totalCount", len(rows)))
 
     async def get_professional_experience(self, user_id: int) -> MetamodelGrid:
         """Get professional experience (uses integer-keyed data pattern)."""
         response = json.loads(await self._http.get(f"/api/Profile/{user_id}/ProfessionalExperienceSection"))
-        columns_raw = response.get("entityColumns", [])
-        columns = [EntityColumn.model_validate(c) for c in columns_raw]
-        rows = [resolve_row(columns, row) for row in response.get("data", [])]
+        columns = [EntityColumn.model_validate(c) for c in response.get("entityColumns", [])]
+        rows = resolve_rows(columns, response.get("data", []))
         return MetamodelGrid(rows=rows, total_count=response.get("totalCount", len(rows)))
 
     async def get_certificates(self, user_id: int) -> list[ProfileCertificate]:
         """Get certificates held by the user."""
         response_text = await self._http.get(f"/api/Profile/{user_id}/Certificates")
-        adapter = TypeAdapter(list[ProfileCertificate])
-        return adapter.validate_json(response_text)
+        return _CERTIFICATES_ADAPTER.validate_json(response_text)
 
     async def get_languages(self, user_id: int) -> ProfileLanguageSection:
         """Get languages and proficiency levels."""
@@ -83,11 +84,9 @@ class ProfileDomain:
     async def get_core_competencies(self, user_id: int) -> list[CoreCompetency]:
         """Get soft skills / core competencies."""
         response_text = await self._http.get(f"/api/Profile/{user_id}/CoreCompetencies")
-        adapter = TypeAdapter(list[CoreCompetency])
-        return adapter.validate_json(response_text)
+        return _CORE_COMPETENCY_ADAPTER.validate_json(response_text)
 
     async def get_language_levels(self) -> list[LanguageLevel]:
         """Get language level reference data."""
         response_text = await self._http.get("/api/Profile/LanguageLevels")
-        adapter = TypeAdapter(list[LanguageLevel])
-        return adapter.validate_json(response_text)
+        return _LANGUAGE_LEVEL_ADAPTER.validate_json(response_text)

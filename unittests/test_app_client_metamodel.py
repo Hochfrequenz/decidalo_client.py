@@ -29,11 +29,9 @@ class TestExceptions:
 from unittest.mock import MagicMock
 
 import aiohttp
-import pytest
 from aioresponses import aioresponses
 
 from decidalo_app_client._http import HttpHelper
-from decidalo_app_client.exceptions import AppAPIError, AppAuthError
 
 BASE_URL = "https://api.decidalo.app"
 TOKEN = "test-bearer-token"

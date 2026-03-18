@@ -13,6 +13,8 @@ from decidalo_app_client.models.certificates import (
     CertificateHoldersResponse,
 )
 
+_CERT_AUTOCOMPLETE_ADAPTER = TypeAdapter(list[CertificateAutocomplete])
+
 
 class CertsDomain:
     """Methods for querying certificates and their holders."""
@@ -25,8 +27,7 @@ class CertsDomain:
         response_text = await self._http.get(
             "/api/Certificates/Autocomplete", params={"pattern": pattern, "count": str(count)}
         )
-        adapter = TypeAdapter(list[CertificateAutocomplete])
-        return adapter.validate_json(response_text)
+        return _CERT_AUTOCOMPLETE_ADAPTER.validate_json(response_text)
 
     async def get_holders(
         self, certificate_id: int, *, page_size: int = 20, page_index: int = 0

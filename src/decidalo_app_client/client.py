@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 from typing import TYPE_CHECKING
 
 import aiohttp
@@ -49,6 +50,7 @@ class DecidaloAppClient:
 
         self._http = HttpHelper(base_url=base_url)
         self._session: aiohttp.ClientSession | None = None
+        self._refresh_lock = asyncio.Lock()
         self.search = SearchDomain(self._http)
         self.skills = SkillsDomain(self._http)
         self.profile = ProfileDomain(self._http)
@@ -69,10 +71,14 @@ class DecidaloAppClient:
         if self._token_response is None:
             return  # static token — no refresh
         if not self._token_response.is_expired():
-            return
-        if self._token_response.refresh_token is None:
-            raise AppAuthError("Access token expired and no refresh_token available.")
-        self._token_response = await DecidaloAuth.refresh(self._token_response.refresh_token)
+            return  # fast path — no lock needed
+        async with self._refresh_lock:
+            # Re-check after acquiring lock: another coroutine may have already refreshed.
+            if not self._token_response.is_expired():
+                return
+            if self._token_response.refresh_token is None:
+                raise AppAuthError("Access token expired and no refresh_token available.")
+            self._token_response = await DecidaloAuth.refresh(self._token_response.refresh_token)
 
     async def __aenter__(self) -> DecidaloAppClient:
         session = aiohttp.ClientSession()

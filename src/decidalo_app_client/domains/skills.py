@@ -10,6 +10,10 @@ from pydantic import TypeAdapter
 from decidalo_app_client._http import HttpHelper
 from decidalo_app_client.models.skills import SkillAutocomplete, SkillCategory, SkillLevel
 
+_SKILL_AUTOCOMPLETE_ADAPTER = TypeAdapter(list[SkillAutocomplete])
+_SKILL_LEVEL_ADAPTER = TypeAdapter(list[SkillLevel])
+_SKILL_CATEGORY_ADAPTER = TypeAdapter(list[SkillCategory])
+
 
 class SkillsDomain:
     """Methods for querying skills, categories, levels, and assessments."""
@@ -33,20 +37,17 @@ class SkillsDomain:
             "onlyCoreSkills": str(only_core_skills).lower(),
         }
         response_text = await self._http.get("/api/Skill/AutocompleteSkill", params=params)
-        adapter = TypeAdapter(list[SkillAutocomplete])
-        return adapter.validate_json(response_text)
+        return _SKILL_AUTOCOMPLETE_ADAPTER.validate_json(response_text)
 
     async def get_levels(self) -> list[SkillLevel]:
         """Get all skill level definitions (typically 4: Novice to Expert)."""
         response_text = await self._http.get("/api/Skill/SkillLevels")
-        adapter = TypeAdapter(list[SkillLevel])
-        return adapter.validate_json(response_text)
+        return _SKILL_LEVEL_ADAPTER.validate_json(response_text)
 
     async def get_categories(self) -> list[SkillCategory]:
         """Get all skill categories (typically ~328 entries)."""
         response_text = await self._http.get("/api/Skill/Categories")
-        adapter = TypeAdapter(list[SkillCategory])
-        return adapter.validate_json(response_text)
+        return _SKILL_CATEGORY_ADAPTER.validate_json(response_text)
 
     async def get_mappings(self, skill_id: int) -> str:
         """Get synonyms/mappings for a skill. Returns raw JSON (response shape unconfirmed)."""
