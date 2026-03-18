@@ -25,16 +25,8 @@ Use the **App Client** when you need to read data _from_ decidalo (e.g. finding 
 
 ## Installation
 
-Install the base package (Import Client only):
-
 ```bash
 pip install decidalo-client
-```
-
-To also use the App Client, install with the `app` extra:
-
-```bash
-pip install decidalo-client[app]
 ```
 
 ## Import Client (`DecidaloClient`)
