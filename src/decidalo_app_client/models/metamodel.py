@@ -16,9 +16,12 @@ resolve_row() handles Pattern 2. Pattern 1 is exposed as ViewMetamodelEntry list
 
 from __future__ import annotations
 
+import logging
 from typing import Any
 
 from pydantic import BaseModel
+
+logger = logging.getLogger(__name__)
 
 
 class MetamodelColumn(BaseModel):
@@ -61,10 +64,15 @@ def resolve_row(columns: list[EntityColumn], row: dict[str, Any]) -> dict[str, A
         row: One item from the data array (keys are viewMetamodelEntryID as strings).
 
     Returns:
-        Dict mapping columnName -> value for each key in row.
-
-    Raises:
-        KeyError: If a key in row has no matching viewMetamodelEntryID in columns.
+        Dict mapping columnName -> value for each known key in row.
+        Unknown keys (not present in entityColumns) are skipped with a warning to stay
+        resilient against API changes or extra internal fields.
     """
     id_to_name = {str(col.viewMetamodelEntryID): col.column.columnName for col in columns}
-    return {id_to_name[k]: v for k, v in row.items()}
+    result = {}
+    for k, v in row.items():
+        if k in id_to_name:
+            result[id_to_name[k]] = v
+        else:
+            logger.warning("Unknown column key %s in metamodel row, skipping", k)
+    return result

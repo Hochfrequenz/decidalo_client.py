@@ -227,11 +227,15 @@ class TestResolveRow:
         result = resolve_row(columns, row)
         assert result == {"StartDate": "2024-01-01", "EndDate": "2024-12-31", "ProjectName": "Projekt XYZ"}
 
-    def test_raises_on_unknown_key(self) -> None:
+    def test_unknown_key_is_skipped_with_warning(self, caplog: pytest.LogCaptureFixture) -> None:
+        import logging
+
         columns = self._make_columns()
         row = {"181": "2024-01-01", "999": "unexpected"}
-        with pytest.raises(KeyError):
-            resolve_row(columns, row)
+        with caplog.at_level(logging.WARNING, logger="decidalo_app_client.models.metamodel"):
+            result = resolve_row(columns, row)
+        assert result == {"StartDate": "2024-01-01"}
+        assert "999" in caplog.text
 
     def test_empty_row_returns_empty_dict(self) -> None:
         columns = self._make_columns()
