@@ -986,7 +986,7 @@ class TestGetWorkingTimePatterns:
     async def test_get_working_time_patterns_empty(self, mock_aiohttp: aioresponses) -> None:
         """Test get_working_time_patterns returns empty list."""
         mock_aiohttp.get(
-            f"{BASE_URL}/importapi/WorkingTimePattern/Import",
+            f"{BASE_URL}/importapi/WorkingTimePattern",
             payload=[],
             status=200,
         )
@@ -1012,7 +1012,7 @@ class TestGetWorkingTimePatterns:
             }
         ]
         mock_aiohttp.get(
-            f"{BASE_URL}/importapi/WorkingTimePattern/Import",
+            f"{BASE_URL}/importapi/WorkingTimePattern",
             payload=pattern_data,
             status=200,
         )

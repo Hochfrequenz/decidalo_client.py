@@ -1161,6 +1161,7 @@ class WorkingProfileResult(BaseModel):
     hoursPerDay: float | None = None
     maxHoursPerDay: float | None = None
     weekDays: WeekDaysResult | None = None
+    lastEditDate: str | None = None  # returned by GET endpoint, not in OpenAPI spec
 
 
 class BookingInput(BaseModel):
