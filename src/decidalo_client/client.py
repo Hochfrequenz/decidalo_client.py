@@ -800,6 +800,9 @@ class DecidaloClient:  # pylint: disable=too-many-public-methods
         Returns:
             An ImportUserWorkingProfileResult with the import status.
         """
-        data = pattern.model_dump_json(by_alias=True, exclude_none=True)
+        adapter = TypeAdapter(list[UserWorkingProfileInput])
+        data = adapter.dump_json([pattern], by_alias=True, exclude_none=True).decode()
         response_text = await self._post("/importapi/WorkingTimePattern/Import", data)
-        return ImportUserWorkingProfileResult.model_validate_json(response_text)
+        result_adapter = TypeAdapter(list[ImportUserWorkingProfileResult])
+        results = result_adapter.validate_json(response_text)
+        return results[0]
