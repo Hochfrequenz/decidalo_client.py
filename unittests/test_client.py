@@ -986,7 +986,7 @@ class TestGetWorkingTimePatterns:
     async def test_get_working_time_patterns_empty(self, mock_aiohttp: aioresponses) -> None:
         """Test get_working_time_patterns returns empty list."""
         mock_aiohttp.get(
-            f"{BASE_URL}/importapi/WorkingTimePattern/Import",
+            f"{BASE_URL}/importapi/WorkingTimePattern",
             payload=[],
             status=200,
         )
@@ -1012,7 +1012,7 @@ class TestGetWorkingTimePatterns:
             }
         ]
         mock_aiohttp.get(
-            f"{BASE_URL}/importapi/WorkingTimePattern/Import",
+            f"{BASE_URL}/importapi/WorkingTimePattern",
             payload=pattern_data,
             status=200,
         )
@@ -1032,16 +1032,18 @@ class TestImportWorkingTimePattern:
         """Test import_working_time_pattern returns import result."""
         mock_aiohttp.post(
             f"{BASE_URL}/importapi/WorkingTimePattern/Import",
-            payload={
-                "userID": 10,
-                "userWorkingTimePatternResults": [
-                    {
-                        "userWorkingTimePatternID": 5,
-                        "status": {"status": "Created"},
-                    }
-                ],
-                "status": {"status": "Created"},
-            },
+            payload=[
+                {
+                    "userID": 10,
+                    "userWorkingTimePatternResults": [
+                        {
+                            "userWorkingTimePatternID": 5,
+                            "status": {"status": "Created"},
+                        }
+                    ],
+                    "status": {"status": "Created"},
+                }
+            ],
             status=200,
         )
 

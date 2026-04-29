@@ -11,6 +11,7 @@ from pydantic import TypeAdapter
 from decidalo_client.exceptions import (
     DecidaloAPIError,
     DecidaloAuthenticationError,
+    DecidaloClientError,
 )
 from decidalo_client.models import (
     AbsenceImportResult,
@@ -763,25 +764,24 @@ class DecidaloClient:  # pylint: disable=too-many-public-methods
     async def get_working_time_patterns(
         self,
         *,
-        employee_id: str | None = None,
         user_id: int | None = None,
     ) -> list[GetImportUserWorkingProfileResult]:
         """Get all working time patterns from the API.
 
+        The correct endpoint per the OpenAPI spec is GET /importapi/WorkingTimePattern.
+        Note: the API only supports filtering by UserId, not by employeeId.
+
         Args:
-            employee_id: Filter by external employee ID.
             user_id: Optional filter by internal user ID.
 
         Returns:
             A list of GetImportUserWorkingProfileResult objects.
         """
         params: dict[str, str] = {}
-        if employee_id is not None:
-            params["employeeId"] = employee_id
         if user_id is not None:
-            params["userId"] = str(user_id)
+            params["UserId"] = str(user_id)
 
-        response_text = await self._get("/importapi/WorkingTimePattern/Import", params or None)
+        response_text = await self._get("/importapi/WorkingTimePattern", params or None)
         adapter = TypeAdapter(list[GetImportUserWorkingProfileResult])
         return adapter.validate_json(response_text)
 
@@ -801,6 +801,11 @@ class DecidaloClient:  # pylint: disable=too-many-public-methods
         Returns:
             An ImportUserWorkingProfileResult with the import status.
         """
-        data = pattern.model_dump_json(by_alias=True, exclude_none=True)
+        adapter = TypeAdapter(list[UserWorkingProfileInput])
+        data = adapter.dump_json([pattern], by_alias=True, exclude_none=True).decode()
         response_text = await self._post("/importapi/WorkingTimePattern/Import", data)
-        return ImportUserWorkingProfileResult.model_validate_json(response_text)
+        result_adapter = TypeAdapter(list[ImportUserWorkingProfileResult])
+        results = result_adapter.validate_json(response_text)
+        if not results:
+            raise DecidaloClientError("API returned empty result for import_working_time_pattern")
+        return results[0]
