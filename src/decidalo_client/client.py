@@ -805,4 +805,6 @@ class DecidaloClient:  # pylint: disable=too-many-public-methods
         response_text = await self._post("/importapi/WorkingTimePattern/Import", data)
         result_adapter = TypeAdapter(list[ImportUserWorkingProfileResult])
         results = result_adapter.validate_json(response_text)
+        if not results:
+            raise DecidaloAPIError("API returned empty result for import_working_time_pattern")
         return results[0]

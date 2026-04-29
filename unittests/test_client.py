@@ -1032,16 +1032,18 @@ class TestImportWorkingTimePattern:
         """Test import_working_time_pattern returns import result."""
         mock_aiohttp.post(
             f"{BASE_URL}/importapi/WorkingTimePattern/Import",
-            payload={
-                "userID": 10,
-                "userWorkingTimePatternResults": [
-                    {
-                        "userWorkingTimePatternID": 5,
-                        "status": {"status": "Created"},
-                    }
-                ],
-                "status": {"status": "Created"},
-            },
+            payload=[
+                {
+                    "userID": 10,
+                    "userWorkingTimePatternResults": [
+                        {
+                            "userWorkingTimePatternID": 5,
+                            "status": {"status": "Created"},
+                        }
+                    ],
+                    "status": {"status": "Created"},
+                }
+            ],
             status=200,
         )
 
