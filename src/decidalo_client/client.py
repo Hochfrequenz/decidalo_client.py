@@ -11,6 +11,7 @@ from pydantic import TypeAdapter
 from decidalo_client.exceptions import (
     DecidaloAPIError,
     DecidaloAuthenticationError,
+    DecidaloClientError,
 )
 from decidalo_client.models import (
     AbsenceImportResult,
@@ -806,5 +807,5 @@ class DecidaloClient:  # pylint: disable=too-many-public-methods
         result_adapter = TypeAdapter(list[ImportUserWorkingProfileResult])
         results = result_adapter.validate_json(response_text)
         if not results:
-            raise DecidaloAPIError("API returned empty result for import_working_time_pattern")
+            raise DecidaloClientError("API returned empty result for import_working_time_pattern")
         return results[0]
