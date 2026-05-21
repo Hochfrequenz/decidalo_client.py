@@ -4,7 +4,7 @@
 #
 #    pip-compile --output-file=requirements.txt pyproject.toml
 #
-aiohappyeyeballs==2.6.1
+aiohappyeyeballs==2.6.2
     # via aiohttp
 aiohttp==3.13.5
     # via decidalo_client (pyproject.toml)
