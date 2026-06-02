@@ -159,7 +159,7 @@ class TestErrorHandling:
     async def test_400_raises_api_error(self, mock_aiohttp: aioresponses) -> None:
         """Test that 400 status raises DecidaloAPIError."""
         mock_aiohttp.post(
-            f"{BASE_URL}/importapi/User",
+            f"{BASE_URL}/importapi/User/ImportSync",
             body="Bad Request",
             status=400,
         )
@@ -307,7 +307,7 @@ class TestImportUsersAsync:
         """Test import_users_async returns batch ID."""
         batch_id = "550e8400-e29b-41d4-a716-446655440000"
         mock_aiohttp.post(
-            f"{BASE_URL}/importapi/User",
+            f"{BASE_URL}/importapi/User/ImportSync",
             payload={"batchID": batch_id},
             status=202,
         )
