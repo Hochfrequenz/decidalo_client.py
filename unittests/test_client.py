@@ -27,6 +27,7 @@ from decidalo_client.models import (
     TeamBatchInput,
     TeamInput,
     TextFieldInput,
+    TextFieldTranslationInput,
     UserBatchInput,
     UserIdentityInput,
     UserInput,
@@ -167,7 +168,7 @@ class TestErrorHandling:
         async with DecidaloClient(api_key=API_KEY, base_url=BASE_URL) as client:
             batch = UserBatchInput(users=[])
             with pytest.raises(DecidaloAPIError) as exc_info:
-                await client.import_users_async(batch)
+                await client.import_users(batch)
 
         assert exc_info.value.status_code == 400
 
@@ -300,16 +301,30 @@ class TestGetUsers:
         assert result[0].email == "john.doe@example.com"
 
 
-class TestImportUsersAsync:
-    """Tests for import_users_async method."""
+class TestImportUsers:
+    """Tests for import_users method."""
 
-    async def test_import_users_async(self, mock_aiohttp: aioresponses) -> None:
-        """Test import_users_async returns batch ID."""
+    async def test_import_users(self, mock_aiohttp: aioresponses) -> None:
+        """Test import_users returns full sync result with items."""
         batch_id = "550e8400-e29b-41d4-a716-446655440000"
         mock_aiohttp.post(
             f"{BASE_URL}/importapi/User/ImportSync",
-            payload={"batchID": batch_id},
-            status=202,
+            payload={
+                "batchID": batch_id,
+                "status": "Completed",
+                "errorMessage": None,
+                "items": [
+                    {
+                        "rowIndex": 0,
+                        "status": "Created",
+                        "errorMessage": None,
+                        "userID": 42,
+                        "email": "new.user@example.com",
+                        "employeeID": "EMP003",
+                    }
+                ],
+            },
+            status=200,
         )
 
         batch = UserBatchInput(
@@ -323,9 +338,15 @@ class TestImportUsersAsync:
         )
 
         async with DecidaloClient(api_key=API_KEY, base_url=BASE_URL) as client:
-            result = await client.import_users_async(batch)
+            result = await client.import_users(batch)
 
         assert result.batchID == UUID(batch_id)
+        assert result.status == "Completed"
+        assert result.items is not None
+        assert len(result.items) == 1
+        assert result.items[0].status == "Created"
+        assert result.items[0].email == "new.user@example.com"
+        assert result.items[0].userID == 42
 
 
 class TestGetUserImportStatus:
@@ -765,6 +786,7 @@ class TestGetBookingsByProject:
                 "projectCode": "PROJ001",
                 "userID": 20,
                 "subject": "Development",
+                "bookingType": "Confirmed",
             },
         ]
         mock_aiohttp.get(
@@ -902,6 +924,7 @@ class TestGetResourceRequest:
                     "title": "Senior Developer",
                     "requestedCandidateCount": 2,
                 },
+                "creationDate": "2024-01-10T08:00:00Z",
                 "lastEditDate": "2024-01-15T10:00:00Z",
             },
             status=200,
@@ -964,7 +987,7 @@ class TestImportRole:
         role = RoleImportInput(
             identifier=RoleIdentityInput(roleCode="ROLE001"),
             properties=RolePropertiesInput(
-                roleName=TextFieldInput(value="Software Engineer"),
+                roleName=TextFieldTranslationInput(value="Software Engineer"),
             ),
         )
 
