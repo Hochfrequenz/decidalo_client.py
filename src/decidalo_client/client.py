@@ -286,7 +286,7 @@ class DecidaloClient:  # pylint: disable=too-many-public-methods
             A UserImportAcceptedResponse with the batch ID.
         """
         data = batch.model_dump_json(by_alias=True, exclude_none=True)
-        response_text = await self._post("/importapi/User", data)
+        response_text = await self._post("/importapi/User/ImportSync", data)
         return UserImportAcceptedResponse.model_validate_json(response_text)
 
     async def get_user_import_status(
