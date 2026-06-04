@@ -28,7 +28,7 @@ propcache==0.5.2
     # via
     #   aiohttp
     #   yarl
-pydantic==2.12.5
+pydantic==2.13.4
     # via decidalo_client (pyproject.toml)
 pydantic-core==2.41.5
     # via pydantic
