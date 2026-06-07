@@ -40,6 +40,7 @@ from decidalo_client.models import (
     TeamOverview,
     UserBatchImportMetadata,
     UserBatchInput,
+    UserImportAcceptedResponse,
     UserImportBatchResult,
     UserImportResults,
     UserOverview,
@@ -269,7 +270,7 @@ class DecidaloClient:  # pylint: disable=too-many-public-methods
         adapter = TypeAdapter(list[UserOverview])
         return adapter.validate_json(response_text)
 
-    async def import_users(
+    async def import_users_sync(
         self,
         batch: UserBatchInput,
     ) -> UserImportResults:
@@ -287,6 +288,26 @@ class DecidaloClient:  # pylint: disable=too-many-public-methods
         data = batch.model_dump_json(by_alias=True, exclude_none=True)
         response_text = await self._post("/importapi/User/ImportSync", data)
         return UserImportResults.model_validate_json(response_text)
+
+    async def import_users_async(
+        self,
+        batch: UserBatchInput,
+    ) -> UserImportAcceptedResponse:
+        """Import users asynchronously.
+
+        The import is processed asynchronously. The caller can provide a callback URL
+        in the batch to be notified about the completion of the import. Otherwise,
+        use get_user_import_status() with the returned batch ID to poll the status.
+
+        Args:
+            batch: The batch of users to import.
+
+        Returns:
+            A UserImportAcceptedResponse with the batch ID.
+        """
+        data = batch.model_dump_json(by_alias=True, exclude_none=True)
+        response_text = await self._post("/importapi/User/ImportAsync", data)
+        return UserImportAcceptedResponse.model_validate_json(response_text)
 
     async def get_user_import_status(
         self,

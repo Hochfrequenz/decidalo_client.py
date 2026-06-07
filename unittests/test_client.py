@@ -168,7 +168,7 @@ class TestErrorHandling:
         async with DecidaloClient(api_key=API_KEY, base_url=BASE_URL) as client:
             batch = UserBatchInput(users=[])
             with pytest.raises(DecidaloAPIError) as exc_info:
-                await client.import_users(batch)
+                await client.import_users_sync(batch)
 
         assert exc_info.value.status_code == 400
 
@@ -301,11 +301,11 @@ class TestGetUsers:
         assert result[0].email == "john.doe@example.com"
 
 
-class TestImportUsers:
-    """Tests for import_users method."""
+class TestImportUsersSync:
+    """Tests for import_users_sync method."""
 
-    async def test_import_users(self, mock_aiohttp: aioresponses) -> None:
-        """Test import_users returns full sync result with items."""
+    async def test_import_users_sync(self, mock_aiohttp: aioresponses) -> None:
+        """Test import_users_sync returns full sync result with items."""
         batch_id = "550e8400-e29b-41d4-a716-446655440000"
         mock_aiohttp.post(
             f"{BASE_URL}/importapi/User/ImportSync",
@@ -338,7 +338,7 @@ class TestImportUsers:
         )
 
         async with DecidaloClient(api_key=API_KEY, base_url=BASE_URL) as client:
-            result = await client.import_users(batch)
+            result = await client.import_users_sync(batch)
 
         assert result.batchID == UUID(batch_id)
         assert result.status == "Completed"
@@ -347,6 +347,34 @@ class TestImportUsers:
         assert result.items[0].status == "Created"
         assert result.items[0].email == "new.user@example.com"
         assert result.items[0].userID == 42
+
+
+class TestImportUsersAsync:
+    """Tests for import_users_async method."""
+
+    async def test_import_users_async(self, mock_aiohttp: aioresponses) -> None:
+        """Test import_users_async returns batch ID for polling."""
+        batch_id = "550e8400-e29b-41d4-a716-446655440000"
+        mock_aiohttp.post(
+            f"{BASE_URL}/importapi/User/ImportAsync",
+            payload={"batchID": batch_id},
+            status=202,
+        )
+
+        batch = UserBatchInput(
+            users=[
+                UserInput(
+                    email="new.user@example.com",
+                    displayName="New User",
+                    employeeID="EMP003",
+                )
+            ]
+        )
+
+        async with DecidaloClient(api_key=API_KEY, base_url=BASE_URL) as client:
+            result = await client.import_users_async(batch)
+
+        assert result.batchID == UUID(batch_id)
 
 
 class TestGetUserImportStatus:
