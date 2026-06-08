@@ -547,17 +547,24 @@ class TestImportTeamsSync:
     """Tests for import_teams_sync method."""
 
     async def test_import_teams_sync(self, mock_aiohttp: aioresponses) -> None:
-        """Test import_teams_sync returns imported teams."""
-        team_data = [
-            {
-                "teamID": 3,
-                "teamCode": "TEAM003",
-                "teamName": "Marketing",
-            }
-        ]
+        """Test import_teams_sync returns full sync result with items."""
+        batch_id = "660e8400-e29b-41d4-a716-446655440001"
         mock_aiohttp.post(
             f"{BASE_URL}/importapi/Team/ImportSync",
-            payload=team_data,
+            payload={
+                "batchID": batch_id,
+                "status": "Completed",
+                "errorMessage": None,
+                "items": [
+                    {
+                        "rowIndex": 0,
+                        "status": "Created",
+                        "errorMessage": None,
+                        "teamID": 3,
+                        "teamCode": "TEAM003",
+                    }
+                ],
+            },
             status=200,
         )
 
@@ -571,9 +578,63 @@ class TestImportTeamsSync:
         async with DecidaloClient(api_key=API_KEY, base_url=BASE_URL) as client:
             result = await client.import_teams_sync(teams)
 
-        assert len(result) == 1
-        assert result[0].teamID == 3
-        assert result[0].teamName == "Marketing"
+        assert result.batchID == UUID(batch_id)
+        assert result.status == "Completed"
+        assert result.items is not None
+        assert len(result.items) == 1
+        assert result.items[0].status == "Created"
+        assert result.items[0].teamID == 3
+        assert result.items[0].teamCode == "TEAM003"
+
+    async def test_import_teams_sync_returns_results_on_500(self, mock_aiohttp: aioresponses) -> None:
+        """Test import_teams_sync returns TeamImportResults when the API responds with HTTP 500.
+
+        Per the OpenAPI spec, ImportSync returns 500 with a structured
+        TeamImportResults body when one or more items fail. The client must
+        surface those per-item results instead of raising a DecidaloAPIError.
+        """
+        batch_id = "660e8400-e29b-41d4-a716-446655440001"
+        mock_aiohttp.post(
+            f"{BASE_URL}/importapi/Team/ImportSync",
+            payload={
+                "batchID": batch_id,
+                "status": "Failed",
+                "errorMessage": "One or more items have failed.",
+                "items": [
+                    {
+                        "rowIndex": 0,
+                        "status": "Created",
+                        "errorMessage": None,
+                        "teamID": 3,
+                        "teamCode": "TEAM003",
+                    },
+                    {
+                        "rowIndex": 1,
+                        "status": "Failed",
+                        "errorMessage": "Team code already exists",
+                        "teamID": None,
+                        "teamCode": "TEAM004",
+                    },
+                ],
+            },
+            status=500,
+        )
+
+        teams = [
+            TeamInput(teamCode="TEAM003", teamName="Marketing"),
+            TeamInput(teamCode="TEAM004", teamName="Sales"),
+        ]
+
+        async with DecidaloClient(api_key=API_KEY, base_url=BASE_URL) as client:
+            result = await client.import_teams_sync(teams)
+
+        assert result.batchID == UUID(batch_id)
+        assert result.status == "Failed"
+        assert result.items is not None
+        assert len(result.items) == 2
+        assert result.items[0].status == "Created"
+        assert result.items[1].status == "Failed"
+        assert result.items[1].errorMessage == "Team code already exists"
 
 
 class TestGetTeamImportStatus:

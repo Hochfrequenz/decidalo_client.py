@@ -36,6 +36,7 @@ from decidalo_client.models import (
     RoleImportInput,
     TeamBatchInput,
     TeamImportAcceptedResponse,
+    TeamImportResults,
     TeamInput,
     TeamOverview,
     UserBatchImportMetadata,
@@ -414,23 +415,31 @@ class DecidaloClient:  # pylint: disable=too-many-public-methods
     async def import_teams_sync(
         self,
         teams: list[TeamInput],
-    ) -> list[TeamOverview]:
+    ) -> TeamImportResults:
         """Import teams synchronously.
 
-        The import is processed synchronously. This method waits for the import
-        to complete before returning. Any callback URL in the batch is ignored.
+        The import is processed synchronously. The response contains the result
+        for each team in the batch, including any errors.
 
         Args:
             teams: The list of teams to import.
 
         Returns:
-            A list of TeamOverview objects representing the imported teams.
+            A TeamImportResults with the batch status and per-item results.
+
+        Note:
+            Per the OpenAPI spec, ImportSync returns HTTP 500 with a structured
+            TeamImportResults body when one or more items fail (others may still
+            have succeeded). This status is therefore treated as a valid response
+            so callers can inspect the per-item results instead of getting a
+            generic DecidaloAPIError.
         """
         batch = TeamBatchInput(teams=teams)
         data = batch.model_dump_json(by_alias=True, exclude_none=True)
-        response_text = await self._post("/importapi/Team/ImportSync", data)
-        adapter = TypeAdapter(list[TeamOverview])
-        return adapter.validate_json(response_text)
+        response_text = await self._post(
+            "/importapi/Team/ImportSync", data, allowed_error_statuses={500}
+        )
+        return TeamImportResults.model_validate_json(response_text)
 
     async def get_team_import_status(
         self,
