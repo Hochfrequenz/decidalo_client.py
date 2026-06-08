@@ -348,6 +348,68 @@ class TestImportUsersSync:
         assert result.items[0].email == "new.user@example.com"
         assert result.items[0].userID == 42
 
+    async def test_import_users_sync_returns_results_on_500(self, mock_aiohttp: aioresponses) -> None:
+        """Test import_users_sync returns UserImportResults when the API responds with HTTP 500.
+
+        Per the OpenAPI spec, ImportSync returns 500 with a structured
+        UserImportResults body when one or more items fail. The client must
+        surface those per-item results instead of raising a DecidaloAPIError.
+        """
+        batch_id = "550e8400-e29b-41d4-a716-446655440000"
+        mock_aiohttp.post(
+            f"{BASE_URL}/importapi/User/ImportSync",
+            payload={
+                "batchID": batch_id,
+                "status": "Failed",
+                "errorMessage": "One or more items have failed.",
+                "items": [
+                    {
+                        "rowIndex": 0,
+                        "status": "Created",
+                        "errorMessage": None,
+                        "userID": 42,
+                        "email": "new.user@example.com",
+                        "employeeID": "EMP003",
+                    },
+                    {
+                        "rowIndex": 1,
+                        "status": "Failed",
+                        "errorMessage": "Invalid email address",
+                        "userID": None,
+                        "email": "broken",
+                        "employeeID": "EMP004",
+                    },
+                ],
+            },
+            status=500,
+        )
+
+        batch = UserBatchInput(
+            users=[
+                UserInput(
+                    email="new.user@example.com",
+                    displayName="New User",
+                    employeeID="EMP003",
+                ),
+                UserInput(
+                    email="broken",
+                    displayName="Broken User",
+                    employeeID="EMP004",
+                ),
+            ]
+        )
+
+        async with DecidaloClient(api_key=API_KEY, base_url=BASE_URL) as client:
+            result = await client.import_users_sync(batch)
+
+        assert result.batchID == UUID(batch_id)
+        assert result.status == "Failed"
+        assert result.items is not None
+        assert len(result.items) == 2
+        assert result.items[0].status == "Created"
+        assert result.items[1].status == "Failed"
+        assert result.items[1].errorMessage == "Invalid email address"
+
 
 class TestImportUsersAsync:
     """Tests for import_users_async method."""
