@@ -313,9 +313,7 @@ class DecidaloClient:  # pylint: disable=too-many-public-methods
             generic DecidaloAPIError.
         """
         data = batch.model_dump_json(by_alias=True, exclude_none=True)
-        response_text = await self._post(
-            "/importapi/User/ImportSync", data, allowed_error_statuses={500}
-        )
+        response_text = await self._post("/importapi/User/ImportSync", data, allowed_error_statuses={500})
         return UserImportResults.model_validate_json(response_text)
 
     async def import_users_async(
@@ -436,9 +434,7 @@ class DecidaloClient:  # pylint: disable=too-many-public-methods
         """
         batch = TeamBatchInput(teams=teams)
         data = batch.model_dump_json(by_alias=True, exclude_none=True)
-        response_text = await self._post(
-            "/importapi/Team/ImportSync", data, allowed_error_statuses={500}
-        )
+        response_text = await self._post("/importapi/Team/ImportSync", data, allowed_error_statuses={500})
         return TeamImportResults.model_validate_json(response_text)
 
     async def get_team_import_status(
