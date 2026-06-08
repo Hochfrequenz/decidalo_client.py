@@ -27,6 +27,7 @@ from decidalo_client.models import (
     TeamBatchInput,
     TeamInput,
     TextFieldInput,
+    TextFieldTranslationInput,
     UserBatchInput,
     UserIdentityInput,
     UserInput,
@@ -167,7 +168,7 @@ class TestErrorHandling:
         async with DecidaloClient(api_key=API_KEY, base_url=BASE_URL) as client:
             batch = UserBatchInput(users=[])
             with pytest.raises(DecidaloAPIError) as exc_info:
-                await client.import_users_async(batch)
+                await client.import_users_sync(batch)
 
         assert exc_info.value.status_code == 400
 
@@ -300,16 +301,126 @@ class TestGetUsers:
         assert result[0].email == "john.doe@example.com"
 
 
+class TestImportUsersSync:
+    """Tests for import_users_sync method."""
+
+    async def test_import_users_sync(self, mock_aiohttp: aioresponses) -> None:
+        """Test import_users_sync returns full sync result with items."""
+        batch_id = "550e8400-e29b-41d4-a716-446655440000"
+        mock_aiohttp.post(
+            f"{BASE_URL}/importapi/User/ImportSync",
+            payload={
+                "batchID": batch_id,
+                "status": "Completed",
+                "errorMessage": None,
+                "items": [
+                    {
+                        "rowIndex": 0,
+                        "status": "Created",
+                        "errorMessage": None,
+                        "userID": 42,
+                        "email": "new.user@example.com",
+                        "employeeID": "EMP003",
+                    }
+                ],
+            },
+            status=200,
+        )
+
+        batch = UserBatchInput(
+            users=[
+                UserInput(
+                    email="new.user@example.com",
+                    displayName="New User",
+                    employeeID="EMP003",
+                )
+            ]
+        )
+
+        async with DecidaloClient(api_key=API_KEY, base_url=BASE_URL) as client:
+            result = await client.import_users_sync(batch)
+
+        assert result.batchID == UUID(batch_id)
+        assert result.status == "Completed"
+        assert result.items is not None
+        assert len(result.items) == 1
+        assert result.items[0].status == "Created"
+        assert result.items[0].email == "new.user@example.com"
+        assert result.items[0].userID == 42
+
+    async def test_import_users_sync_returns_results_on_500(self, mock_aiohttp: aioresponses) -> None:
+        """Test import_users_sync returns UserImportResults when the API responds with HTTP 500.
+
+        Per the OpenAPI spec, ImportSync returns 500 with a structured
+        UserImportResults body when one or more items fail. The client must
+        surface those per-item results instead of raising a DecidaloAPIError.
+        """
+        batch_id = "550e8400-e29b-41d4-a716-446655440000"
+        mock_aiohttp.post(
+            f"{BASE_URL}/importapi/User/ImportSync",
+            payload={
+                "batchID": batch_id,
+                "status": "Failed",
+                "errorMessage": "One or more items have failed.",
+                "items": [
+                    {
+                        "rowIndex": 0,
+                        "status": "Created",
+                        "errorMessage": None,
+                        "userID": 42,
+                        "email": "new.user@example.com",
+                        "employeeID": "EMP003",
+                    },
+                    {
+                        "rowIndex": 1,
+                        "status": "Failed",
+                        "errorMessage": "Invalid email address",
+                        "userID": None,
+                        "email": "broken",
+                        "employeeID": "EMP004",
+                    },
+                ],
+            },
+            status=500,
+        )
+
+        batch = UserBatchInput(
+            users=[
+                UserInput(
+                    email="new.user@example.com",
+                    displayName="New User",
+                    employeeID="EMP003",
+                ),
+                UserInput(
+                    email="broken",
+                    displayName="Broken User",
+                    employeeID="EMP004",
+                ),
+            ]
+        )
+
+        async with DecidaloClient(api_key=API_KEY, base_url=BASE_URL) as client:
+            result = await client.import_users_sync(batch)
+
+        assert result.batchID == UUID(batch_id)
+        assert result.status == "Failed"
+        assert result.items is not None
+        assert len(result.items) == 2
+        assert result.items[0].status == "Created"
+        assert result.items[1].status == "Failed"
+        assert result.items[1].errorMessage == "Invalid email address"
+
+
 class TestImportUsersAsync:
     """Tests for import_users_async method."""
 
     async def test_import_users_async(self, mock_aiohttp: aioresponses) -> None:
-        """Test import_users_async returns batch ID."""
+        """Test import_users_async returns batch ID for polling."""
         batch_id = "550e8400-e29b-41d4-a716-446655440000"
         mock_aiohttp.post(
-            f"{BASE_URL}/importapi/User/ImportSync",
+            f"{BASE_URL}/importapi/User/ImportAsync",
             payload={"batchID": batch_id},
-            status=202,
+            status=200,
         )
 
         batch = UserBatchInput(
@@ -414,7 +525,7 @@ class TestImportTeamsAsync:
         mock_aiohttp.post(
             f"{BASE_URL}/importapi/Team",
             payload={"batchID": batch_id},
-            status=202,
+            status=200,
         )
 
         batch = TeamBatchInput(
@@ -436,17 +547,24 @@ class TestImportTeamsSync:
     """Tests for import_teams_sync method."""
 
     async def test_import_teams_sync(self, mock_aiohttp: aioresponses) -> None:
-        """Test import_teams_sync returns imported teams."""
-        team_data = [
-            {
-                "teamID": 3,
-                "teamCode": "TEAM003",
-                "teamName": "Marketing",
-            }
-        ]
+        """Test import_teams_sync returns full sync result with items."""
+        batch_id = "660e8400-e29b-41d4-a716-446655440001"
         mock_aiohttp.post(
             f"{BASE_URL}/importapi/Team/ImportSync",
-            payload=team_data,
+            payload={
+                "batchID": batch_id,
+                "status": "Completed",
+                "errorMessage": None,
+                "items": [
+                    {
+                        "rowIndex": 0,
+                        "status": "Created",
+                        "errorMessage": None,
+                        "teamID": 3,
+                        "teamCode": "TEAM003",
+                    }
+                ],
+            },
             status=200,
         )
 
@@ -460,9 +578,63 @@ class TestImportTeamsSync:
         async with DecidaloClient(api_key=API_KEY, base_url=BASE_URL) as client:
             result = await client.import_teams_sync(teams)
 
-        assert len(result) == 1
-        assert result[0].teamID == 3
-        assert result[0].teamName == "Marketing"
+        assert result.batchID == UUID(batch_id)
+        assert result.status == "Completed"
+        assert result.items is not None
+        assert len(result.items) == 1
+        assert result.items[0].status == "Created"
+        assert result.items[0].teamID == 3
+        assert result.items[0].teamCode == "TEAM003"
+
+    async def test_import_teams_sync_returns_results_on_500(self, mock_aiohttp: aioresponses) -> None:
+        """Test import_teams_sync returns TeamImportResults when the API responds with HTTP 500.
+
+        Per the OpenAPI spec, ImportSync returns 500 with a structured
+        TeamImportResults body when one or more items fail. The client must
+        surface those per-item results instead of raising a DecidaloAPIError.
+        """
+        batch_id = "660e8400-e29b-41d4-a716-446655440001"
+        mock_aiohttp.post(
+            f"{BASE_URL}/importapi/Team/ImportSync",
+            payload={
+                "batchID": batch_id,
+                "status": "Failed",
+                "errorMessage": "One or more items have failed.",
+                "items": [
+                    {
+                        "rowIndex": 0,
+                        "status": "Created",
+                        "errorMessage": None,
+                        "teamID": 3,
+                        "teamCode": "TEAM003",
+                    },
+                    {
+                        "rowIndex": 1,
+                        "status": "Failed",
+                        "errorMessage": "Team code already exists",
+                        "teamID": None,
+                        "teamCode": "TEAM004",
+                    },
+                ],
+            },
+            status=500,
+        )
+
+        teams = [
+            TeamInput(teamCode="TEAM003", teamName="Marketing"),
+            TeamInput(teamCode="TEAM004", teamName="Sales"),
+        ]
+
+        async with DecidaloClient(api_key=API_KEY, base_url=BASE_URL) as client:
+            result = await client.import_teams_sync(teams)
+
+        assert result.batchID == UUID(batch_id)
+        assert result.status == "Failed"
+        assert result.items is not None
+        assert len(result.items) == 2
+        assert result.items[0].status == "Created"
+        assert result.items[1].status == "Failed"
+        assert result.items[1].errorMessage == "Team code already exists"
 
 
 class TestGetTeamImportStatus:
@@ -765,6 +937,7 @@ class TestGetBookingsByProject:
                 "projectCode": "PROJ001",
                 "userID": 20,
                 "subject": "Development",
+                "bookingType": "Confirmed",
             },
         ]
         mock_aiohttp.get(
@@ -902,6 +1075,7 @@ class TestGetResourceRequest:
                     "title": "Senior Developer",
                     "requestedCandidateCount": 2,
                 },
+                "creationDate": "2024-01-10T08:00:00Z",
                 "lastEditDate": "2024-01-15T10:00:00Z",
             },
             status=200,
@@ -964,7 +1138,7 @@ class TestImportRole:
         role = RoleImportInput(
             identifier=RoleIdentityInput(roleCode="ROLE001"),
             properties=RolePropertiesInput(
-                roleName=TextFieldInput(value="Software Engineer"),
+                roleName=TextFieldTranslationInput(value="Software Engineer"),
             ),
         )
 
