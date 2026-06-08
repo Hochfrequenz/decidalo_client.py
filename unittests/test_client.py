@@ -420,7 +420,7 @@ class TestImportUsersAsync:
         mock_aiohttp.post(
             f"{BASE_URL}/importapi/User/ImportAsync",
             payload={"batchID": batch_id},
-            status=202,
+            status=200,
         )
 
         batch = UserBatchInput(
@@ -525,7 +525,7 @@ class TestImportTeamsAsync:
         mock_aiohttp.post(
             f"{BASE_URL}/importapi/Team",
             payload={"batchID": batch_id},
-            status=202,
+            status=200,
         )
 
         batch = TeamBatchInput(
