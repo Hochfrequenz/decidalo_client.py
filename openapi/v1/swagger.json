@@ -422,7 +422,7 @@
           {
             "name": "UsersPracticeAreaName",
             "in": "query",
-            "description": "Filter on the practice area of the booked user. Null means no filter. If UsersPracticeAreaName is provided, this will be ignored.",
+            "description": "Filter on the practice area of the booked user. Null means no filter. If UsersPracticeAreaID is provided, this will be ignored.",
             "schema": {
               "type": "string"
             }
@@ -478,11 +478,55 @@
               "type": "string",
               "format": "date-time"
             }
+          },
+          {
+            "name": "ExcludeDailyPlanning",
+            "in": "query",
+            "description": "If true, daily planning is not included in the response.",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "PlanningStartDate",
+            "in": "query",
+            "description": "Optional inclusive lower bound for daily planning data. If provided, only entries with CalendarDate greater than or equal to PlanningStartDate are returned. If ExcludeDailyPlanning is set to true, this date has no effect.",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "PlanningEndDate",
+            "in": "query",
+            "description": "Optional inclusive upper bound for daily planning data. If provided, only entries with CalendarDate less than or equal to PlanningEndDate are returned. If ExcludeDailyPlanning is set to true, this date has no effect.",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "Top",
+            "in": "query",
+            "description": "Optional number of bookings to return. Returning all data at once, might be too much.",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "Skip",
+            "in": "query",
+            "description": "Optional number of bookings to skip. This is useful for pagination.",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
           }
         ],
         "responses": {
           "200": {
-            "description": "OK",
+            "description": "Returns the list of bookings.",
             "content": {
               "text/plain": {
                 "schema": {
@@ -511,9 +555,19 @@
             }
           },
           "400": {
-            "description": "Input data is invalid.",
+            "description": "If the top or skip parameters are negative.",
             "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorResult"
+                }
+              },
               "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorResult"
+                }
+              },
+              "text/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ValidationErrorResult"
                 }
@@ -700,6 +754,107 @@
             "description": "Input data is invalid.",
             "content": {
               "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorResult"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "500": {
+            "description": "Unexpected error",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/importapi/Certificate": {
+      "get": {
+        "tags": [
+          "Certificate"
+        ],
+        "summary": "Get all certificates.",
+        "parameters": [
+          {
+            "name": "certificateID",
+            "in": "query",
+            "description": "Optional filter on a specific certificate by its internal id.",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "top",
+            "in": "query",
+            "description": "Optional number of certificates to return.",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "skip",
+            "in": "query",
+            "description": "Optional number of certificates to skip. This is useful for pagination.",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns the list of certificates.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CertificateExportOutput"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CertificateExportOutput"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CertificateExportOutput"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "If the top or skip parameters are negative.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorResult"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorResult"
+                }
+              },
+              "text/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ValidationErrorResult"
                 }
@@ -995,6 +1150,250 @@
           }
         },
         "deprecated": true
+      }
+    },
+    "/importapi/Profile/Roles": {
+      "get": {
+        "tags": [
+          "Profile"
+        ],
+        "summary": "Returns users with their assigned roles.",
+        "parameters": [
+          {
+            "name": "userID",
+            "in": "query",
+            "description": "Optional filter on a specific user by their internal id.",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "employeeID",
+            "in": "query",
+            "description": "Optional filter on a specific user by their employee id.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "roleID",
+            "in": "query",
+            "description": "Optional filter — returns only users that hold this role (matched by internal id). Each matched user is returned with their full role list.",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "roleCode",
+            "in": "query",
+            "description": "Optional filter — returns only users that hold this role (matched by external code). Each matched user is returned with their full role list.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "top",
+            "in": "query",
+            "description": "Optional number of users to return.",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "skip",
+            "in": "query",
+            "description": "Optional number of users to skip. This is useful for pagination.",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns the list of users with roles.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/UserRoleExportOutput"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/UserRoleExportOutput"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/UserRoleExportOutput"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "If the top or skip parameters are negative.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorResult"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorResult"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorResult"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "500": {
+            "description": "Unexpected error",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/importapi/Profile/Certificates": {
+      "get": {
+        "tags": [
+          "Profile"
+        ],
+        "summary": "Returns users with their assigned certificates.",
+        "parameters": [
+          {
+            "name": "userID",
+            "in": "query",
+            "description": "Optional filter on a specific user by their internal id.",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "employeeID",
+            "in": "query",
+            "description": "Optional filter on a specific user by their employee id.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "certificateID",
+            "in": "query",
+            "description": "Optional filter — returns only users that hold this certificate. Each matched user is returned with their full certificate list.",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "top",
+            "in": "query",
+            "description": "Optional number of users to return.",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "skip",
+            "in": "query",
+            "description": "Optional number of users to skip. This is useful for pagination.",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns the list of users with certificates.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/UserCertificateExportOutput"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/UserCertificateExportOutput"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/UserCertificateExportOutput"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "If the top or skip parameters are negative.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorResult"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorResult"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorResult"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "500": {
+            "description": "Unexpected error",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/importapi/Project": {
@@ -1339,6 +1738,69 @@
         }
       }
     },
+    "/importapi/Project/Priorities": {
+      "get": {
+        "tags": [
+          "Project"
+        ],
+        "summary": "Lists all possible priorities.",
+        "description": "Use this endpoint to check which priorities are available.\r\n\r\nUse the display name in property \"Priority\" to reference the priority in projects or ResourceRequests.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PriorityEntry"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PriorityEntry"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PriorityEntry"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Input data is invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorResult"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "500": {
+            "description": "Unexpected error",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/importapi/Project/DeliveryModels": {
       "get": {
         "tags": [
@@ -1525,13 +1987,214 @@
         }
       }
     },
+    "/importapi/Project/ServiceLines": {
+      "get": {
+        "tags": [
+          "Project"
+        ],
+        "summary": "Lists all possible service lines.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ServiceLine"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ServiceLine"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ServiceLine"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Input data is invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorResult"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "500": {
+            "description": "Unexpected error",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/importapi/Project/LegalEntities": {
+      "get": {
+        "tags": [
+          "Project"
+        ],
+        "summary": "Lists all possible legal entities.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/LegalEntity"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/LegalEntity"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/LegalEntity"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Input data is invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorResult"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "500": {
+            "description": "Unexpected error",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/importapi/Project/ResourceGroups": {
+      "get": {
+        "tags": [
+          "Project"
+        ],
+        "summary": "Lists all possible resource groups.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ResourceGroupLite"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ResourceGroupLite"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ResourceGroupLite"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Input data is invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorResult"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "500": {
+            "description": "Unexpected error",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/importapi/Project/Import": {
       "post": {
         "tags": [
           "Project"
         ],
         "summary": "Creates or updates a project.",
+        "parameters": [
+          {
+            "name": "bookingExtendOption",
+            "in": "query",
+            "description": "Controls which booking extension logic is applied when the project dates change.\r\nUpdateBookingDatesOnly — only bookings ending exactly on the previous project end date have their end date moved.\r\nOn prolonging, no new planning entries are generated.\r\nOn shortening, planning entries beyond the new end date are zeroed out and removed (weekly, daily, and monthly).\r\nRedistributePersonDays — bookings ending within the last week of the previous project end date (within 6 days) are moved and their total person days are redistributed evenly over the new period by overwriting all planning entries with a uniform weekly capacity.\r\nUpdateBookingsAndPlanning — bookings ending within the last week of the previous project end date (within 6 days) are extended or shortened and planning entries are updated using the existing capacity pattern.\r\nWhen omitted, nothing happens, only project end date is updated.",
+            "schema": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/BookingExtendOption"
+                }
+              ]
+            }
+          }
+        ],
         "requestBody": {
+          "description": "The project data to create or update.",
           "content": {
             "application/json": {
               "schema": {
@@ -1684,22 +2347,99 @@
         }
       }
     },
-    "/importapi/ResourceRequest/{requestid}": {
+    "/importapi/ResourceRequest": {
       "get": {
         "tags": [
           "ResourceRequest"
         ],
-        "summary": "Returns a specific resource request.",
-        "operationId": "GetResourceRequest",
+        "summary": "Returns a (filtered) list of resource requests.",
+        "description": "The applied filters are connected with an \"AND\" condition.",
         "parameters": [
           {
             "name": "requestid",
-            "in": "path",
-            "description": "decídalo identifier of the resource request.",
-            "required": true,
+            "in": "query",
+            "description": "Filters for a specific request by the decídalo internal id.",
             "schema": {
               "type": "integer",
               "format": "int32"
+            }
+          },
+          {
+            "name": "requestcode",
+            "in": "query",
+            "description": "Filters for a specific request by the decídalo request code.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "top",
+            "in": "query",
+            "description": "Limits the number of results returned.",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "skip",
+            "in": "query",
+            "description": "Skips the specified number of results.",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "enddateafter",
+            "in": "query",
+            "description": "Filters for requests with an end date after the specified date.",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "startdatebefore",
+            "in": "query",
+            "description": "Filters for requests with a start date before the specified date.",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "resourcegroupid",
+            "in": "query",
+            "description": "Filters for requests belonging to a specific resource group by ID.",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "resourcegroupname",
+            "in": "query",
+            "description": "Filters for requests belonging to a specific resource group by name.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "projectid",
+            "in": "query",
+            "description": "Filters for requests belonging to a specific project by ID.",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "projectcode",
+            "in": "query",
+            "description": "Filters for requests belonging to a specific project by code.",
+            "schema": {
+              "type": "string"
             }
           }
         ],
@@ -1709,23 +2449,29 @@
             "content": {
               "text/plain": {
                 "schema": {
-                  "$ref": "#/components/schemas/ResourceRequestOutput"
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ResourceRequestOutput"
+                  }
                 }
               },
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ResourceRequestOutput"
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ResourceRequestOutput"
+                  }
                 }
               },
               "text/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ResourceRequestOutput"
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ResourceRequestOutput"
+                  }
                 }
               }
             }
-          },
-          "404": {
-            "description": "Not Found"
           },
           "400": {
             "description": "Input data is invalid.",
@@ -1751,9 +2497,7 @@
             }
           }
         }
-      }
-    },
-    "/importapi/ResourceRequest": {
+      },
       "post": {
         "tags": [
           "ResourceRequest"
@@ -1865,7 +2609,245 @@
         }
       }
     },
+    "/importapi/ResourceRequest/{requestid}": {
+      "get": {
+        "tags": [
+          "ResourceRequest"
+        ],
+        "summary": "Returns a specific resource request.",
+        "operationId": "GetResourceRequest",
+        "parameters": [
+          {
+            "name": "requestid",
+            "in": "path",
+            "description": "decídalo identifier of the resource request.",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResourceRequestOutput"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResourceRequestOutput"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResourceRequestOutput"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "400": {
+            "description": "Input data is invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorResult"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "500": {
+            "description": "Unexpected error",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/importapi/ResourceRequest/CustomProperties": {
+      "get": {
+        "tags": [
+          "ResourceRequest"
+        ],
+        "summary": "Returns a description of all possible custom properties for resource requests.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CustomProperty"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CustomProperty"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CustomProperty"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Input data is invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorResult"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "500": {
+            "description": "Unexpected error",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/importapi/Role": {
+      "get": {
+        "tags": [
+          "Role"
+        ],
+        "summary": "Get all roles with their skills and certificates.",
+        "parameters": [
+          {
+            "name": "roleID",
+            "in": "query",
+            "description": "Optional filter on a specific role by its internal id.",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "roleCode",
+            "in": "query",
+            "description": "Optional filter on a specific role by its external code.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "top",
+            "in": "query",
+            "description": "Optional number of roles to return.",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "skip",
+            "in": "query",
+            "description": "Optional number of roles to skip. This is useful for pagination.",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns the list of roles.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RoleExportOutput"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RoleExportOutput"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RoleExportOutput"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "If the top or skip parameters are negative.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorResult"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorResult"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorResult"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "500": {
+            "description": "Unexpected error",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
       "post": {
         "tags": [
           "Role"
@@ -1932,6 +2914,317 @@
             "description": "Input data is invalid.",
             "content": {
               "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorResult"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "500": {
+            "description": "Unexpected error",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/importapi/Skill": {
+      "get": {
+        "tags": [
+          "Skill"
+        ],
+        "summary": "Get all skills.",
+        "parameters": [
+          {
+            "name": "skillID",
+            "in": "query",
+            "description": "Optional filter on a specific skill by its internal id.",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "onlyCoreSkills",
+            "in": "query",
+            "description": "Optional filter to return only core skills. Null and false both result in no filter.",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "top",
+            "in": "query",
+            "description": "Optional number of skills to return.",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "skip",
+            "in": "query",
+            "description": "Optional number of skills to skip. This is useful for pagination.",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns the list of skills.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SkillItemOutput"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SkillItemOutput"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SkillItemOutput"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "If the top or skip parameters are negative.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorResult"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorResult"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorResult"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "500": {
+            "description": "Unexpected error",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/importapi/Skill/UserSkills": {
+      "get": {
+        "tags": [
+          "Skill"
+        ],
+        "summary": "Get users with their assessed skills.",
+        "parameters": [
+          {
+            "name": "userID",
+            "in": "query",
+            "description": "Optional filter on a specific user by their internal id.",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "employeeID",
+            "in": "query",
+            "description": "Optional filter on a specific user by their employee id. If userID is provided, this will be ignored.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "teamID",
+            "in": "query",
+            "description": "Optional filter to return only users belonging to a specific team by its internal id.",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "teamCode",
+            "in": "query",
+            "description": "Optional filter to return only users belonging to a specific team by its code. If teamID is provided, this will be ignored.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "businessUnitID",
+            "in": "query",
+            "description": "Optional filter to return only users belonging to a specific business unit by its internal id.",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "businessUnitName",
+            "in": "query",
+            "description": "Optional filter to return only users belonging to a specific business unit by its name. If businessUnitID is provided, this will be ignored.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "countryCode",
+            "in": "query",
+            "description": "Optional filter to return only users from a specific country by its code (e.g. \"DE\", \"US\").",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "legalEntityID",
+            "in": "query",
+            "description": "Optional filter to return only users belonging to a specific legal entity by its internal id.",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "legalEntityName",
+            "in": "query",
+            "description": "Optional filter to return only users belonging to a specific legal entity by its name. If legalEntityID is provided, this will be ignored.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "practiceAreaID",
+            "in": "query",
+            "description": "Optional filter to return only users belonging to a specific practice area by its internal id.",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "practiceAreaName",
+            "in": "query",
+            "description": "Optional filter to return only users belonging to a specific practice area by its name. If practiceAreaID is provided, this will be ignored.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "serviceLineID",
+            "in": "query",
+            "description": "Optional filter to return only users belonging to a specific service line by its internal id.",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "serviceLineName",
+            "in": "query",
+            "description": "Optional filter to return only users belonging to a specific service line by its name. If serviceLineID is provided, this will be ignored.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "top",
+            "in": "query",
+            "description": "Optional number of users to return.",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "skip",
+            "in": "query",
+            "description": "Optional number of users to skip. This is useful for pagination.",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns the list of users with their assessed skills.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/UserSkillsOutput"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/UserSkillsOutput"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/UserSkillsOutput"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "If the top or skip parameters are negative.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorResult"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorResult"
+                }
+              },
+              "text/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ValidationErrorResult"
                 }
@@ -2108,25 +3401,42 @@
           }
         },
         "responses": {
-          "204": {
-            "description": "Import has finished."
+          "200": {
+            "description": "Import has finished.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/TeamImportResults"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TeamImportResults"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TeamImportResults"
+                }
+              }
+            }
           },
           "500": {
             "description": "Internal Server Error",
             "content": {
               "text/plain": {
                 "schema": {
-                  "type": "string"
+                  "$ref": "#/components/schemas/TeamImportResults"
                 }
               },
               "application/json": {
                 "schema": {
-                  "type": "string"
+                  "$ref": "#/components/schemas/TeamImportResults"
                 }
               },
               "text/json": {
                 "schema": {
-                  "type": "string"
+                  "$ref": "#/components/schemas/TeamImportResults"
                 }
               }
             }
@@ -2182,6 +3492,14 @@
                   "$ref": "#/components/schemas/ImportBatchStatusType"
                 }
               ]
+            }
+          },
+          {
+            "name": "includeRowResults",
+            "in": "query",
+            "description": "Whether to include individual row results in the response.\r\n            The response might get very big, depending on the number of imported rows. (Default: false)",
+            "schema": {
+              "type": "boolean"
             }
           }
         ],
@@ -2299,6 +3617,246 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "/importapi/Team/Managers": {
+      "get": {
+        "tags": [
+          "Team"
+        ],
+        "summary": "Returns team manager assignments.",
+        "parameters": [
+          {
+            "name": "teamID",
+            "in": "query",
+            "description": "Optional filter on a specific team by its internal id.",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "teamCode",
+            "in": "query",
+            "description": "Optional filter on a specific team by its external code.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "userID",
+            "in": "query",
+            "description": "Optional filter to return only assignments of this manager user.",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "employeeID",
+            "in": "query",
+            "description": "Optional filter to return only assignments of the manager with this employee id.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "top",
+            "in": "query",
+            "description": "Optional number of team manager assignments to return.",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "skip",
+            "in": "query",
+            "description": "Optional number of team manager assignments to skip. This is useful for pagination.",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns the list of team manager assignments.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TeamManagerExportOutput"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TeamManagerExportOutput"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TeamManagerExportOutput"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "If the top or skip parameters are negative.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorResult"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorResult"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorResult"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "500": {
+            "description": "Unexpected error",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Team"
+        ],
+        "summary": "Edits managers of teams in batch.\r\nMore than one manager per team is allowed.",
+        "requestBody": {
+          "description": "Batch data.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/TeamManagerInputBatch"
+                  }
+                ],
+                "description": "Batch of team managers to add or remove."
+              }
+            },
+            "text/json": {
+              "schema": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/TeamManagerInputBatch"
+                  }
+                ],
+                "description": "Batch of team managers to add or remove."
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/TeamManagerInputBatch"
+                  }
+                ],
+                "description": "Batch of team managers to add or remove."
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TeamManagerImportResult"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TeamManagerImportResult"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TeamManagerImportResult"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TeamManagerImportResult"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TeamManagerImportResult"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TeamManagerImportResult"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Input data is invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorResult"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
           }
         }
       }
@@ -2477,6 +4035,105 @@
         }
       }
     },
+    "/importapi/User/ImportSync": {
+      "post": {
+        "tags": [
+          "User"
+        ],
+        "summary": "Imports a batch of users synchronously.",
+        "description": "The import is processed synchronously. The callback URL is ignored.",
+        "requestBody": {
+          "description": "The data to import.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/UserBatchInput"
+                  }
+                ],
+                "description": "Data container for a whole batch of users to import."
+              }
+            },
+            "text/json": {
+              "schema": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/UserBatchInput"
+                  }
+                ],
+                "description": "Data container for a whole batch of users to import."
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/UserBatchInput"
+                  }
+                ],
+                "description": "Data container for a whole batch of users to import."
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Import has finished.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserImportResults"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserImportResults"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserImportResults"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "One or more items have failed. \r\n            Others items may have succedded. \r\n            See response body for more information.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserImportResults"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserImportResults"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserImportResults"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Input data is invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorResult"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        }
+      }
+    },
     "/importapi/User/ImportStatus": {
       "get": {
         "tags": [
@@ -2512,6 +4169,14 @@
                   "$ref": "#/components/schemas/ImportBatchStatusType"
                 }
               ]
+            }
+          },
+          {
+            "name": "includeRowResults",
+            "in": "query",
+            "description": "Whether to include individual row results in the response.\r\n            The response might get very big, depending on the number of imported rows. (Default: false)",
+            "schema": {
+              "type": "boolean"
             }
           }
         ],
@@ -2976,10 +4641,20 @@
             "format": "int32",
             "nullable": true
           },
+          "absenceCode": {
+            "type": "string",
+            "description": "Technical identifier",
+            "nullable": true
+          },
           "userId": {
             "type": "integer",
             "description": "ID of the user whose absences are imported",
             "format": "int32",
+            "nullable": true
+          },
+          "employeeID": {
+            "type": "string",
+            "description": "Customer-specific user ID",
             "nullable": true
           },
           "startDate": {
@@ -2997,16 +4672,6 @@
           "subject": {
             "type": "string",
             "description": "Informal text displayed in the UI",
-            "nullable": true
-          },
-          "absenceCode": {
-            "type": "string",
-            "description": "Technical identifier",
-            "nullable": true
-          },
-          "employeeID": {
-            "type": "string",
-            "description": "Customer-specific user ID",
             "nullable": true
           },
           "delete": {
@@ -3054,6 +4719,18 @@
           "absenceCode": {
             "type": "string",
             "description": "Technical identifier",
+            "nullable": true
+          },
+          "minutesPerDay": {
+            "type": "number",
+            "description": "Minutes per day of the absence.\r\nFor now this is only filled during the RM Migration from redesign to not loose this data.",
+            "format": "double",
+            "nullable": true
+          },
+          "originalScheduleEntryID": {
+            "type": "integer",
+            "description": "The ScheduleEntryID from redesign.",
+            "format": "int32",
             "nullable": true
           },
           "employeeID": {
@@ -3111,6 +4788,18 @@
             "description": "Technical identifier",
             "nullable": true
           },
+          "minutesPerDay": {
+            "type": "number",
+            "description": "Minutes per day of the absence.\r\nFor now this is only filled during the RM Migration from redesign to not loose this data.",
+            "format": "double",
+            "nullable": true
+          },
+          "originalScheduleEntryID": {
+            "type": "integer",
+            "description": "The ScheduleEntryID from redesign.",
+            "format": "int32",
+            "nullable": true
+          },
           "employeeID": {
             "type": "string",
             "description": "Customer-specific user ID",
@@ -3135,24 +4824,65 @@
         "additionalProperties": false,
         "description": "Represents a list of absences."
       },
+      "AssessedSkillOutput": {
+        "type": "object",
+        "properties": {
+          "skillID": {
+            "type": "integer",
+            "description": "The internal id of the skill.",
+            "format": "int32"
+          },
+          "name": {
+            "type": "string",
+            "description": "The name of the skill.",
+            "nullable": true
+          },
+          "categoryName": {
+            "type": "string",
+            "description": "The name of the category the skill belongs to.",
+            "nullable": true
+          },
+          "parentCategoryName": {
+            "type": "string",
+            "description": "The name of the parent category the skill's category belongs to.",
+            "nullable": true
+          },
+          "skillLevel": {
+            "type": "integer",
+            "description": "The assessed skill level.",
+            "format": "int32",
+            "nullable": true
+          },
+          "isTopSkill": {
+            "type": "boolean",
+            "description": "Indicates whether the skill is marked as a top skill for the user."
+          }
+        },
+        "additionalProperties": false,
+        "description": "Assessed skill entry for a user, for the Import API."
+      },
       "BatchImportMetadata": {
         "type": "object",
         "properties": {
           "batchID": {
             "type": "string",
+            "description": "ID of the batch.",
             "format": "uuid"
           },
           "creationDate": {
             "type": "string",
+            "description": "Timestamp when the batch was accepted.",
             "format": "date-time"
           },
           "startDate": {
             "type": "string",
+            "description": "Timestamp of the start of processing.\r\nCan be null if processing has not started yet.",
             "format": "date-time",
             "nullable": true
           },
           "endDate": {
             "type": "string",
+            "description": "Timestamp of the end of processing.\r\nCan be null if processing has not ended yet.",
             "format": "date-time",
             "nullable": true
           },
@@ -3162,6 +4892,15 @@
                 "$ref": "#/components/schemas/ImportBatchStatus"
               }
             ],
+            "description": "The current status of the batch.",
+            "nullable": true
+          },
+          "rowResults": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TeamImportRowResult"
+            },
+            "description": "Optional list of row results for each imported team.\r\nThis property is only set if requested through the parameter \"includeRowResults\".",
             "nullable": true
           }
         },
@@ -3203,6 +4942,14 @@
         "additionalProperties": false,
         "description": "Data container for a whole batch of users to import."
       },
+      "BookingExtendOption": {
+        "enum": [
+          "UpdateBookingsAndPlanning",
+          "UpdateBookingDatesOnly",
+          "RedistributePersonDays"
+        ],
+        "type": "string"
+      },
       "BookingImportResult": {
         "type": "object",
         "properties": {
@@ -3210,6 +4957,11 @@
             "type": "integer",
             "description": "The internal ID of the booking.",
             "format": "int32",
+            "nullable": true
+          },
+          "bookingCode": {
+            "type": "string",
+            "description": "The external booking code.",
             "nullable": true
           },
           "employeeID": {
@@ -3344,6 +5096,18 @@
             "description": "Unique identifier for a project. Can be used to link the booking to a project.",
             "nullable": true
           },
+          "requestId": {
+            "type": "integer",
+            "description": "The internal ID of the request linked to the booking.",
+            "format": "int32",
+            "nullable": true
+          },
+          "requestCode": {
+            "maxLength": 100,
+            "type": "string",
+            "description": "The external code of the request linked to the booking.",
+            "nullable": true
+          },
           "bookingType": {
             "$ref": "#/components/schemas/BookingType"
           },
@@ -3388,6 +5152,12 @@
         "description": "Data structure for a booking to import."
       },
       "BookingItemOutput": {
+        "required": [
+          "bookingID",
+          "bookingType",
+          "subject",
+          "userID"
+        ],
         "type": "object",
         "properties": {
           "bookingID": {
@@ -3408,8 +5178,7 @@
           "userID": {
             "type": "integer",
             "description": "Internal ID of a booked user",
-            "format": "int32",
-            "nullable": true
+            "format": "int32"
           },
           "startDate": {
             "type": "string",
@@ -3433,8 +5202,7 @@
             "maxLength": 254,
             "minLength": 0,
             "type": "string",
-            "description": "Subject of the booking",
-            "nullable": true
+            "description": "Subject of the booking"
           },
           "companyID": {
             "type": "integer",
@@ -3600,6 +5368,145 @@
         "additionalProperties": false,
         "description": "Class representing a business unit."
       },
+      "BusinessUnitOutput": {
+        "required": [
+          "businessUnitID"
+        ],
+        "type": "object",
+        "properties": {
+          "businessUnitID": {
+            "type": "integer",
+            "description": "decídalo id of the business unit.",
+            "format": "int32"
+          },
+          "businessUnitName": {
+            "type": "string",
+            "description": "Display name of the business unit.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Short display information of a business unit."
+      },
+      "BusinessUnitReferenceInput": {
+        "type": "object",
+        "properties": {
+          "businessUnitID": {
+            "type": "integer",
+            "description": "decídalo id of the business unit.",
+            "format": "int32",
+            "nullable": true,
+            "example": 1
+          },
+          "businessUnitName": {
+            "maxLength": 100,
+            "type": "string",
+            "description": "Name of the business unit.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Reference to a business unit for a resource request."
+      },
+      "ByteNullableOptionalField": {
+        "type": "object",
+        "properties": {
+          "isProvided": {
+            "type": "boolean"
+          },
+          "value": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "CertificateExportOutput": {
+        "type": "object",
+        "properties": {
+          "certificateID": {
+            "type": "integer",
+            "description": "The internal ID of the certificate.",
+            "format": "int32"
+          },
+          "certificateName": {
+            "type": "string",
+            "description": "Name of the certificate.",
+            "nullable": true
+          },
+          "officialUrl": {
+            "type": "string",
+            "description": "Official URL for the certificate.",
+            "nullable": true
+          },
+          "organizationID": {
+            "type": "integer",
+            "description": "ID of the issuing organization.",
+            "format": "int32",
+            "nullable": true
+          },
+          "organizationName": {
+            "type": "string",
+            "description": "Name of the issuing organization.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Represents a certificate for the Import API GET endpoint."
+      },
+      "CertificateRequirementInput": {
+        "type": "object",
+        "properties": {
+          "certificateID": {
+            "type": "integer",
+            "description": "The internal decídalo identifier of the certificate.\r\nCan be used instead of CertificateName to reference an existing certificate.",
+            "format": "int32",
+            "nullable": true,
+            "example": 7
+          },
+          "certificateName": {
+            "maxLength": 200,
+            "type": "string",
+            "description": "The display name of the required certificate.\r\nUsed to look up the certificate if CertificateID is not provided.",
+            "nullable": true
+          },
+          "perfectMatch": {
+            "type": "boolean",
+            "description": "Whether the certificate must be an exact match.\r\nDefault: false (similar certificates are also acceptable).",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Detail input for a certificate requirement."
+      },
+      "CertificateRequirementOutput": {
+        "type": "object",
+        "properties": {
+          "certificateID": {
+            "type": "integer",
+            "description": "The internal decídalo identifier of the certificate.",
+            "format": "int32",
+            "nullable": true,
+            "example": 7
+          },
+          "certificateName": {
+            "maxLength": 200,
+            "minLength": 0,
+            "type": "string",
+            "description": "The display name of the required certificate.",
+            "nullable": true,
+            "example": "AWS Solutions Architect"
+          },
+          "perfectMatch": {
+            "type": "boolean",
+            "description": "Whether the certificate must be an exact match.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Detail output for a certificate requirement."
+      },
       "CompanyCompleteOutput": {
         "type": "object",
         "properties": {
@@ -3647,6 +5554,11 @@
           "isCustomer": {
             "type": "boolean",
             "description": "Indicates whether the company is a customer."
+          },
+          "allowCustomerDataExport": {
+            "type": "boolean",
+            "description": "Indicates whether the export of customer data is allowed for this company.",
+            "nullable": true
           }
         },
         "additionalProperties": false,
@@ -3920,6 +5832,78 @@
         },
         "additionalProperties": false
       },
+      "EducationLevel": {
+        "enum": [
+          "Realschule",
+          "Ausbildung",
+          "Meister",
+          "Abitur",
+          "Bachelor",
+          "Master",
+          "PHD",
+          "habil",
+          "Prof"
+        ],
+        "type": "string"
+      },
+      "EducationLevelNullableOptionalField": {
+        "type": "object",
+        "properties": {
+          "isProvided": {
+            "type": "boolean"
+          },
+          "value": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EducationLevel"
+              }
+            ],
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "EducationRequirementInput": {
+        "type": "object",
+        "properties": {
+          "educationLevel": {
+            "$ref": "#/components/schemas/EducationLevel"
+          },
+          "fieldOfStudy": {
+            "maxLength": 200,
+            "type": "string",
+            "description": "The required field of study.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Detail input for an education requirement."
+      },
+      "EducationRequirementOutput": {
+        "type": "object",
+        "properties": {
+          "educationLevel": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EducationLevel"
+              }
+            ],
+            "description": "The required minimum education level.",
+            "nullable": true,
+            "example": "Master"
+          },
+          "fieldOfStudy": {
+            "maxLength": 200,
+            "minLength": 0,
+            "type": "string",
+            "description": "The required field of study.",
+            "nullable": true,
+            "example": "Computer Science"
+          }
+        },
+        "additionalProperties": false,
+        "description": "Detail output for an education requirement."
+      },
       "ExceptionType": {
         "enum": [
           "Unknown",
@@ -4027,6 +6011,28 @@
         },
         "additionalProperties": false
       },
+      "ImportApiUserIdentity": {
+        "type": "object",
+        "properties": {
+          "userID": {
+            "type": "integer",
+            "description": "The internal id of the user.",
+            "format": "int32"
+          },
+          "employeeID": {
+            "type": "string",
+            "description": "The external employee identifier.",
+            "nullable": true
+          },
+          "email": {
+            "type": "string",
+            "description": "The email address of the user.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Lightweight user identity containing the core identifiers used across Import API responses."
+      },
       "ImportBatchStatus": {
         "required": [
           "status"
@@ -4096,6 +6102,10 @@
           "isCustomer": {
             "type": "boolean",
             "nullable": true
+          },
+          "allowCustomerDataExport": {
+            "type": "boolean",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -4106,6 +6116,10 @@
           "companyID": {
             "type": "integer",
             "format": "int32"
+          },
+          "companyName": {
+            "type": "string",
+            "nullable": true
           },
           "status": {
             "allOf": [
@@ -4154,6 +6168,10 @@
           "requestID": {
             "type": "integer",
             "format": "int32",
+            "nullable": true
+          },
+          "requestCode": {
+            "type": "string",
             "nullable": true
           },
           "status": {
@@ -4276,6 +6294,23 @@
         },
         "additionalProperties": false
       },
+      "Int32ListOptionalField": {
+        "type": "object",
+        "properties": {
+          "isProvided": {
+            "type": "boolean"
+          },
+          "value": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "Int32NullableOptionalField": {
         "type": "object",
         "properties": {
@@ -4289,6 +6324,19 @@
           }
         },
         "additionalProperties": false
+      },
+      "JobPositionRequirementInput": {
+        "type": "object",
+        "properties": {
+          "jobPositionName": {
+            "maxLength": 2000,
+            "type": "string",
+            "description": "The display name of the required job position.\r\nIf provided, this value is used as the requirement's query text and overrides\r\nany value supplied via Decidalo.Domain.Models.ResourceRequests.RequirementInput.QueryText.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Detail input for a job position requirement."
       },
       "KeywordInput": {
         "required": [
@@ -4305,6 +6353,192 @@
         },
         "additionalProperties": false,
         "description": "Defines a keyword for a project."
+      },
+      "LanguageRequirementInput": {
+        "type": "object",
+        "properties": {
+          "standardLanguageID": {
+            "type": "integer",
+            "description": "The standard (global) identifier of the language.",
+            "format": "int32",
+            "nullable": true,
+            "example": 1
+          },
+          "languageName": {
+            "maxLength": 100,
+            "type": "string",
+            "description": "The display name of the required language.\r\nCan be used instead of StandardLanguageID to look up the language.",
+            "nullable": true
+          },
+          "requiredNumericalValue": {
+            "type": "integer",
+            "description": "The minimum required language level (numerical value, as defined in skills.languageLevels).\r\nIf null or not provided, any level is considered acceptable.",
+            "format": "int32",
+            "nullable": true,
+            "example": 3
+          }
+        },
+        "additionalProperties": false,
+        "description": "Detail input for a language requirement."
+      },
+      "LanguageRequirementOutput": {
+        "type": "object",
+        "properties": {
+          "standardLanguageID": {
+            "type": "integer",
+            "description": "The standard (global) identifier of the language.",
+            "format": "int32",
+            "nullable": true,
+            "example": 1
+          },
+          "languageName": {
+            "maxLength": 100,
+            "minLength": 0,
+            "type": "string",
+            "description": "The display name of the required language.",
+            "nullable": true,
+            "example": "English"
+          },
+          "requiredNumericalValue": {
+            "type": "integer",
+            "description": "The minimum required language level (numerical value, as defined in skills.languageLevels).\r\nNull means any level is acceptable.",
+            "format": "int32",
+            "nullable": true,
+            "example": 3
+          }
+        },
+        "additionalProperties": false,
+        "description": "Detail output for a language requirement."
+      },
+      "LegalEntity": {
+        "type": "object",
+        "properties": {
+          "legalEntityID": {
+            "type": "integer",
+            "description": "The unique identifier of a legal entity.",
+            "format": "int32"
+          },
+          "legalEntityName": {
+            "type": "string",
+            "description": "The name of the legal entity.",
+            "nullable": true
+          },
+          "position": {
+            "type": "integer",
+            "description": "The position of the legal entity in a list of legal entities.",
+            "format": "int32",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "A class representing a single legal entity."
+      },
+      "LegalEntityOutput": {
+        "required": [
+          "legalEntityID"
+        ],
+        "type": "object",
+        "properties": {
+          "legalEntityID": {
+            "type": "integer",
+            "description": "decídalo id of the legal entity.",
+            "format": "int32"
+          },
+          "legalEntityName": {
+            "type": "string",
+            "description": "Display name of the legal entity.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Short display information of a legal entity."
+      },
+      "LegalEntityReferenceInput": {
+        "type": "object",
+        "properties": {
+          "legalEntityID": {
+            "type": "integer",
+            "description": "decídalo id of the legal entity.",
+            "format": "int32",
+            "nullable": true,
+            "example": 1
+          },
+          "legalEntityName": {
+            "maxLength": 100,
+            "type": "string",
+            "description": "Name of the legal entity.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Reference to a legal entity for a resource request."
+      },
+      "LocationRequirementInput": {
+        "type": "object",
+        "properties": {
+          "rawLocationText": {
+            "maxLength": 255,
+            "type": "string",
+            "description": "The original free-text location entered by the user (e.g. \"50 km from Hannover\", \"HH\", \"30159\").",
+            "nullable": true
+          },
+          "radiusKm": {
+            "type": "number",
+            "description": "Optional radius in kilometers from the resolved location point.\r\nNull means exact city match. If the radius is parsed from RawLocationText by the geocoding service,\r\nthe parsed value takes precedence.",
+            "format": "double",
+            "nullable": true,
+            "example": 50
+          }
+        },
+        "additionalProperties": false,
+        "description": "Detail input for a distance-from-location requirement.\r\nRawLocationText is forwarded to the geocoding service which resolves it to coordinates."
+      },
+      "LocationRequirementOutput": {
+        "type": "object",
+        "properties": {
+          "locationText": {
+            "maxLength": 255,
+            "minLength": 0,
+            "type": "string",
+            "description": "The original free-text location entered by the user.",
+            "nullable": true,
+            "example": "50 km from Hannover"
+          },
+          "normalizedPlace": {
+            "maxLength": 255,
+            "minLength": 0,
+            "type": "string",
+            "description": "The place name resolved by the geocoding service (e.g. \"Hannover, Lower Saxony, Germany\").",
+            "nullable": true,
+            "example": "Hannover, Lower Saxony, Germany"
+          },
+          "radiusKm": {
+            "type": "number",
+            "description": "Radius in kilometers from the resolved location point. Null means exact city match.",
+            "format": "double",
+            "nullable": true,
+            "example": 50
+          }
+        },
+        "additionalProperties": false,
+        "description": "Detail output for a distance-from-location requirement.\r\nLocationPoint (geography) is intentionally not exposed — frontend only sees the resolved place name and radius."
+      },
+      "Month": {
+        "enum": [
+          "January",
+          "February",
+          "March",
+          "April",
+          "May",
+          "June",
+          "July",
+          "August",
+          "September",
+          "October",
+          "November",
+          "December"
+        ],
+        "type": "string"
       },
       "PracticeArea": {
         "type": "object",
@@ -4327,6 +6561,113 @@
         },
         "additionalProperties": false,
         "description": "Domain Model of a Practice Area.\r\nA Practice Area is a field of expertise or a specialization of a user."
+      },
+      "PracticeAreaOutput": {
+        "required": [
+          "practiceAreaID"
+        ],
+        "type": "object",
+        "properties": {
+          "practiceAreaID": {
+            "type": "integer",
+            "description": "decídalo id of the practice area.",
+            "format": "int32"
+          },
+          "practiceAreaName": {
+            "type": "string",
+            "description": "Display name of the practice area.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Short display information of a practice area."
+      },
+      "PracticeAreaReferenceInput": {
+        "type": "object",
+        "properties": {
+          "practiceAreaID": {
+            "type": "integer",
+            "description": "decídalo id of the practice area.",
+            "format": "int32",
+            "nullable": true,
+            "example": 1
+          },
+          "practiceAreaName": {
+            "maxLength": 100,
+            "type": "string",
+            "description": "Name of the practice area.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Reference to a practice area for a resource request."
+      },
+      "PriorityEntry": {
+        "required": [
+          "position",
+          "priority",
+          "priorityID"
+        ],
+        "type": "object",
+        "properties": {
+          "priorityID": {
+            "type": "integer",
+            "description": "The decídalo id of the priority.",
+            "format": "int32"
+          },
+          "priority": {
+            "minLength": 1,
+            "type": "string",
+            "description": "The display name of the priority."
+          },
+          "position": {
+            "type": "integer",
+            "description": "The sort position of the priority.",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false,
+        "description": "Represents a priority that can be assigned to a Project or to a ResourceRequest."
+      },
+      "PriorityOutput": {
+        "required": [
+          "priorityID"
+        ],
+        "type": "object",
+        "properties": {
+          "priorityID": {
+            "type": "integer",
+            "description": "decídalo id of the priority.",
+            "format": "int32"
+          },
+          "priorityName": {
+            "type": "string",
+            "description": "Display name of the priority.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Short display information of a priority."
+      },
+      "PriorityReferenceInput": {
+        "type": "object",
+        "properties": {
+          "priorityID": {
+            "type": "integer",
+            "description": "decídalo id of the priority.",
+            "format": "int32",
+            "nullable": true,
+            "example": 1
+          },
+          "priorityName": {
+            "maxLength": 100,
+            "type": "string",
+            "description": "Name of the priority.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Reference to a priority for a resource request."
       },
       "ProjectCompanyReferenceInput": {
         "type": "object",
@@ -4355,6 +6696,158 @@
         },
         "additionalProperties": false,
         "description": "Referenes a company for a project."
+      },
+      "ProjectExperienceRequirementInput": {
+        "type": "object",
+        "properties": {
+          "industryIDs": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "description": "List of internal industry IDs that the project experience should relate to.",
+            "nullable": true,
+            "example": [
+              1,
+              5
+            ]
+          },
+          "companyIDs": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "description": "List of internal company IDs that the project experience should relate to.",
+            "nullable": true,
+            "example": [
+              3
+            ]
+          },
+          "skillIDs": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "description": "List of internal skill IDs relevant to the project experience.",
+            "nullable": true,
+            "example": [
+              10,
+              22
+            ]
+          },
+          "standardPositions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Standardized project position names expected for the experience.",
+            "nullable": true,
+            "example": [
+              "Project Manager",
+              "Technical Lead"
+            ]
+          },
+          "keywords": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Free-text keywords to match against project experience.",
+            "nullable": true,
+            "example": [
+              "Agile",
+              "Scrum"
+            ]
+          },
+          "durationInMonths": {
+            "type": "integer",
+            "description": "The minimum required duration of project experience in months.",
+            "format": "int32",
+            "nullable": true,
+            "example": 12
+          }
+        },
+        "additionalProperties": false,
+        "description": "Detail input for a project experience requirement."
+      },
+      "ProjectExperienceRequirementOutput": {
+        "type": "object",
+        "properties": {
+          "industryIDs": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "description": "List of internal industry IDs that the project experience relates to.",
+            "nullable": true,
+            "example": [
+              1,
+              5
+            ]
+          },
+          "companyIDs": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "description": "List of internal company IDs that the project experience relates to.",
+            "nullable": true,
+            "example": [
+              3
+            ]
+          },
+          "skillIDs": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "description": "List of internal skill IDs relevant to the project experience.",
+            "nullable": true,
+            "example": [
+              10,
+              22
+            ]
+          },
+          "standardPositions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Standardized project position names expected for the experience.",
+            "nullable": true,
+            "example": [
+              "Project Manager",
+              "Technical Lead"
+            ]
+          },
+          "keywords": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Free-text keywords to match against project experience.",
+            "nullable": true,
+            "example": [
+              "Agile",
+              "Scrum"
+            ]
+          },
+          "durationInMonths": {
+            "type": "integer",
+            "description": "The minimum required duration of project experience in months.",
+            "format": "int32",
+            "nullable": true,
+            "example": 12
+          }
+        },
+        "additionalProperties": false,
+        "description": "Detail output for a project experience requirement."
       },
       "ProjectIndustryReferenceInput": {
         "type": "object",
@@ -4572,6 +7065,16 @@
               "$ref": "#/components/schemas/KeywordInput"
             },
             "description": "List of keywords of the projects."
+          },
+          "creationDate": {
+            "type": "string",
+            "description": "Timestamp of the creation of the project reference.",
+            "format": "date-time"
+          },
+          "lastEditDate": {
+            "type": "string",
+            "description": "Timestamp of the last edit of the project reference.",
+            "format": "date-time"
           }
         },
         "additionalProperties": false,
@@ -4643,6 +7146,11 @@
             "description": "Flag to indicate whether this project is a central project.\r\nIf no value is provided, this flag is set to true in the create case.",
             "nullable": true
           },
+          "isConfidential": {
+            "type": "boolean",
+            "description": "Flag to indicate wheater this project is a confidential project. \r\nIf no value is provided, this flag is set to false in the create case.",
+            "nullable": true
+          },
           "displayCustomerDataOnCv": {
             "type": "boolean",
             "description": "Flag to indicate whether the customer data should be displayed on a CV.\r\nIf no value is provided, this flag is set to true in the create case.",
@@ -4702,6 +7210,16 @@
             "description": "The primary project assistant for the project.\r\nIf not provided, the current primary project assistant is not changed.\r\nTo remove the primary project assistant, set UserID to null.",
             "nullable": true
           },
+          "substituteProjectManager": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/UserReferenceInput"
+              }
+            ],
+            "description": "[Legacy]\r\nThe substitute project manager of the project.\r\nIf not set, it won't be changed.",
+            "nullable": true,
+            "deprecated": true
+          },
           "countryCode": {
             "maxLength": 2,
             "type": "string",
@@ -4739,6 +7257,42 @@
               }
             ],
             "description": "Practice area of the project.\r\nValues like 'Project Management' or 'IT Security'.\r\nIf not set, it won't be changed.",
+            "nullable": true
+          },
+          "priority": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TextFieldInput"
+              }
+            ],
+            "description": "Priority of the project.\r\nIf not set, it won't be changed.",
+            "nullable": true
+          },
+          "serviceLine": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TextFieldInput"
+              }
+            ],
+            "description": "Service line of the project.\r\nIf not set, it won't be changed.",
+            "nullable": true
+          },
+          "legalEntity": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TextFieldInput"
+              }
+            ],
+            "description": "Legal entity of the project.\r\nIf not set, it won't be changed.",
+            "nullable": true
+          },
+          "resourceGroup": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TextFieldInput"
+              }
+            ],
+            "description": "Resource group of the project.\r\nIf not set, it won't be changed.",
             "nullable": true
           },
           "customProperties": {
@@ -4877,6 +7431,16 @@
             "description": "The primary project assistant of the project.",
             "nullable": true
           },
+          "substituteProjectManager": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/UserReferenceOutput"
+              }
+            ],
+            "description": "[Legacy] The substitute project manager who acts as backup for the main project manager.",
+            "nullable": true,
+            "deprecated": true
+          },
           "countryCode": {
             "maxLength": 2,
             "type": "string",
@@ -4915,6 +7479,46 @@
             ],
             "description": "Practice area of the project.\r\nValues like 'Project Management' or 'IT Security'.",
             "nullable": true
+          },
+          "priority": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TextFieldInput"
+              }
+            ],
+            "description": "Priority of the project.",
+            "nullable": true
+          },
+          "serviceLine": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TextFieldInput"
+              }
+            ],
+            "description": "Service line of the project.",
+            "nullable": true
+          },
+          "legalEntity": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TextFieldInput"
+              }
+            ],
+            "description": "Legal entity of the project.",
+            "nullable": true
+          },
+          "resourceGroup": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TextFieldInput"
+              }
+            ],
+            "description": "Resource group of the project.",
+            "nullable": true
+          },
+          "isConfidential": {
+            "type": "boolean",
+            "description": "Indicates whether the project is a confidential project."
           },
           "customProperties": {
             "type": "object",
@@ -4995,6 +7599,288 @@
         },
         "additionalProperties": false
       },
+      "RequirementInput": {
+        "type": "object",
+        "properties": {
+          "requirementID": {
+            "type": "integer",
+            "description": "The internal decídalo identifier of an existing requirement.\r\nIf provided, the requirement will be updated. If omitted, a new requirement is created.",
+            "format": "int32",
+            "nullable": true,
+            "example": 42
+          },
+          "queryText": {
+            "maxLength": 2000,
+            "type": "string",
+            "description": "The free-text description of what the requirement demands.",
+            "nullable": true
+          },
+          "type": {
+            "$ref": "#/components/schemas/RequirementType"
+          },
+          "skillDetails": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SkillRequirementInput"
+              }
+            ],
+            "description": "Detail information for a skill requirement.\r\nOnly relevant when Type is \"Skills\".\r\nIf not supplied, skill details will not be changed.",
+            "nullable": true
+          },
+          "languageDetails": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/LanguageRequirementInput"
+              }
+            ],
+            "description": "Detail information for a language requirement.\r\nOnly relevant when Type is \"Languages\".\r\nIf not supplied, language details will not be changed.",
+            "nullable": true
+          },
+          "certificateDetails": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CertificateRequirementInput"
+              }
+            ],
+            "description": "Detail information for a certificate requirement.\r\nOnly relevant when Type is \"Certificates\".\r\nIf not supplied, certificate details will not be changed.",
+            "nullable": true
+          },
+          "educationDetails": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EducationRequirementInput"
+              }
+            ],
+            "description": "Detail information for an education requirement.\r\nOnly relevant when Type is \"Education\".\r\nIf not supplied, education details will not be changed.",
+            "nullable": true
+          },
+          "projectExperienceDetails": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ProjectExperienceRequirementInput"
+              }
+            ],
+            "description": "Detail information for a project experience requirement.\r\nOnly relevant when Type is \"ProjectExperience\".\r\nIf not supplied, project experience details will not be changed.",
+            "nullable": true
+          },
+          "jobPositionDetails": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/JobPositionRequirementInput"
+              }
+            ],
+            "description": "Detail information for a job position requirement.\r\nOnly relevant when Type is \"JobPosition\".\r\nIf not supplied, job position details will not be changed.",
+            "nullable": true
+          },
+          "locationDetails": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/LocationRequirementInput"
+              }
+            ],
+            "description": "Detail information for a distance-from-location requirement.\r\nOnly relevant when Type is \"DistanceFromLocation\".\r\nIf not supplied, location details will not be changed.",
+            "nullable": true
+          },
+          "delete": {
+            "type": "boolean",
+            "description": "Flag to indicate whether this requirement should be deleted.\r\nOnly applies when a RequirementID is provided.\r\nDefault: false.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "A single requirement to import on a resource request.\r\nIf a RequirementID is provided, the requirement will be updated (or deleted if the Delete flag is set).\r\nIf no RequirementID is provided, a new requirement will be created."
+      },
+      "RequirementOutput": {
+        "required": [
+          "requirementID",
+          "type"
+        ],
+        "type": "object",
+        "properties": {
+          "requirementID": {
+            "type": "integer",
+            "description": "The internal decídalo identifier of the requirement.",
+            "format": "int32",
+            "example": 42
+          },
+          "queryText": {
+            "maxLength": 2000,
+            "minLength": 0,
+            "type": "string",
+            "description": "The free-text description of what the requirement demands.",
+            "nullable": true,
+            "example": "5+ years of experience with C# and .NET"
+          },
+          "type": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/RequirementType"
+              }
+            ],
+            "description": "The type of the requirement.\r\nDetermines which detail object is populated.",
+            "example": "Skills"
+          },
+          "skillDetails": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SkillRequirementOutput"
+              }
+            ],
+            "description": "Detail information for a skill requirement.\r\nOnly populated when Type is \"Skills\".",
+            "nullable": true
+          },
+          "languageDetails": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/LanguageRequirementOutput"
+              }
+            ],
+            "description": "Detail information for a language requirement.\r\nOnly populated when Type is \"Languages\".",
+            "nullable": true
+          },
+          "certificateDetails": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CertificateRequirementOutput"
+              }
+            ],
+            "description": "Detail information for a certificate requirement.\r\nOnly populated when Type is \"Certificates\".",
+            "nullable": true
+          },
+          "educationDetails": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EducationRequirementOutput"
+              }
+            ],
+            "description": "Detail information for an education requirement.\r\nOnly populated when Type is \"Education\".",
+            "nullable": true
+          },
+          "projectExperienceDetails": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ProjectExperienceRequirementOutput"
+              }
+            ],
+            "description": "Detail information for a project experience requirement.\r\nOnly populated when Type is \"ProjectExperience\".",
+            "nullable": true
+          },
+          "locationDetails": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/LocationRequirementOutput"
+              }
+            ],
+            "description": "Detail information for a distance-from-location requirement.\r\nOnly populated when Type is \"DistanceFromLocation\".",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "A single requirement on a resource request."
+      },
+      "RequirementType": {
+        "enum": [
+          "ProjectExperience",
+          "Education",
+          "Languages",
+          "Certificates",
+          "Skills",
+          "JobPosition",
+          "Availability",
+          "DistanceFromLocation"
+        ],
+        "type": "string"
+      },
+      "RequirementTypeNullableOptionalField": {
+        "type": "object",
+        "properties": {
+          "isProvided": {
+            "type": "boolean"
+          },
+          "value": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/RequirementType"
+              }
+            ],
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ResourceGroupLite": {
+        "type": "object",
+        "properties": {
+          "resourceGroupID": {
+            "type": "integer",
+            "description": "The id of the resource group.",
+            "format": "int32"
+          },
+          "resourceGroupName": {
+            "type": "string",
+            "description": "The name of the resource group.",
+            "nullable": true
+          },
+          "resourceManagerID": {
+            "type": "integer",
+            "description": "ID of the resource manager, if there is only a single on the group, otherwise null",
+            "format": "int32",
+            "nullable": true
+          },
+          "match": {
+            "type": "boolean",
+            "description": "Used when comparing resource groups against a resource request's requirements.",
+            "nullable": true
+          },
+          "isAiSuggested": {
+            "type": "boolean",
+            "description": "Indicates whether this resource group was suggested by AI as relevant for the request.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Class representing a resource group but only contains the most basic information."
+      },
+      "ResourceGroupOutput": {
+        "required": [
+          "resourceGroupID"
+        ],
+        "type": "object",
+        "properties": {
+          "resourceGroupID": {
+            "type": "integer",
+            "description": "decídalo id of the resource group.",
+            "format": "int32"
+          },
+          "resourceGroupName": {
+            "type": "string",
+            "description": "Display name of the resource group.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Short display information of a resource group."
+      },
+      "ResourceGroupReferenceInput": {
+        "type": "object",
+        "properties": {
+          "resourceGroupID": {
+            "type": "integer",
+            "description": "decídalo id of the resource group.",
+            "format": "int32",
+            "nullable": true,
+            "example": 1
+          },
+          "resourceGroupName": {
+            "maxLength": 100,
+            "type": "string",
+            "description": "Name of the resource group.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Reference to a resource group for a resource request."
+      },
       "ResourceRequestIdentifier": {
         "required": [
           "requestID"
@@ -5006,6 +7892,14 @@
             "description": "decídalo id of the resource request.",
             "format": "int32",
             "example": 1
+          },
+          "requestCode": {
+            "maxLength": 100,
+            "minLength": 0,
+            "type": "string",
+            "description": "Optional external identifier for the resource request, e.g. from an external system.",
+            "nullable": true,
+            "example": "RR-2026-001"
           }
         },
         "additionalProperties": false,
@@ -5020,6 +7914,12 @@
             "format": "int32",
             "nullable": true,
             "example": 1
+          },
+          "requestCode": {
+            "maxLength": 100,
+            "type": "string",
+            "description": "Optional external identifier for the resource request, e.g. from an external system.\r\nCan be used instead of RequestID to look up an existing resource request.",
+            "nullable": true
           }
         },
         "additionalProperties": false,
@@ -5067,6 +7967,69 @@
             "description": "Target industry for the resource request, if any.\r\nIf not supplied, the industry will not be changed.\r\nTo remove the industry from the resource request, set an empty object.\r\nIf the industry does not exist, it will be created with the provided values.",
             "nullable": true
           },
+          "priority": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PriorityReferenceInput"
+              }
+            ],
+            "description": "Priority of the resource request, if any.\r\nIf not supplied, the priority will not be changed.\r\nSetting an empty object will not change the priority (Priority cannot be cleared).\r\nIf the priority does not exist, it will result in an error.",
+            "nullable": true
+          },
+          "businessUnit": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BusinessUnitReferenceInput"
+              }
+            ],
+            "description": "Business unit associated with the resource request, if any.\r\nIf not supplied, the business unit will not be changed.\r\nTo remove the business unit from the resource request, set an empty object.\r\nIf the business unit does not exist, it will result in an error.",
+            "nullable": true
+          },
+          "practiceArea": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PracticeAreaReferenceInput"
+              }
+            ],
+            "description": "Practice area associated with the resource request, if any.\r\nIf not supplied, the practice area will not be changed.\r\nTo remove the practice area from the resource request, set an empty object.\r\nIf the practice area does not exist, it will result in an error.",
+            "nullable": true
+          },
+          "serviceCategory": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ServiceCategoryReferenceInput"
+              }
+            ],
+            "description": "Service category associated with the resource request, if any.\r\nIf not supplied, the service category will not be changed.\r\nTo remove the service category from the resource request, set an empty object.\r\nIf the service category does not exist, it will result in an error.",
+            "nullable": true
+          },
+          "serviceLine": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ServiceLineReferenceInput"
+              }
+            ],
+            "description": "Service line associated with the resource request, if any.\r\nIf not supplied, the service line will not be changed.\r\nTo remove the service line from the resource request, set an empty object.\r\nIf the service line does not exist, it will result in an error.",
+            "nullable": true
+          },
+          "legalEntity": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/LegalEntityReferenceInput"
+              }
+            ],
+            "description": "Legal entity associated with the resource request, if any.\r\nIf not supplied, the legal entity will not be changed.\r\nTo remove the legal entity from the resource request, set an empty object.\r\nIf the legal entity does not exist, it will result in an error.",
+            "nullable": true
+          },
+          "resourceGroup": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ResourceGroupReferenceInput"
+              }
+            ],
+            "description": "Resource group associated with the resource request, if any.\r\nIf not supplied, the resource group will not be changed.\r\nTo remove the resource group from the resource request, set an empty object.\r\nIf the resource group does not exist, it will result in an error.",
+            "nullable": true
+          },
           "assignedResourceManager": {
             "allOf": [
               {
@@ -5074,6 +8037,15 @@
               }
             ],
             "description": "Assigned user that is responsible for the resource request.\r\nIf not supplied, the assigned resource manager will not be changed.\r\nTo remove the assigned resource manager from the resource request, set an empty object.\r\nIf the user does not exist, it will result in an error.",
+            "nullable": true
+          },
+          "requestor": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/UserReferenceInput"
+              }
+            ],
+            "description": "The user that originally requested the resource (the requestor).\r\nIf not supplied, the requestor will not be changed or set to the importing user.\r\nThe Requestor cannot be set to null.",
             "nullable": true
           },
           "delete": {
@@ -5089,6 +8061,22 @@
             ],
             "description": "The existing project that we wish to link to the resource request.\r\nIt is irrelevant whether the resource request exists or not but at the moment we support only the linking of\r\nalready existing projects. \r\nThe link is established by creating a dummy booking which is connected \r\non one end with the project and on the other end with the resource request\r\nIf the project code or project id does not exist, nothing is going to be linked.",
             "nullable": true
+          },
+          "requirements": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RequirementInput"
+            },
+            "description": "Requirements to import for the resource request.\r\nIf not supplied, the requirements will not be changed.\r\nEach entry will be created, updated, or deleted depending on the provided fields.",
+            "nullable": true
+          },
+          "customProperties": {
+            "type": "object",
+            "additionalProperties": {
+              "nullable": true
+            },
+            "description": "Custom fields of the resource request.\r\nValues can be any primitive type like string, int, bool or DateTime (formatted as string).",
+            "nullable": true
           }
         },
         "additionalProperties": false,
@@ -5096,6 +8084,7 @@
       },
       "ResourceRequestOutput": {
         "required": [
+          "creationDate",
           "identifier",
           "lastEditDate",
           "properties",
@@ -5127,11 +8116,6 @@
             ],
             "description": "Fields of the resource request that can be set by the user."
           },
-          "lastEditDate": {
-            "type": "string",
-            "description": "Timestamp of the last change ot the resource request.",
-            "format": "date-time"
-          },
           "company": {
             "allOf": [
               {
@@ -5159,6 +8143,15 @@
             "description": "Assigned user that is responsible for the resource request.",
             "nullable": true
           },
+          "requestor": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/UserReferenceOutput"
+              }
+            ],
+            "description": "The user who originally requested the resource (the requestor).",
+            "nullable": true
+          },
           "project": {
             "allOf": [
               {
@@ -5167,6 +8160,86 @@
             ],
             "description": "The project that is linked to the resource request.",
             "nullable": true
+          },
+          "priority": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PriorityOutput"
+              }
+            ],
+            "description": "Priority of the resource request.",
+            "nullable": true
+          },
+          "businessUnit": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BusinessUnitOutput"
+              }
+            ],
+            "description": "Business unit of the resource request.",
+            "nullable": true
+          },
+          "practiceArea": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PracticeAreaOutput"
+              }
+            ],
+            "description": "Practice area of the resource request.",
+            "nullable": true
+          },
+          "serviceLine": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ServiceLineOutput"
+              }
+            ],
+            "description": "Service line of the resource request.",
+            "nullable": true
+          },
+          "legalEntity": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/LegalEntityOutput"
+              }
+            ],
+            "description": "Legal entity of the resource request.",
+            "nullable": true
+          },
+          "resourceGroup": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ResourceGroupOutput"
+              }
+            ],
+            "description": "Resource group assigned to the resource request.",
+            "nullable": true
+          },
+          "requirements": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RequirementOutput"
+            },
+            "description": "Requirements of the resource request.",
+            "nullable": true
+          },
+          "customProperties": {
+            "type": "object",
+            "additionalProperties": {
+              "nullable": true
+            },
+            "description": "Custom fields of the resource request.\r\nValues can be any primitive type like string, int, bool or DateTime (formatted as string).",
+            "nullable": true
+          },
+          "creationDate": {
+            "type": "string",
+            "description": "Timestamp of the creation of the resource request.",
+            "format": "date-time"
+          },
+          "lastEditDate": {
+            "type": "string",
+            "description": "Timestamp of the last change of the resource request.",
+            "format": "date-time"
           }
         },
         "additionalProperties": false,
@@ -5229,6 +8302,32 @@
             "type": "string",
             "description": "Notes about the contact person who needs the resource.",
             "nullable": true
+          },
+          "countryCode": {
+            "maxLength": 2,
+            "type": "string",
+            "description": "Two-letter country code of the resource request.",
+            "nullable": true
+          },
+          "location": {
+            "maxLength": 100,
+            "type": "string",
+            "description": "Location of the resource request.",
+            "nullable": true
+          },
+          "capacity": {
+            "type": "integer",
+            "description": "Capacity as a percentage (0-100).",
+            "format": "int32",
+            "nullable": true,
+            "example": 80
+          },
+          "personDays": {
+            "type": "number",
+            "description": "Person days for the resource request.",
+            "format": "double",
+            "nullable": true,
+            "example": 20.5
           }
         },
         "additionalProperties": false,
@@ -5303,6 +8402,30 @@
             "type": "string",
             "description": "Notes about the contact person who needs the resource.",
             "nullable": true
+          },
+          "countryCode": {
+            "maxLength": 2,
+            "type": "string",
+            "description": "Two-letter country code of the resource request.",
+            "nullable": true
+          },
+          "location": {
+            "maxLength": 100,
+            "type": "string",
+            "description": "Location of the resource request.",
+            "nullable": true
+          },
+          "capacity": {
+            "type": "integer",
+            "description": "Capacity as a percentage (0-100).",
+            "format": "int32",
+            "nullable": true
+          },
+          "personDays": {
+            "type": "number",
+            "description": "Person days for the resource request.",
+            "format": "double",
+            "nullable": true
           }
         },
         "additionalProperties": false,
@@ -5348,6 +8471,160 @@
         },
         "additionalProperties": false,
         "description": "Defines a certificate for a role."
+      },
+      "RoleExportCertificate": {
+        "type": "object",
+        "properties": {
+          "certificateID": {
+            "type": "integer",
+            "description": "Internal ID of the certificate.",
+            "format": "int32"
+          },
+          "certificateName": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TextFieldInput"
+              }
+            ],
+            "description": "The name of the certificate.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "A certificate associated with a role."
+      },
+      "RoleExportIdentity": {
+        "type": "object",
+        "properties": {
+          "roleID": {
+            "type": "integer",
+            "description": "The internal ID of the role.",
+            "format": "int32"
+          },
+          "roleCode": {
+            "type": "string",
+            "description": "The external identifier of the role.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Identifier of a role in the export output."
+      },
+      "RoleExportOutput": {
+        "type": "object",
+        "properties": {
+          "identifier": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/RoleExportIdentity"
+              }
+            ],
+            "description": "Identifier of the role.",
+            "nullable": true
+          },
+          "properties": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/RoleExportProperties"
+              }
+            ],
+            "description": "Properties of the role.",
+            "nullable": true
+          },
+          "roleCertificates": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RoleExportCertificate"
+            },
+            "description": "Certificates associated with the role.",
+            "nullable": true
+          },
+          "roleSkills": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RoleExportSkill"
+            },
+            "description": "Skills associated with the role.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Represents a role with associated certificates and skills for the Import API GET endpoint.\r\nMirrors the structure of Decidalo.Domain.Models.Roles.Import.RoleImportInput but without RedesignIDs."
+      },
+      "RoleExportProperties": {
+        "type": "object",
+        "properties": {
+          "roleName": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TextFieldTranslationInput"
+              }
+            ],
+            "description": "The name of the role with translations.",
+            "nullable": true
+          },
+          "roleDescription": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TextFieldInput"
+              }
+            ],
+            "description": "Description of the role.",
+            "nullable": true
+          },
+          "roleCode": {
+            "type": "string",
+            "description": "External identifier of the role.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Properties of a role in the export output."
+      },
+      "RoleExportSkill": {
+        "type": "object",
+        "properties": {
+          "skillID": {
+            "type": "integer",
+            "description": "Internal ID of the skill.",
+            "format": "int32"
+          },
+          "skillName": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TextFieldTranslationInput"
+              }
+            ],
+            "description": "The name of the skill with translations.",
+            "nullable": true
+          },
+          "skillLevel": {
+            "type": "integer",
+            "description": "The skill level. Null means 'Any level'.",
+            "format": "int32",
+            "nullable": true
+          },
+          "skillCategory": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/RoleSkillCategoryInput"
+              }
+            ],
+            "description": "The category of the skill.",
+            "nullable": true
+          },
+          "skillSubCategory": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/RoleSkillCategoryInput"
+              }
+            ],
+            "description": "The sub category of the skill.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "A skill associated with a role."
       },
       "RoleIdentityInput": {
         "type": "object",
@@ -5413,7 +8690,7 @@
         "type": "object",
         "properties": {
           "roleName": {
-            "$ref": "#/components/schemas/TextFieldInput"
+            "$ref": "#/components/schemas/TextFieldTranslationInput"
           },
           "roleDescription": {
             "$ref": "#/components/schemas/TextFieldInput"
@@ -5428,6 +8705,26 @@
         "additionalProperties": false,
         "description": "Defines the properties of a role."
       },
+      "RoleSkillCategoryInput": {
+        "type": "object",
+        "properties": {
+          "categoryID": {
+            "type": "integer",
+            "description": "decídalo specific id of the skill category.\r\nEither CategoryID or a transltion must be specified.\r\nIf the category does not exist yet, then at least one translation must be specified.",
+            "format": "int32",
+            "nullable": true
+          },
+          "translations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SkillCategoryTranslationInput"
+            },
+            "description": "The texts of the skill category in various translations.\r\nIf the category is specified with the CategoryID then the Translations are not needed.\r\nIn order to create the category at least one translation is required.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "RoleSkillInput": {
         "type": "object",
         "properties": {
@@ -5438,17 +8735,118 @@
             "nullable": true
           },
           "skillName": {
-            "$ref": "#/components/schemas/TextFieldInput"
+            "$ref": "#/components/schemas/TextFieldTranslationInput"
           },
           "skillLevel": {
             "type": "integer",
             "description": "The skill level of the skill for the role.\r\nWhen the value 'null' is provided or no value at all, then 'Any level' is set.",
             "format": "int32",
             "nullable": true
+          },
+          "skillCategory": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/RoleSkillCategoryInput"
+              }
+            ],
+            "description": "The category of the skill.\r\nOnly used if the skill does not exist yet.\r\nIf the sub category is not specified, then new skills will be placed into this category directly.",
+            "nullable": true
+          },
+          "skillSubCategory": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/RoleSkillCategoryInput"
+              }
+            ],
+            "description": "The sub category of the skill.\r\nOnly used if the skill does not exist yet to palce the new skill into this category.\r\nIf no category is given, new skills are created without.",
+            "nullable": true
           }
         },
         "additionalProperties": false,
         "description": "Defines a skill with skill level for a role."
+      },
+      "ServiceCategoryReferenceInput": {
+        "type": "object",
+        "properties": {
+          "serviceCategoryID": {
+            "type": "integer",
+            "description": "decídalo id of the service category.",
+            "format": "int32",
+            "nullable": true,
+            "example": 1
+          },
+          "serviceCategoryName": {
+            "maxLength": 100,
+            "type": "string",
+            "description": "Name of the service category.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Reference to a service category for a resource request."
+      },
+      "ServiceLine": {
+        "type": "object",
+        "properties": {
+          "serviceLineID": {
+            "type": "integer",
+            "description": "The unique identifier of the service line.",
+            "format": "int32"
+          },
+          "serviceLineName": {
+            "type": "string",
+            "description": "The name of the service line.",
+            "nullable": true
+          },
+          "position": {
+            "type": "integer",
+            "description": "THe position of the service line inside of a list of service lines.",
+            "format": "int32",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "The class representing a single service line."
+      },
+      "ServiceLineOutput": {
+        "required": [
+          "serviceLineID"
+        ],
+        "type": "object",
+        "properties": {
+          "serviceLineID": {
+            "type": "integer",
+            "description": "decídalo id of the service line.",
+            "format": "int32"
+          },
+          "serviceLineName": {
+            "type": "string",
+            "description": "Display name of the service line.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Short display information of a service line."
+      },
+      "ServiceLineReferenceInput": {
+        "type": "object",
+        "properties": {
+          "serviceLineID": {
+            "type": "integer",
+            "description": "decídalo id of the service line.",
+            "format": "int32",
+            "nullable": true,
+            "example": 1
+          },
+          "serviceLineName": {
+            "maxLength": 100,
+            "type": "string",
+            "description": "Name of the service line.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Reference to a service line for a resource request."
       },
       "SingleNullableOptionalField": {
         "type": "object",
@@ -5459,6 +8857,138 @@
           "value": {
             "type": "number",
             "format": "float",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "SkillCategoryTranslationInput": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "languageCode": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Translation in one language of a skill category."
+      },
+      "SkillItemOutput": {
+        "type": "object",
+        "properties": {
+          "skillID": {
+            "type": "integer",
+            "description": "The internal id of the skill.",
+            "format": "int32"
+          },
+          "name": {
+            "type": "string",
+            "description": "The name of the skill.",
+            "nullable": true
+          },
+          "categoryName": {
+            "type": "string",
+            "description": "The name of the category the skill belongs to. Null if the skill has no category.",
+            "nullable": true
+          },
+          "parentCategoryName": {
+            "type": "string",
+            "description": "The name of the parent category (subcategory context). Null if the category has no parent.",
+            "nullable": true
+          },
+          "isCoreSkill": {
+            "type": "boolean",
+            "description": "Indicates whether the skill is a core skill."
+          },
+          "isTranslatable": {
+            "type": "boolean",
+            "description": "Indicates whether the skill is translatable."
+          },
+          "description": {
+            "type": "string",
+            "description": "The description of the skill.",
+            "nullable": true
+          },
+          "vendor": {
+            "type": "string",
+            "description": "The vendor of the skill.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Skill output for the Import API."
+      },
+      "SkillRequirementInput": {
+        "type": "object",
+        "properties": {
+          "skillID": {
+            "type": "integer",
+            "description": "The internal decídalo identifier of the skill.\r\nCan be used instead of SkillName to reference an existing skill.",
+            "format": "int32",
+            "nullable": true,
+            "example": 15
+          },
+          "skillName": {
+            "maxLength": 200,
+            "type": "string",
+            "description": "The display name of the required skill.\r\nUsed to look up or create the skill if SkillID is not provided.",
+            "nullable": true
+          },
+          "skillLevel": {
+            "type": "integer",
+            "description": "The minimum required skill level (numerical value).\r\nIf null or not provided, any skill level is considered acceptable.",
+            "format": "int32",
+            "nullable": true,
+            "example": 3
+          }
+        },
+        "additionalProperties": false,
+        "description": "Detail input for a skill requirement."
+      },
+      "SkillRequirementOutput": {
+        "type": "object",
+        "properties": {
+          "skillID": {
+            "type": "integer",
+            "description": "The internal decídalo identifier of the skill.",
+            "format": "int32",
+            "nullable": true,
+            "example": 15
+          },
+          "skillName": {
+            "maxLength": 200,
+            "minLength": 0,
+            "type": "string",
+            "description": "The display name of the required skill.",
+            "nullable": true,
+            "example": "C#"
+          },
+          "skillLevel": {
+            "type": "integer",
+            "description": "The minimum required skill level (numerical value).\r\nNull means any skill level is acceptable.",
+            "format": "int32",
+            "nullable": true,
+            "example": 3
+          }
+        },
+        "additionalProperties": false,
+        "description": "Detail output for a skill requirement."
+      },
+      "StringListOptionalField": {
+        "type": "object",
+        "properties": {
+          "isProvided": {
+            "type": "boolean"
+          },
+          "value": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
             "nullable": true
           }
         },
@@ -5541,6 +9071,75 @@
         "additionalProperties": false,
         "description": "Contains information about the accepted batch."
       },
+      "TeamImportResults": {
+        "type": "object",
+        "properties": {
+          "batchID": {
+            "type": "string",
+            "description": "ID of the batch.",
+            "format": "uuid"
+          },
+          "status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ImportBatchStatusType"
+              }
+            ],
+            "description": "The current status of the batch as a whole."
+          },
+          "errorMessage": {
+            "type": "string",
+            "description": "Optional error details on the level of the whole batch.\r\nFor details of failed entries, see their entries.",
+            "nullable": true
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TeamImportRowResult"
+            },
+            "description": "Details about the individual imported teams.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Contains details about the results of a team import batch."
+      },
+      "TeamImportRowResult": {
+        "type": "object",
+        "properties": {
+          "rowIndex": {
+            "type": "integer",
+            "description": "The index of the row in the input data (0-based).",
+            "format": "int32"
+          },
+          "status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ImportItemStatusType"
+              }
+            ],
+            "description": "The current status of the import for this row."
+          },
+          "errorMessage": {
+            "type": "string",
+            "description": "Optional error message if the import for this row failed.",
+            "nullable": true
+          },
+          "teamID": {
+            "type": "integer",
+            "description": "The decídalo internal ID of the team.\r\nIt was either provided in the input data or was resolved during import.",
+            "format": "int32",
+            "nullable": true
+          },
+          "teamCode": {
+            "type": "string",
+            "description": "The external identifier of the imported team.\r\nIt was provided in the input data or was resolved during import.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Contains details about the processing of one team in the team import."
+      },
       "TeamInput": {
         "type": "object",
         "properties": {
@@ -5595,6 +9194,134 @@
         },
         "additionalProperties": false,
         "description": "Data container for one team in the batch import of teams."
+      },
+      "TeamManagerExportOutput": {
+        "type": "object",
+        "properties": {
+          "userID": {
+            "type": "integer",
+            "description": "Internal id of the user.",
+            "format": "int32",
+            "nullable": true
+          },
+          "employeeID": {
+            "type": "string",
+            "description": "External identifier of the user.",
+            "nullable": true
+          },
+          "email": {
+            "type": "string",
+            "description": "Email address of the user.",
+            "nullable": true
+          },
+          "teamID": {
+            "type": "integer",
+            "description": "Internal id of the team.",
+            "format": "int32",
+            "nullable": true
+          },
+          "teamCode": {
+            "type": "string",
+            "description": "External identifier of the team.",
+            "nullable": true
+          },
+          "isPrimaryManager": {
+            "type": "boolean",
+            "description": "Flag indicating whether this is the primary manager of the team or an additional one."
+          }
+        },
+        "additionalProperties": false,
+        "description": "A single team manager assignment for the Import API GET endpoint.\r\nShape matches `TeamManagerInput` so the GET response can be fed\r\ndirectly into the POST endpoint."
+      },
+      "TeamManagerImportResult": {
+        "required": [
+          "input",
+          "status"
+        ],
+        "type": "object",
+        "properties": {
+          "input": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TeamManagerInput"
+              }
+            ],
+            "description": "Represents one of the managers of a team."
+          },
+          "status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ImportItemStatusType"
+              }
+            ]
+          },
+          "errorMessage": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "TeamManagerInput": {
+        "type": "object",
+        "properties": {
+          "userID": {
+            "type": "integer",
+            "description": "decídalo internal id of the user.\r\nEither UserID, EmployeeID or Email must be provided to identify the user.",
+            "format": "int32",
+            "nullable": true
+          },
+          "employeeID": {
+            "type": "string",
+            "description": "External identifier of the user.\r\nEither UserID, EmployeeID or Email must be provided to identify the user.",
+            "nullable": true
+          },
+          "email": {
+            "type": "string",
+            "description": "Email address of the user, must be unique.\r\nEither UserID, EmployeeID or Email must be provided to identify the user.",
+            "nullable": true
+          },
+          "teamID": {
+            "type": "integer",
+            "description": "decídalo internal id of the team.\r\nEither TeamID or TeamCode must be provided to identify the team.",
+            "format": "int32",
+            "nullable": true
+          },
+          "teamCode": {
+            "type": "string",
+            "description": "External identifier of the team.\r\nEither TeamID or TeamCode must be provided to identify the team.",
+            "nullable": true
+          },
+          "isPrimaryManager": {
+            "type": "boolean",
+            "description": "Flag to indicate whether this is the primary manage of the team or an additional one. (Default: false)",
+            "default": false
+          },
+          "delete": {
+            "type": "boolean",
+            "description": "Flag indicating whether to remove the manager from the team. (Default: false)",
+            "default": false
+          }
+        },
+        "additionalProperties": false,
+        "description": "Represents one of the managers of a team."
+      },
+      "TeamManagerInputBatch": {
+        "required": [
+          "teamManagers"
+        ],
+        "type": "object",
+        "properties": {
+          "teamManagers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TeamManagerInput"
+            },
+            "description": "Batch of team managers to add or remove."
+          }
+        },
+        "additionalProperties": false,
+        "description": "Batch of team managers to add or remove."
       },
       "TeamOverview": {
         "type": "object",
@@ -5675,6 +9402,44 @@
         },
         "additionalProperties": false
       },
+      "TextFieldTranslationInput": {
+        "type": "object",
+        "properties": {
+          "value": {
+            "type": "string",
+            "description": "String value of the text field.",
+            "nullable": true
+          },
+          "translations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UserImportTextTranslation"
+            },
+            "description": "List of translations of the text field.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Text input field with translations."
+      },
+      "TextFieldTranslationInputOptionalField": {
+        "type": "object",
+        "properties": {
+          "isProvided": {
+            "type": "boolean"
+          },
+          "value": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TextFieldTranslationInput"
+              }
+            ],
+            "description": "Text input field with translations.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "UserBatchImportMetadata": {
         "type": "object",
         "properties": {
@@ -5703,6 +9468,13 @@
               }
             ],
             "nullable": true
+          },
+          "rowResults": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UserImportRowResult"
+            },
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -5730,6 +9502,82 @@
         },
         "additionalProperties": false,
         "description": "Data container for a whole batch of users to import."
+      },
+      "UserCertificateExportEntry": {
+        "type": "object",
+        "properties": {
+          "certificateID": {
+            "type": "integer",
+            "description": "Internal ID of the certificate.",
+            "format": "int32"
+          },
+          "certificateName": {
+            "type": "string",
+            "description": "Name of the certificate.",
+            "nullable": true
+          },
+          "issueYear": {
+            "type": "integer",
+            "description": "Year when user earned the certificate.",
+            "format": "int32",
+            "nullable": true
+          },
+          "issueMonth": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Month"
+              }
+            ],
+            "description": "Month when user earned the certificate.",
+            "nullable": true
+          },
+          "expirationYear": {
+            "type": "integer",
+            "description": "Year until when the certificate is valid.",
+            "format": "int32",
+            "nullable": true
+          },
+          "expirationMonth": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Month"
+              }
+            ],
+            "description": "Month until when the certificate is valid.",
+            "nullable": true
+          },
+          "credentialUrl": {
+            "type": "string",
+            "description": "User personal URL for certificate validation.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "A single certificate assignment for a user."
+      },
+      "UserCertificateExportOutput": {
+        "type": "object",
+        "properties": {
+          "user": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ImportApiUserIdentity"
+              }
+            ],
+            "description": "Identity of the user.",
+            "nullable": true
+          },
+          "certificates": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UserCertificateExportEntry"
+            },
+            "description": "Certificates assigned to this user.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "A user with their certificates for the Import API GET endpoint."
       },
       "UserIdentityInput": {
         "type": "object",
@@ -5799,6 +9647,109 @@
         "additionalProperties": false,
         "description": "Describes the overall result of a user import."
       },
+      "UserImportResults": {
+        "type": "object",
+        "properties": {
+          "batchID": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ImportBatchStatusType"
+              }
+            ]
+          },
+          "errorMessage": {
+            "type": "string",
+            "nullable": true
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UserImportRowResult"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "UserImportRow": {
+        "type": "object",
+        "properties": {
+          "userID": {
+            "type": "integer",
+            "description": "The internal id of the user.",
+            "format": "int32"
+          },
+          "employeeID": {
+            "type": "string",
+            "description": "The external employee identifier.",
+            "nullable": true
+          },
+          "name": {
+            "type": "string",
+            "description": "The display name of the user.",
+            "nullable": true
+          },
+          "email": {
+            "type": "string",
+            "description": "The email address of the user.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Lightweight user row returned by the Import API user query, before skills are attached."
+      },
+      "UserImportRowResult": {
+        "type": "object",
+        "properties": {
+          "rowIndex": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ImportItemStatusType"
+              }
+            ]
+          },
+          "errorMessage": {
+            "type": "string",
+            "nullable": true
+          },
+          "userID": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "email": {
+            "type": "string",
+            "nullable": true
+          },
+          "employeeID": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "UserImportTextTranslation": {
+        "type": "object",
+        "properties": {
+          "languageID": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "textField": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "UserInput": {
         "type": "object",
         "properties": {
@@ -5806,7 +9757,8 @@
             "type": "integer",
             "description": "The unique internal identifier of the user.",
             "format": "int32",
-            "nullable": true
+            "nullable": true,
+            "example": 123
           },
           "email": {
             "maxLength": 254,
@@ -5836,7 +9788,8 @@
             "type": "integer",
             "description": "The year of birth of the user.",
             "format": "int32",
-            "nullable": true
+            "nullable": true,
+            "example": 1980
           },
           "highestEducation": {
             "maxLength": 200,
@@ -5931,7 +9884,8 @@
             "type": "integer",
             "description": "The standard weekly working hours of the user.",
             "format": "int32",
-            "nullable": true
+            "nullable": true,
+            "example": 40
           },
           "entryDate": {
             "type": "string",
@@ -5954,19 +9908,19 @@
             "nullable": true
           },
           "businessUnitName": {
-            "maxLength": 50,
+            "maxLength": 100,
             "type": "string",
             "description": "The name of the business unit.",
             "nullable": true
           },
           "practiceAreaID": {
             "type": "integer",
-            "description": "Internal decídalo ID of the practice area of the user",
+            "description": "Internal decídalo ID of the practice area of the user.\r\nThis field uses a byte value and only accepts numbers from 0 to 255.",
             "format": "int32",
             "nullable": true
           },
           "practiceAreaName": {
-            "maxLength": 50,
+            "maxLength": 100,
             "type": "string",
             "description": "The English name of the practice area of the user",
             "nullable": true
@@ -5981,17 +9935,20 @@
             "type": "boolean",
             "description": "Flag to indicate, whether this user should be deleted.\r\n(Default: false)",
             "default": false,
-            "nullable": true
+            "nullable": true,
+            "example": false
           },
           "deactivate": {
             "type": "boolean",
             "description": "Flag to indicate, whether this user should be deactivated.\r\nSending false will reactivate the user.",
-            "nullable": true
+            "nullable": true,
+            "example": false
           },
           "hasLogin": {
             "type": "boolean",
             "description": "Flag to indicate, whether this user should have a login.\r\nnull: No change or don't create for new users.\r\nfalse: Remove login for existing users.",
-            "nullable": true
+            "nullable": true,
+            "example": true
           },
           "deliveryModel": {
             "maxLength": 100,
@@ -6002,7 +9959,7 @@
           "customProperties": {
             "type": "object",
             "additionalProperties": { },
-            "description": "Custom fields of the user. \r\nValues can be any primitive type like string, int, bool or DateTime (formatted as string).",
+            "description": "Custom fields of the user. \r\nValues can be any primitive type like string, int, bool, DateTime (formatted as string) or type \"list\".\r\nList item values can be referenced either by their internal ID (int) or by their label (string).\r\nUse the endpoint for custom properties to get more information on how to format the custom properties and to get the list of available custom properties.",
             "nullable": true
           },
           "holidayListCode": {
@@ -6012,24 +9969,24 @@
           },
           "legalEntityID": {
             "type": "integer",
-            "description": "This is the technical Id of the legal entity corressponding to the User.",
+            "description": "Internal decídalo ID of the legal entity of the User.\r\nThis field uses a byte value and only accepts numbers from 0 to 255.",
             "format": "int32",
             "nullable": true
           },
           "legalEntityName": {
-            "maxLength": 50,
+            "maxLength": 100,
             "type": "string",
             "description": "This is the name corresponding to the legal entity of the user.",
             "nullable": true
           },
           "serviceLineID": {
             "type": "integer",
-            "description": "This is the technical Id of the service line corressponding to the user.",
+            "description": "Internal decídalo ID of the service line of the user.\r\nThis field uses a byte value and only accepts numbers from 0 to 255.",
             "format": "int32",
             "nullable": true
           },
           "serviceLineName": {
-            "maxLength": 50,
+            "maxLength": 100,
             "type": "string",
             "description": "This is the name corressponding to the service line of the user.",
             "nullable": true
@@ -6168,16 +10125,6 @@
             "description": "The service category name of the user.",
             "nullable": true
           },
-          "creationDate": {
-            "type": "string",
-            "description": "Date when user was created.",
-            "format": "date-time"
-          },
-          "lastEditDate": {
-            "type": "string",
-            "description": "Date when user was last edited.",
-            "format": "date-time"
-          },
           "jobTitle": {
             "maxLength": 100,
             "minLength": 0,
@@ -6302,6 +10249,16 @@
             "type": "string",
             "description": "The name of the service line corresponding to the user.",
             "nullable": true
+          },
+          "creationDate": {
+            "type": "string",
+            "description": "Date when user was created.",
+            "format": "date-time"
+          },
+          "lastEditDate": {
+            "type": "string",
+            "description": "Date when user was last edited.",
+            "format": "date-time"
           }
         },
         "additionalProperties": false,
@@ -6322,6 +10279,13 @@
             "type": "string",
             "description": "References the user by the external id.\r\nGets ignored, if UserID is set.",
             "nullable": true
+          },
+          "email": {
+            "maxLength": 250,
+            "minLength": 0,
+            "type": "string",
+            "description": "References the user by the email address.\r\nThe email must be uniquely assigned to a user in the system.",
+            "nullable": true
           }
         },
         "additionalProperties": false,
@@ -6341,10 +10305,87 @@
             "type": "string",
             "description": "References the user by the external id.",
             "nullable": true
+          },
+          "email": {
+            "maxLength": 250,
+            "minLength": 0,
+            "type": "string",
+            "description": "Email address of the user, when available.",
+            "nullable": true
           }
         },
         "additionalProperties": false,
         "description": "Reference to a user."
+      },
+      "UserRoleExportEntry": {
+        "type": "object",
+        "properties": {
+          "roleID": {
+            "type": "integer",
+            "description": "Internal ID of the role.",
+            "format": "int32"
+          },
+          "roleCode": {
+            "type": "string",
+            "description": "External identifier of the role.",
+            "nullable": true
+          },
+          "roleName": {
+            "type": "string",
+            "description": "Name of the role.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "A single role assignment for a user."
+      },
+      "UserRoleExportOutput": {
+        "type": "object",
+        "properties": {
+          "user": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ImportApiUserIdentity"
+              }
+            ],
+            "description": "Identity of the user.",
+            "nullable": true
+          },
+          "roles": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UserRoleExportEntry"
+            },
+            "description": "Roles assigned to this user.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "A user with their assigned roles for the Import API GET endpoint."
+      },
+      "UserSkillsOutput": {
+        "type": "object",
+        "properties": {
+          "user": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/UserImportRow"
+              }
+            ],
+            "description": "The user information.",
+            "nullable": true
+          },
+          "skills": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AssessedSkillOutput"
+            },
+            "description": "The list of assessed skills for this user.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "User with their assessed skills, for the Import API."
       },
       "UserWorkingProfileInput": {
         "type": "object",
@@ -6591,6 +10632,10 @@
               }
             ],
             "nullable": true
+          },
+          "lastEditDate": {
+            "type": "string",
+            "format": "date-time"
           }
         },
         "additionalProperties": false

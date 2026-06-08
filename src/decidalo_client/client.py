@@ -36,12 +36,14 @@ from decidalo_client.models import (
     RoleImportInput,
     TeamBatchInput,
     TeamImportAcceptedResponse,
+    TeamImportResults,
     TeamInput,
     TeamOverview,
     UserBatchImportMetadata,
     UserBatchInput,
     UserImportAcceptedResponse,
     UserImportBatchResult,
+    UserImportResults,
     UserOverview,
     UserWorkingProfileInput,
 )
@@ -130,11 +132,20 @@ class DecidaloClient:  # pylint: disable=too-many-public-methods
             "Accept": "application/json",
         }
 
-    async def _handle_response(self, response: aiohttp.ClientResponse) -> str:
+    async def _handle_response(
+        self,
+        response: aiohttp.ClientResponse,
+        allowed_error_statuses: set[int] | None = None,
+    ) -> str:
         """Handle the API response and raise appropriate exceptions.
 
         Args:
             response: The aiohttp response object.
+            allowed_error_statuses: HTTP status codes >= 400 that should be
+                treated as a valid response and returned to the caller instead
+                of raising. Used for endpoints that carry a structured body on
+                error (e.g. ImportSync returns UserImportResults with HTTP 500).
+                Authentication errors (401/403) are always raised.
 
         Returns:
             The response text if successful.
@@ -150,6 +161,9 @@ class DecidaloClient:  # pylint: disable=too-many-public-methods
                 status_code=response.status,
                 message=text or "Authentication failed",
             )
+
+        if allowed_error_statuses and response.status in allowed_error_statuses:
+            return text
 
         if response.status >= 400:
             raise DecidaloAPIError(
@@ -179,12 +193,19 @@ class DecidaloClient:  # pylint: disable=too-many-public-methods
         async with self._session.get(url, headers=self._get_headers(), params=params) as response:
             return await self._handle_response(response)
 
-    async def _post(self, path: str, data: str | None = None) -> str:
+    async def _post(
+        self,
+        path: str,
+        data: str | None = None,
+        allowed_error_statuses: set[int] | None = None,
+    ) -> str:
         """Make a POST request to the API.
 
         Args:
             path: The API path (will be appended to base_url).
             data: Optional JSON string to send as the request body.
+            allowed_error_statuses: HTTP status codes >= 400 that should be
+                returned to the caller instead of raising (see _handle_response).
 
         Returns:
             The response text.
@@ -197,7 +218,7 @@ class DecidaloClient:  # pylint: disable=too-many-public-methods
 
         url = f"{self._base_url}{path}"
         async with self._session.post(url, headers=self._get_headers(), data=data) as response:
-            return await self._handle_response(response)
+            return await self._handle_response(response, allowed_error_statuses)
 
     async def _head(self, path: str) -> int:
         """Make a HEAD request to the API.
@@ -269,6 +290,32 @@ class DecidaloClient:  # pylint: disable=too-many-public-methods
         adapter = TypeAdapter(list[UserOverview])
         return adapter.validate_json(response_text)
 
+    async def import_users_sync(
+        self,
+        batch: UserBatchInput,
+    ) -> UserImportResults:
+        """Import users synchronously.
+
+        The import is processed synchronously. The response contains the result
+        for each user in the batch, including any errors.
+
+        Args:
+            batch: The batch of users to import.
+
+        Returns:
+            A UserImportResults with the batch status and per-item results.
+
+        Note:
+            Per the OpenAPI spec, ImportSync returns HTTP 500 with a structured
+            UserImportResults body when one or more items fail (others may still
+            have succeeded). This status is therefore treated as a valid response
+            so callers can inspect the per-item results instead of getting a
+            generic DecidaloAPIError.
+        """
+        data = batch.model_dump_json(by_alias=True, exclude_none=True)
+        response_text = await self._post("/importapi/User/ImportSync", data, allowed_error_statuses={500})
+        return UserImportResults.model_validate_json(response_text)
+
     async def import_users_async(
         self,
         batch: UserBatchInput,
@@ -286,7 +333,7 @@ class DecidaloClient:  # pylint: disable=too-many-public-methods
             A UserImportAcceptedResponse with the batch ID.
         """
         data = batch.model_dump_json(by_alias=True, exclude_none=True)
-        response_text = await self._post("/importapi/User/ImportSync", data)
+        response_text = await self._post("/importapi/User/ImportAsync", data)
         return UserImportAcceptedResponse.model_validate_json(response_text)
 
     async def get_user_import_status(
@@ -366,23 +413,29 @@ class DecidaloClient:  # pylint: disable=too-many-public-methods
     async def import_teams_sync(
         self,
         teams: list[TeamInput],
-    ) -> list[TeamOverview]:
+    ) -> TeamImportResults:
         """Import teams synchronously.
 
-        The import is processed synchronously. This method waits for the import
-        to complete before returning. Any callback URL in the batch is ignored.
+        The import is processed synchronously. The response contains the result
+        for each team in the batch, including any errors.
 
         Args:
             teams: The list of teams to import.
 
         Returns:
-            A list of TeamOverview objects representing the imported teams.
+            A TeamImportResults with the batch status and per-item results.
+
+        Note:
+            Per the OpenAPI spec, ImportSync returns HTTP 500 with a structured
+            TeamImportResults body when one or more items fail (others may still
+            have succeeded). This status is therefore treated as a valid response
+            so callers can inspect the per-item results instead of getting a
+            generic DecidaloAPIError.
         """
         batch = TeamBatchInput(teams=teams)
         data = batch.model_dump_json(by_alias=True, exclude_none=True)
-        response_text = await self._post("/importapi/Team/ImportSync", data)
-        adapter = TypeAdapter(list[TeamOverview])
-        return adapter.validate_json(response_text)
+        response_text = await self._post("/importapi/Team/ImportSync", data, allowed_error_statuses={500})
+        return TeamImportResults.model_validate_json(response_text)
 
     async def get_team_import_status(
         self,
