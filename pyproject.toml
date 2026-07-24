@@ -30,7 +30,7 @@ Homepage = "https://github.com/Hochfrequenz/decidalo_client.py"
 
 [dependency-groups]
 tests = [
-    "pytest==9.0.3",
+    "pytest==9.1.1",
     "pytest-asyncio==1.4.0",
     "aioresponses==0.7.8",
 ]
