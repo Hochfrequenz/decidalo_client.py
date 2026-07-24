@@ -55,7 +55,7 @@ formatting = [
     "isort==8.0.1",
 ]
 codegen = [
-    "datamodel-code-generator==0.64.0",
+    "datamodel-code-generator==0.70.0",
     { include-group = "formatting" },
 ]
 dev = [
