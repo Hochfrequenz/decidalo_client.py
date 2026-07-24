@@ -39,7 +39,7 @@ linting = [
     { include-group = "tests" },
 ]
 type_check = [
-    "mypy==2.1.0",
+    "mypy==2.3.0",
     "mypy[pydantic]",
     { include-group = "tests" },
 ]
