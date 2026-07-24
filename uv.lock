@@ -390,7 +390,7 @@ wheels = [
 
 [[package]]
 name = "datamodel-code-generator"
-version = "0.64.0"
+version = "0.70.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "argcomplete" },
@@ -402,9 +402,9 @@ dependencies = [
     { name = "pydantic" },
     { name = "pyyaml" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/9c/d2/86c94a2836ed42231653a7ddaefa0a5bc23418167a876bba7376c96b3a35/datamodel_code_generator-0.64.0.tar.gz", hash = "sha256:9c592900a00b20e416494273c22435f5a9aef6ea8c7b9190747522a60497a1cb", size = 1316440, upload-time = "2026-06-14T17:24:50.528Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/66/da/3f34411e9ef4d99fb774a506fabdf2c99f229612545fa213a9fab3d89661/datamodel_code_generator-0.70.0.tar.gz", hash = "sha256:eac611f052ede1dca4b37325d070d631a988a5936c69626a3de54e28472954c6", size = 1635415, upload-time = "2026-07-23T03:45:26.397Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/23/94/71338e2f0146ac10747a5537b3a1e45256e66b7c229869eb0ee787111b41/datamodel_code_generator-0.64.0-py3-none-any.whl", hash = "sha256:b7cd8bd41a312aa997aec6150670bad781847c5b674f17e4d70e78208a0fb990", size = 374698, upload-time = "2026-06-14T17:24:48.809Z" },
+    { url = "https://files.pythonhosted.org/packages/01/ae/6a7da5c5b8e0e7667233e3ba0dd400131aa1cb688a1714a15fa989e36f59/datamodel_code_generator-0.70.0-py3-none-any.whl", hash = "sha256:4c3357328cf9998e9b1a6d4ad7ae4296f008563f9298aaa4e325b07418fafa40", size = 440877, upload-time = "2026-07-23T03:45:24.39Z" },
 ]
 
 [[package]]
@@ -473,7 +473,7 @@ requires-dist = [
 [package.metadata.requires-dev]
 codegen = [
     { name = "black", specifier = "==26.5.1" },
-    { name = "datamodel-code-generator", specifier = "==0.64.0" },
+    { name = "datamodel-code-generator", specifier = "==0.70.0" },
     { name = "isort", specifier = "==8.0.1" },
 ]
 coverage = [
@@ -487,7 +487,7 @@ dev = [
     { name = "black", specifier = "==26.5.1" },
     { name = "codespell", specifier = "==2.4.3" },
     { name = "coverage", specifier = "==7.14.1" },
-    { name = "datamodel-code-generator", specifier = "==0.64.0" },
+    { name = "datamodel-code-generator", specifier = "==0.70.0" },
     { name = "isort", specifier = "==8.0.1" },
     { name = "mypy", specifier = "==2.3.0" },
     { name = "mypy", extras = ["pydantic"] },
