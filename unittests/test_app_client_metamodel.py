@@ -92,6 +92,8 @@ class TestHttpHelper:
             await helper.get("/api/test")
 
 
+from datetime import UTC
+
 from decidalo_app_client import DecidaloAppClient
 
 
@@ -130,14 +132,14 @@ class TestDecidaloAppClientContextManager:
         assert client._static_token == "static-token"
 
     async def test_token_response_enables_refresh(self) -> None:
-        from datetime import datetime, timezone
+        from datetime import datetime
 
         from decidalo_app_client.auth import TokenResponse
 
         tr = TokenResponse(
             access_token="abc",
             refresh_token="refresh-xyz",
-            expires_at=datetime(2030, 1, 1, tzinfo=timezone.utc),
+            expires_at=datetime(2030, 1, 1, tzinfo=UTC),
         )
         client = DecidaloAppClient(token=tr)
         assert client._token_response is tr
@@ -147,7 +149,7 @@ class TestDecidaloAppClientContextManager:
 class TestDecidaloAppClientAutoRefresh:
     async def test_expired_token_triggers_refresh(self, mock_aiohttp: aioresponses) -> None:
         """Auto-refresh is called before a request when the token is expired."""
-        from datetime import datetime, timezone
+        from datetime import datetime
         from unittest.mock import AsyncMock, patch
 
         from decidalo_app_client.auth import DecidaloAuth, TokenResponse
@@ -155,14 +157,14 @@ class TestDecidaloAppClientAutoRefresh:
         expired = TokenResponse(
             access_token="old-token",
             refresh_token="valid-refresh",
-            expires_at=datetime(2020, 1, 1, tzinfo=timezone.utc),  # already expired
+            expires_at=datetime(2020, 1, 1, tzinfo=UTC),  # already expired
         )
         fresh = TokenResponse(
             access_token="new-token",
             refresh_token="new-refresh",
-            expires_at=datetime(2030, 1, 1, tzinfo=timezone.utc),
+            expires_at=datetime(2030, 1, 1, tzinfo=UTC),
         )
-        mock_aiohttp.get(f"https://api.decidalo.app/api/Skill/SkillLevels", body="[]", status=200)
+        mock_aiohttp.get("https://api.decidalo.app/api/Skill/SkillLevels", body="[]", status=200)
 
         with patch.object(DecidaloAuth, "refresh", new=AsyncMock(return_value=fresh)) as mock_refresh:
             async with DecidaloAppClient(token=expired) as client:
@@ -175,7 +177,7 @@ class TestDecidaloAppClientAutoRefresh:
 
         from decidalo_app_client.auth import DecidaloAuth
 
-        mock_aiohttp.get(f"https://api.decidalo.app/api/Skill/SkillLevels", body="[]", status=200)
+        mock_aiohttp.get("https://api.decidalo.app/api/Skill/SkillLevels", body="[]", status=200)
 
         with patch.object(DecidaloAuth, "refresh", new=AsyncMock()) as mock_refresh:
             async with DecidaloAppClient(token="static-forever") as client:
@@ -184,7 +186,7 @@ class TestDecidaloAppClientAutoRefresh:
 
     async def test_expired_token_without_refresh_token_raises(self) -> None:
         """If token is expired and no refresh_token is available, AppAuthError is raised."""
-        from datetime import datetime, timezone
+        from datetime import datetime
 
         from decidalo_app_client.auth import TokenResponse
         from decidalo_app_client.exceptions import AppAuthError
@@ -192,7 +194,7 @@ class TestDecidaloAppClientAutoRefresh:
         expired = TokenResponse(
             access_token="old-token",
             refresh_token=None,  # no refresh token
-            expires_at=datetime(2020, 1, 1, tzinfo=timezone.utc),
+            expires_at=datetime(2020, 1, 1, tzinfo=UTC),
         )
         async with DecidaloAppClient(token=expired) as client:
             with pytest.raises(AppAuthError, match="refresh_token"):

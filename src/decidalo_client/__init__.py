@@ -10,8 +10,8 @@ from decidalo_client.exceptions import (
 )
 
 __all__ = [
-    "DecidaloClient",
     "DecidaloAPIError",
     "DecidaloAuthenticationError",
+    "DecidaloClient",
     "DecidaloClientError",
 ]
