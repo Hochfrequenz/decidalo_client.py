@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import asyncio
 import time
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import aiohttp
 from pydantic import BaseModel
@@ -27,7 +27,7 @@ class TokenResponse(BaseModel):
 
     def is_expired(self, buffer_seconds: int = 60) -> bool:
         """Return True if the token expires within buffer_seconds."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         return (self.expires_at - now).total_seconds() < buffer_seconds
 
 
@@ -89,7 +89,7 @@ class DecidaloAuth:
                     result = await token_resp.json(content_type=None)
 
                 if "access_token" in result:
-                    expires_at = datetime.now(timezone.utc) + timedelta(seconds=int(result["expires_in"]))
+                    expires_at = datetime.now(UTC) + timedelta(seconds=int(result["expires_in"]))
                     return TokenResponse(
                         access_token=result["access_token"],
                         refresh_token=result.get("refresh_token"),
@@ -127,7 +127,7 @@ class DecidaloAuth:
 
         if "access_token" not in result:
             raise AppAuthError(f"Token refresh failed: {result.get('error_description', result)}")
-        expires_at = datetime.now(timezone.utc) + timedelta(seconds=int(result["expires_in"]))
+        expires_at = datetime.now(UTC) + timedelta(seconds=int(result["expires_in"]))
         return TokenResponse(
             access_token=result["access_token"],
             refresh_token=result.get("refresh_token", refresh_token),
