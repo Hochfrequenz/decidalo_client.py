@@ -8,6 +8,7 @@ import pytest
 from aioresponses import aioresponses
 
 from decidalo_client import DecidaloClient
+from decidalo_client import models as dm
 from decidalo_client.exceptions import DecidaloAPIError, DecidaloAuthenticationError
 from decidalo_client.models import (
     AbsenceImportItem,
@@ -1245,3 +1246,628 @@ class TestImportWorkingTimePattern:
         assert result.userID == 10
         assert result.userWorkingTimePatternResults is not None
         assert len(result.userWorkingTimePatternResults) == 1
+
+
+# =============================================================================
+# New API endpoint tests (import API spec sync)
+# =============================================================================
+
+
+class TestActivitiesEndpoints:
+    """Tests for the activity type and general activity methods."""
+
+    async def test_get_activity_types(self, mock_aiohttp: aioresponses) -> None:
+        """Test get_activity_types hits the correct endpoint and parses the response."""
+        mock_aiohttp.get(
+            f"{BASE_URL}/importapi/ActivityType",
+            payload=[{"activityTypeID": 42}],
+            status=200,
+        )
+
+        async with DecidaloClient(api_key=API_KEY, base_url=BASE_URL) as client:
+            result = await client.get_activity_types()
+
+        assert len(result) == 1
+        assert isinstance(result[0], dm.ActivityTypeResult)
+        assert result[0].activityTypeID == 42
+
+    async def test_import_activity_type(self, mock_aiohttp: aioresponses) -> None:
+        """Test import_activity_type hits the correct endpoint and parses the response."""
+        mock_aiohttp.post(
+            f"{BASE_URL}/importapi/ActivityType",
+            payload={"activityTypeID": 42},
+            status=200,
+        )
+
+        async with DecidaloClient(api_key=API_KEY, base_url=BASE_URL) as client:
+            result = await client.import_activity_type(dm.ActivityTypeImportItem())
+
+        assert isinstance(result, dm.ActivityTypeResult)
+        assert result.activityTypeID == 42
+
+    async def test_get_general_activities(self, mock_aiohttp: aioresponses) -> None:
+        """Test get_general_activities hits the correct endpoint and parses the response."""
+        mock_aiohttp.get(
+            f"{BASE_URL}/importapi/GeneralActivity",
+            payload=[{"generalActivityID": 42}],
+            status=200,
+        )
+
+        async with DecidaloClient(api_key=API_KEY, base_url=BASE_URL) as client:
+            result = await client.get_general_activities()
+
+        assert len(result) == 1
+        assert isinstance(result[0], dm.GeneralActivityResult)
+        assert result[0].generalActivityID == 42
+
+    async def test_import_general_activity(self, mock_aiohttp: aioresponses) -> None:
+        """Test import_general_activity hits the correct endpoint and parses the response."""
+        mock_aiohttp.post(
+            f"{BASE_URL}/importapi/GeneralActivity",
+            payload={"generalActivityID": 42},
+            status=200,
+        )
+
+        async with DecidaloClient(api_key=API_KEY, base_url=BASE_URL) as client:
+            result = await client.import_general_activity(dm.GeneralActivityImportItem())
+
+        assert isinstance(result, dm.GeneralActivityResult)
+        assert result.generalActivityID == 42
+
+
+class TestOrderEndpoints:
+    """Tests for the order methods."""
+
+    async def test_get_orders(self, mock_aiohttp: aioresponses) -> None:
+        """Test get_orders hits the correct endpoint and parses the response."""
+        mock_aiohttp.get(
+            f"{BASE_URL}/importapi/Order",
+            payload={},
+            status=200,
+        )
+
+        async with DecidaloClient(api_key=API_KEY, base_url=BASE_URL) as client:
+            result = await client.get_orders()
+
+        assert isinstance(result, dm.OrderImportOutputBatch)
+
+    async def test_get_order(self, mock_aiohttp: aioresponses) -> None:
+        """Test get_order hits the correct endpoint and parses the response."""
+        mock_aiohttp.get(
+            f"{BASE_URL}/importapi/Order/Single",
+            payload={"orderID": 42},
+            status=200,
+        )
+
+        async with DecidaloClient(api_key=API_KEY, base_url=BASE_URL) as client:
+            result = await client.get_order()
+
+        assert isinstance(result, dm.OrderImportOutput)
+        assert result.orderID == 42
+
+    async def test_import_orders(self, mock_aiohttp: aioresponses) -> None:
+        """Test import_orders hits the correct endpoint and parses the response."""
+        mock_aiohttp.post(
+            f"{BASE_URL}/importapi/Order",
+            payload={},
+            status=200,
+        )
+
+        async with DecidaloClient(api_key=API_KEY, base_url=BASE_URL) as client:
+            result = await client.import_orders(dm.OrderImportBatch())
+
+        assert isinstance(result, dm.OrderImportBatchResult)
+
+    async def test_get_order_custom_properties(self, mock_aiohttp: aioresponses) -> None:
+        """Test get_order_custom_properties hits the correct endpoint and parses the response."""
+        mock_aiohttp.get(
+            f"{BASE_URL}/importapi/Order/CustomProperties",
+            payload=[{"maxLength": 42}],
+            status=200,
+        )
+
+        async with DecidaloClient(api_key=API_KEY, base_url=BASE_URL) as client:
+            result = await client.get_order_custom_properties()
+
+        assert len(result) == 1
+        assert isinstance(result[0], dm.CustomProperty)
+        assert result[0].maxLength == 42
+
+    async def test_get_order_position(self, mock_aiohttp: aioresponses) -> None:
+        """Test get_order_position hits the correct endpoint and parses the response."""
+        mock_aiohttp.get(
+            f"{BASE_URL}/importapi/Order/Position/Single",
+            payload={"orderID": 42},
+            status=200,
+        )
+
+        async with DecidaloClient(api_key=API_KEY, base_url=BASE_URL) as client:
+            result = await client.get_order_position()
+
+        assert isinstance(result, dm.OrderPositionImportOutput)
+        assert result.orderID == 42
+
+    async def test_import_order_positions(self, mock_aiohttp: aioresponses) -> None:
+        """Test import_order_positions hits the correct endpoint and parses the response."""
+        mock_aiohttp.post(
+            f"{BASE_URL}/importapi/Order/Position",
+            payload={},
+            status=200,
+        )
+
+        async with DecidaloClient(api_key=API_KEY, base_url=BASE_URL) as client:
+            result = await client.import_order_positions(dm.OrderPositionImportBatch())
+
+        assert isinstance(result, dm.OrderPositionImportBatchResult)
+
+    async def test_get_order_position_recording_targets(self, mock_aiohttp: aioresponses) -> None:
+        """Test get_order_position_recording_targets hits the correct endpoint and parses the response."""
+        mock_aiohttp.get(
+            f"{BASE_URL}/importapi/Order/Position/RecordingTargets",
+            payload=[{"orderPositionID": 42}],
+            status=200,
+        )
+
+        async with DecidaloClient(api_key=API_KEY, base_url=BASE_URL) as client:
+            result = await client.get_order_position_recording_targets()
+
+        assert len(result) == 1
+        assert isinstance(result[0], dm.OrderPositionRecordingTargetOutput)
+        assert result[0].orderPositionID == 42
+
+    async def test_import_order_position_recording_targets(self, mock_aiohttp: aioresponses) -> None:
+        """Test import_order_position_recording_targets hits the correct endpoint and parses the response."""
+        mock_aiohttp.post(
+            f"{BASE_URL}/importapi/Order/Position/RecordingTargets",
+            payload={},
+            status=200,
+        )
+
+        async with DecidaloClient(api_key=API_KEY, base_url=BASE_URL) as client:
+            result = await client.import_order_position_recording_targets(dm.OrderPositionRecordingTargetImportBatch())
+
+        assert isinstance(result, dm.OrderPositionRecordingTargetImportBatchResult)
+
+    async def test_get_order_position_work_packages(self, mock_aiohttp: aioresponses) -> None:
+        """Test get_order_position_work_packages hits the correct endpoint and parses the response."""
+        mock_aiohttp.get(
+            f"{BASE_URL}/importapi/Order/Position/WorkPackages",
+            payload=[{"orderPositionID": 42}],
+            status=200,
+        )
+
+        async with DecidaloClient(api_key=API_KEY, base_url=BASE_URL) as client:
+            result = await client.get_order_position_work_packages()
+
+        assert len(result) == 1
+        assert isinstance(result[0], dm.OrderPositionWorkPackageOutput)
+        assert result[0].orderPositionID == 42
+
+    async def test_import_order_position_work_packages(self, mock_aiohttp: aioresponses) -> None:
+        """Test import_order_position_work_packages hits the correct endpoint and parses the response."""
+        mock_aiohttp.post(
+            f"{BASE_URL}/importapi/Order/Position/WorkPackages",
+            payload={},
+            status=200,
+        )
+
+        async with DecidaloClient(api_key=API_KEY, base_url=BASE_URL) as client:
+            result = await client.import_order_position_work_packages(dm.OrderPositionWorkPackageImportBatch())
+
+        assert isinstance(result, dm.OrderPositionWorkPackageImportBatchResult)
+
+
+class TestWorkPackageEndpoints:
+    """Tests for the work package methods."""
+
+    async def test_get_work_packages(self, mock_aiohttp: aioresponses) -> None:
+        """Test get_work_packages hits the correct endpoint and parses the response."""
+        mock_aiohttp.get(
+            f"{BASE_URL}/importapi/WorkPackage",
+            payload=[
+                {
+                    "creationDate": "2024-01-01T00:00:00Z",
+                    "identifier": {"workPackageID": 1},
+                    "lastEditDate": "2024-01-01T00:00:00Z",
+                    "project": {"projectID": 1},
+                    "properties": {"name": "x", "status": "Planned", "timeRecordingAllowed": True},
+                }
+            ],
+            status=200,
+        )
+
+        async with DecidaloClient(api_key=API_KEY, base_url=BASE_URL) as client:
+            result = await client.get_work_packages()
+
+        assert len(result) == 1
+        assert isinstance(result[0], dm.WorkPackageOutput)
+
+    async def test_get_work_package(self, mock_aiohttp: aioresponses) -> None:
+        """Test get_work_package hits the correct endpoint and parses the response."""
+        mock_aiohttp.get(
+            f"{BASE_URL}/importapi/WorkPackage/1",
+            payload={
+                "creationDate": "2024-01-01T00:00:00Z",
+                "identifier": {"workPackageID": 1},
+                "lastEditDate": "2024-01-01T00:00:00Z",
+                "project": {"projectID": 1},
+                "properties": {"name": "x", "status": "Planned", "timeRecordingAllowed": True},
+            },
+            status=200,
+        )
+
+        async with DecidaloClient(api_key=API_KEY, base_url=BASE_URL) as client:
+            result = await client.get_work_package(1)
+
+        assert isinstance(result, dm.WorkPackageOutput)
+
+    async def test_import_work_package(self, mock_aiohttp: aioresponses) -> None:
+        """Test import_work_package hits the correct endpoint and parses the response."""
+        mock_aiohttp.post(
+            f"{BASE_URL}/importapi/WorkPackage",
+            payload={"workPackageID": 42},
+            status=200,
+        )
+
+        async with DecidaloClient(api_key=API_KEY, base_url=BASE_URL) as client:
+            result = await client.import_work_package(dm.WorkPackageInput())
+
+        assert isinstance(result, dm.ImportWorkPackageCommandResult)
+        assert result.workPackageID == 42
+
+    async def test_get_work_package_candidates(self, mock_aiohttp: aioresponses) -> None:
+        """Test get_work_package_candidates hits the correct endpoint and parses the response."""
+        mock_aiohttp.get(
+            f"{BASE_URL}/importapi/WorkPackage/Candidates",
+            payload={},
+            status=200,
+        )
+
+        async with DecidaloClient(api_key=API_KEY, base_url=BASE_URL) as client:
+            result = await client.get_work_package_candidates()
+
+        assert isinstance(result, dm.WorkPackageCandidateBatchInput)
+
+    async def test_import_work_package_candidates(self, mock_aiohttp: aioresponses) -> None:
+        """Test import_work_package_candidates hits the correct endpoint and parses the response."""
+        mock_aiohttp.post(
+            f"{BASE_URL}/importapi/WorkPackage/Candidates",
+            payload={},
+            status=200,
+        )
+
+        async with DecidaloClient(api_key=API_KEY, base_url=BASE_URL) as client:
+            result = await client.import_work_package_candidates(dm.WorkPackageCandidateBatchInput())
+
+        assert isinstance(result, dm.WorkPackageCandidateBatchResult)
+
+    async def test_get_work_package_order_positions(self, mock_aiohttp: aioresponses) -> None:
+        """Test get_work_package_order_positions hits the correct endpoint and parses the response."""
+        mock_aiohttp.get(
+            f"{BASE_URL}/importapi/WorkPackage/OrderPositions",
+            payload=[{"workPackageID": 42}],
+            status=200,
+        )
+
+        async with DecidaloClient(api_key=API_KEY, base_url=BASE_URL) as client:
+            result = await client.get_work_package_order_positions()
+
+        assert len(result) == 1
+        assert isinstance(result[0], dm.WorkPackageOrderPositionOutput)
+        assert result[0].workPackageID == 42
+
+    async def test_import_work_package_order_positions(self, mock_aiohttp: aioresponses) -> None:
+        """Test import_work_package_order_positions hits the correct endpoint and parses the response."""
+        mock_aiohttp.post(
+            f"{BASE_URL}/importapi/WorkPackage/OrderPositions",
+            payload={},
+            status=200,
+        )
+
+        async with DecidaloClient(api_key=API_KEY, base_url=BASE_URL) as client:
+            result = await client.import_work_package_order_positions(dm.WorkPackageOrderPositionImportBatch())
+
+        assert isinstance(result, dm.WorkPackageOrderPositionImportBatchResult)
+
+    async def test_get_work_package_recording_targets(self, mock_aiohttp: aioresponses) -> None:
+        """Test get_work_package_recording_targets hits the correct endpoint and parses the response."""
+        mock_aiohttp.get(
+            f"{BASE_URL}/importapi/WorkPackage/RecordingTargets",
+            payload=[{"workPackageID": 42}],
+            status=200,
+        )
+
+        async with DecidaloClient(api_key=API_KEY, base_url=BASE_URL) as client:
+            result = await client.get_work_package_recording_targets()
+
+        assert len(result) == 1
+        assert isinstance(result[0], dm.WorkPackageRecordingTargetOutput)
+        assert result[0].workPackageID == 42
+
+    async def test_import_work_package_recording_targets(self, mock_aiohttp: aioresponses) -> None:
+        """Test import_work_package_recording_targets hits the correct endpoint and parses the response."""
+        mock_aiohttp.post(
+            f"{BASE_URL}/importapi/WorkPackage/RecordingTargets",
+            payload={},
+            status=200,
+        )
+
+        async with DecidaloClient(api_key=API_KEY, base_url=BASE_URL) as client:
+            result = await client.import_work_package_recording_targets(dm.WorkPackageRecordingTargetImportBatch())
+
+        assert isinstance(result, dm.WorkPackageRecordingTargetImportBatchResult)
+
+
+class TestTimeRecordingEndpoints:
+    """Tests for the time recording methods."""
+
+    async def test_get_recording_targets(self, mock_aiohttp: aioresponses) -> None:
+        """Test get_recording_targets hits the correct endpoint and parses the response."""
+        mock_aiohttp.get(
+            f"{BASE_URL}/importapi/TimeRecording/RecordingTargets",
+            payload=[{"recordingTargetID": 42}],
+            status=200,
+        )
+
+        async with DecidaloClient(api_key=API_KEY, base_url=BASE_URL) as client:
+            result = await client.get_recording_targets()
+
+        assert len(result) == 1
+        assert isinstance(result[0], dm.RecordingTargetOutput)
+        assert result[0].recordingTargetID == 42
+
+    async def test_get_user_time_sheet(self, mock_aiohttp: aioresponses) -> None:
+        """Test get_user_time_sheet hits the correct endpoint and parses the response."""
+        mock_aiohttp.get(
+            f"{BASE_URL}/importapi/TimeRecording/UserTimeSheet",
+            payload={},
+            status=200,
+        )
+
+        async with DecidaloClient(api_key=API_KEY, base_url=BASE_URL) as client:
+            result = await client.get_user_time_sheet()
+
+        assert isinstance(result, dm.TimeRecordingImportOutputBatch)
+
+    async def test_import_user_time_sheet(self, mock_aiohttp: aioresponses) -> None:
+        """Test import_user_time_sheet hits the correct endpoint and parses the response."""
+        mock_aiohttp.post(
+            f"{BASE_URL}/importapi/TimeRecording/UserTimeSheet",
+            payload={},
+            status=200,
+        )
+
+        async with DecidaloClient(api_key=API_KEY, base_url=BASE_URL) as client:
+            result = await client.import_user_time_sheet(dm.TimeRecordingImportBatch())
+
+        assert isinstance(result, dm.TimeRecordingImportResult)
+
+
+class TestProfileExportEndpoints:
+    """Tests for the profile export methods."""
+
+    async def test_get_profile_industries(self, mock_aiohttp: aioresponses) -> None:
+        """Test get_profile_industries hits the correct endpoint and parses the response."""
+        mock_aiohttp.get(
+            f"{BASE_URL}/importapi/Profile/Industries",
+            payload=[{}],
+            status=200,
+        )
+
+        async with DecidaloClient(api_key=API_KEY, base_url=BASE_URL) as client:
+            result = await client.get_profile_industries()
+
+        assert len(result) == 1
+        assert isinstance(result[0], dm.UserIndustryExportOutput)
+
+    async def test_get_profile_languages(self, mock_aiohttp: aioresponses) -> None:
+        """Test get_profile_languages hits the correct endpoint and parses the response."""
+        mock_aiohttp.get(
+            f"{BASE_URL}/importapi/Profile/Languages",
+            payload=[{}],
+            status=200,
+        )
+
+        async with DecidaloClient(api_key=API_KEY, base_url=BASE_URL) as client:
+            result = await client.get_profile_languages()
+
+        assert len(result) == 1
+        assert isinstance(result[0], dm.UserLanguageExportOutput)
+
+    async def test_get_profile_professional_experience(self, mock_aiohttp: aioresponses) -> None:
+        """Test get_profile_professional_experience hits the correct endpoint and parses the response."""
+        mock_aiohttp.get(
+            f"{BASE_URL}/importapi/Profile/ProfessionalExperience",
+            payload=[{}],
+            status=200,
+        )
+
+        async with DecidaloClient(api_key=API_KEY, base_url=BASE_URL) as client:
+            result = await client.get_profile_professional_experience()
+
+        assert len(result) == 1
+        assert isinstance(result[0], dm.UserProfessionalExperienceExportOutput)
+
+    async def test_get_profile_publications(self, mock_aiohttp: aioresponses) -> None:
+        """Test get_profile_publications hits the correct endpoint and parses the response."""
+        mock_aiohttp.get(
+            f"{BASE_URL}/importapi/Profile/Publications",
+            payload=[{}],
+            status=200,
+        )
+
+        async with DecidaloClient(api_key=API_KEY, base_url=BASE_URL) as client:
+            result = await client.get_profile_publications()
+
+        assert len(result) == 1
+        assert isinstance(result[0], dm.UserPublicationExportOutput)
+
+    async def test_get_profile_testimonials(self, mock_aiohttp: aioresponses) -> None:
+        """Test get_profile_testimonials hits the correct endpoint and parses the response."""
+        mock_aiohttp.get(
+            f"{BASE_URL}/importapi/Profile/Testimonials",
+            payload=[{}],
+            status=200,
+        )
+
+        async with DecidaloClient(api_key=API_KEY, base_url=BASE_URL) as client:
+            result = await client.get_profile_testimonials()
+
+        assert len(result) == 1
+        assert isinstance(result[0], dm.UserTestimonialExportOutput)
+
+    async def test_get_profile_trainings(self, mock_aiohttp: aioresponses) -> None:
+        """Test get_profile_trainings hits the correct endpoint and parses the response."""
+        mock_aiohttp.get(
+            f"{BASE_URL}/importapi/Profile/Trainings",
+            payload=[{}],
+            status=200,
+        )
+
+        async with DecidaloClient(api_key=API_KEY, base_url=BASE_URL) as client:
+            result = await client.get_profile_trainings()
+
+        assert len(result) == 1
+        assert isinstance(result[0], dm.UserTrainingExportOutput)
+
+    async def test_get_profile_user_skills(self, mock_aiohttp: aioresponses) -> None:
+        """Test get_profile_user_skills hits the correct endpoint and parses the response."""
+        mock_aiohttp.get(
+            f"{BASE_URL}/importapi/Profile/UserSkills",
+            payload=[{}],
+            status=200,
+        )
+
+        async with DecidaloClient(api_key=API_KEY, base_url=BASE_URL) as client:
+            result = await client.get_profile_user_skills()
+
+        assert len(result) == 1
+        assert isinstance(result[0], dm.UserSkillsOutput)
+
+    async def test_import_profile_user_skills(self, mock_aiohttp: aioresponses) -> None:
+        """Test import_profile_user_skills hits the correct endpoint and parses the response."""
+        mock_aiohttp.post(
+            f"{BASE_URL}/importapi/Profile/UserSkills",
+            payload=[{"userID": 42}],
+            status=200,
+        )
+
+        async with DecidaloClient(api_key=API_KEY, base_url=BASE_URL) as client:
+            result = await client.import_profile_user_skills([dm.UserSkillsImportInput()])
+
+        assert len(result) == 1
+        assert isinstance(result[0], dm.UserSkillsImportResult)
+        assert result[0].userID == 42
+
+
+class TestProjectExtendedEndpoints:
+    """Tests for the project (extended) methods."""
+
+    async def test_get_project_contacts(self, mock_aiohttp: aioresponses) -> None:
+        """Test get_project_contacts hits the correct endpoint and parses the response."""
+        mock_aiohttp.get(
+            f"{BASE_URL}/importapi/Project/Contacts",
+            payload=[{}],
+            status=200,
+        )
+
+        async with DecidaloClient(api_key=API_KEY, base_url=BASE_URL) as client:
+            result = await client.get_project_contacts()
+
+        assert len(result) == 1
+        assert isinstance(result[0], dm.ProjectContactsExportOutput)
+
+    async def test_get_project_team_members(self, mock_aiohttp: aioresponses) -> None:
+        """Test get_project_team_members hits the correct endpoint and parses the response."""
+        mock_aiohttp.get(
+            f"{BASE_URL}/importapi/Project/TeamMembers",
+            payload=[{}],
+            status=200,
+        )
+
+        async with DecidaloClient(api_key=API_KEY, base_url=BASE_URL) as client:
+            result = await client.get_project_team_members()
+
+        assert len(result) == 1
+        assert isinstance(result[0], dm.ProjectTeamMembersExportOutput)
+
+    async def test_get_project_recording_targets(self, mock_aiohttp: aioresponses) -> None:
+        """Test get_project_recording_targets hits the correct endpoint and parses the response."""
+        mock_aiohttp.get(
+            f"{BASE_URL}/importapi/Project/RecordingTargets",
+            payload=[{"projectReferenceID": 42}],
+            status=200,
+        )
+
+        async with DecidaloClient(api_key=API_KEY, base_url=BASE_URL) as client:
+            result = await client.get_project_recording_targets()
+
+        assert len(result) == 1
+        assert isinstance(result[0], dm.ProjectRecordingTargetOutput)
+        assert result[0].projectReferenceID == 42
+
+    async def test_import_project_recording_targets(self, mock_aiohttp: aioresponses) -> None:
+        """Test import_project_recording_targets hits the correct endpoint and parses the response."""
+        mock_aiohttp.post(
+            f"{BASE_URL}/importapi/Project/RecordingTargets",
+            payload={},
+            status=200,
+        )
+
+        async with DecidaloClient(api_key=API_KEY, base_url=BASE_URL) as client:
+            result = await client.import_project_recording_targets(dm.ProjectRecordingTargetImportBatch())
+
+        assert isinstance(result, dm.ProjectRecordingTargetImportBatchResult)
+
+    async def test_import_projects(self, mock_aiohttp: aioresponses) -> None:
+        """Test import_projects hits the correct endpoint and parses the response."""
+        mock_aiohttp.post(
+            f"{BASE_URL}/importapi/Project/ImportBatch",
+            payload=[{"projectID": 42}],
+            status=200,
+        )
+
+        async with DecidaloClient(api_key=API_KEY, base_url=BASE_URL) as client:
+            result = await client.import_projects(dm.ProjectBatchInput(projects=[]))
+
+        assert len(result) == 1
+        assert isinstance(result[0], dm.ProjectReferenceImportResult)
+        assert result[0].projectID == 42
+
+
+class TestResourceRequestContactsEndpoint:
+    """Tests for the resource request (extended) methods."""
+
+    async def test_get_resource_request_contacts(self, mock_aiohttp: aioresponses) -> None:
+        """Test get_resource_request_contacts hits the correct endpoint and parses the response."""
+        mock_aiohttp.get(
+            f"{BASE_URL}/importapi/ResourceRequest/Contacts",
+            payload=[{"contactType": "ProjectManager", "isPrimary": True, "request": {"requestID": 1}, "user": {}}],
+            status=200,
+        )
+
+        async with DecidaloClient(api_key=API_KEY, base_url=BASE_URL) as client:
+            result = await client.get_resource_request_contacts()
+
+        assert len(result) == 1
+        assert isinstance(result[0], dm.ResourceRequestContactOutput)
+        assert result[0].isPrimary is True
+
+
+class TestEmployeeTypesEndpoint:
+    """Tests for the user (extended) methods."""
+
+    async def test_get_employee_types(self, mock_aiohttp: aioresponses) -> None:
+        """Test get_employee_types hits the correct endpoint and parses the response."""
+        mock_aiohttp.get(
+            f"{BASE_URL}/importapi/User/EmployeeTypes",
+            payload=[{"employeeTypeID": 42, "employeeTypeName": "x", "isDefault": True, "isExternal": True}],
+            status=200,
+        )
+
+        async with DecidaloClient(api_key=API_KEY, base_url=BASE_URL) as client:
+            result = await client.get_employee_types()
+
+        assert len(result) == 1
+        assert isinstance(result[0], dm.EmployeeTypeOutput)
+        assert result[0].employeeTypeID == 42

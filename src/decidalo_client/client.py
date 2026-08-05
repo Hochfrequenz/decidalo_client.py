@@ -16,11 +16,18 @@ from decidalo_client.exceptions import (
 from decidalo_client.models import (
     AbsenceImportResult,
     AbsenceOutputResult,
+    ActivityTypeImportItem,
+    ActivityTypeResult,
     BookingBatchInput,
+    BookingExtendOption,
     BookingImportResult,
     BookingInput,
     BookingItemOutput,
     CompanyCompleteOutput,
+    CustomProperty,
+    EmployeeTypeOutput,
+    GeneralActivityImportItem,
+    GeneralActivityResult,
     GetImportUserWorkingProfileResult,
     ImportAbsencesCommand,
     ImportCompanyCommand,
@@ -28,9 +35,31 @@ from decidalo_client.models import (
     ImportResourceRequestCommandResult,
     ImportRoleResult,
     ImportUserWorkingProfileResult,
+    ImportWorkPackageCommandResult,
+    OrderImportBatch,
+    OrderImportBatchResult,
+    OrderImportOutput,
+    OrderImportOutputBatch,
+    OrderPositionImportBatch,
+    OrderPositionImportBatchResult,
+    OrderPositionImportOutput,
+    OrderPositionRecordingTargetImportBatch,
+    OrderPositionRecordingTargetImportBatchResult,
+    OrderPositionRecordingTargetOutput,
+    OrderPositionWorkPackageImportBatch,
+    OrderPositionWorkPackageImportBatchResult,
+    OrderPositionWorkPackageOutput,
+    ProjectBatchInput,
+    ProjectContactsExportOutput,
+    ProjectRecordingTargetImportBatch,
+    ProjectRecordingTargetImportBatchResult,
+    ProjectRecordingTargetOutput,
     ProjectReferenceImportResult,
     ProjectReferenceInput,
     ProjectReferenceOutput,
+    ProjectTeamMembersExportOutput,
+    RecordingTargetOutput,
+    ResourceRequestContactOutput,
     ResourceRequestInput,
     ResourceRequestOutput,
     RoleImportInput,
@@ -39,13 +68,36 @@ from decidalo_client.models import (
     TeamImportResults,
     TeamInput,
     TeamOverview,
+    TimeRecordingImportBatch,
+    TimeRecordingImportOutputBatch,
+    TimeRecordingImportResult,
     UserBatchImportMetadata,
     UserBatchInput,
     UserImportAcceptedResponse,
     UserImportBatchResult,
     UserImportResults,
+    UserIndustryExportOutput,
+    UserLanguageExportOutput,
     UserOverview,
+    UserProfessionalExperienceExportOutput,
+    UserPublicationExportOutput,
+    UserSkillsImportInput,
+    UserSkillsImportResult,
+    UserSkillsOutput,
+    UserTestimonialExportOutput,
+    UserTrainingExportOutput,
     UserWorkingProfileInput,
+    WorkPackageCandidateBatchInput,
+    WorkPackageCandidateBatchResult,
+    WorkPackageInput,
+    WorkPackageOrderPositionImportBatch,
+    WorkPackageOrderPositionImportBatchResult,
+    WorkPackageOrderPositionOutput,
+    WorkPackageOutput,
+    WorkPackageRecordingTargetImportBatch,
+    WorkPackageRecordingTargetImportBatchResult,
+    WorkPackageRecordingTargetOutput,
+    WorkPackageStatus,
 )
 
 if TYPE_CHECKING:
@@ -862,3 +914,1183 @@ class DecidaloClient:  # pylint: disable=too-many-public-methods
         if not results:
             raise DecidaloClientError("API returned empty result for import_working_time_pattern")
         return results[0]
+
+    # =========================================================================
+    # Activity Type Methods
+    # =========================================================================
+
+    async def get_activity_types(self) -> list[ActivityTypeResult]:
+        """Get all activity types in the system.
+
+        Returns:
+            A list of ActivityTypeResult objects.
+        """
+        response_text = await self._get("/importapi/ActivityType")
+        adapter = TypeAdapter(list[ActivityTypeResult])
+        return adapter.validate_json(response_text)
+
+    async def import_activity_type(
+        self,
+        activity_type: ActivityTypeImportItem,
+    ) -> ActivityTypeResult:
+        """Create, update, or delete an activity type.
+
+        Set the 'deleted' flag on the item to delete it.
+
+        Args:
+            activity_type: The activity type data to import.
+
+        Returns:
+            An ActivityTypeResult with the resulting activity type.
+        """
+        data = activity_type.model_dump_json(by_alias=True, exclude_none=True)
+        response_text = await self._post("/importapi/ActivityType", data)
+        return ActivityTypeResult.model_validate_json(response_text)
+
+    # =========================================================================
+    # General Activity Methods
+    # =========================================================================
+
+    async def get_general_activities(self) -> list[GeneralActivityResult]:
+        """Get all general activities in the system.
+
+        Returns:
+            A list of GeneralActivityResult objects.
+        """
+        response_text = await self._get("/importapi/GeneralActivity")
+        adapter = TypeAdapter(list[GeneralActivityResult])
+        return adapter.validate_json(response_text)
+
+    async def import_general_activity(
+        self,
+        general_activity: GeneralActivityImportItem,
+    ) -> GeneralActivityResult:
+        """Create, update, or delete a general activity.
+
+        Set the 'deleted' flag on the item to delete it.
+
+        Args:
+            general_activity: The general activity data to import.
+
+        Returns:
+            A GeneralActivityResult with the resulting general activity.
+        """
+        data = general_activity.model_dump_json(by_alias=True, exclude_none=True)
+        response_text = await self._post("/importapi/GeneralActivity", data)
+        return GeneralActivityResult.model_validate_json(response_text)
+
+    # =========================================================================
+    # Order Methods
+    # =========================================================================
+
+    async def get_orders(
+        self,
+        *,
+        project_reference_id: int | None = None,
+        project_code: str | None = None,
+    ) -> OrderImportOutputBatch:
+        """Get orders with their positions.
+
+        Args:
+            project_reference_id: Filter by the internal project reference ID.
+            project_code: Filter by the external project code.
+
+        Returns:
+            An OrderImportOutputBatch containing the matching orders.
+        """
+        params: dict[str, str] = {}
+        if project_reference_id is not None:
+            params["projectReferenceId"] = str(project_reference_id)
+        if project_code is not None:
+            params["projectCode"] = project_code
+
+        response_text = await self._get("/importapi/Order", params or None)
+        return OrderImportOutputBatch.model_validate_json(response_text)
+
+    async def get_order(
+        self,
+        *,
+        order_id: int | None = None,
+        code: str | None = None,
+    ) -> OrderImportOutput:
+        """Get a single order (with its positions) by ID or code.
+
+        Args:
+            order_id: The internal order ID.
+            code: The per-tenant order code.
+
+        Returns:
+            An OrderImportOutput object.
+        """
+        params: dict[str, str] = {}
+        if order_id is not None:
+            params["orderId"] = str(order_id)
+        if code is not None:
+            params["code"] = code
+
+        response_text = await self._get("/importapi/Order/Single", params or None)
+        return OrderImportOutput.model_validate_json(response_text)
+
+    async def import_orders(
+        self,
+        batch: OrderImportBatch,
+    ) -> OrderImportBatchResult:
+        """Create, update, or delete orders with their positions.
+
+        Args:
+            batch: The batch of orders to import.
+
+        Returns:
+            An OrderImportBatchResult with the per-order import status.
+        """
+        data = batch.model_dump_json(by_alias=True, exclude_none=True)
+        response_text = await self._post("/importapi/Order", data)
+        return OrderImportBatchResult.model_validate_json(response_text)
+
+    async def get_order_custom_properties(self) -> list[CustomProperty]:
+        """Get the tenant's custom order fields.
+
+        Returns:
+            A list of CustomProperty objects.
+        """
+        response_text = await self._get("/importapi/Order/CustomProperties")
+        adapter = TypeAdapter(list[CustomProperty])
+        return adapter.validate_json(response_text)
+
+    async def get_order_position(
+        self,
+        *,
+        order_position_id: int | None = None,
+        order_position_code: str | None = None,
+        order_id: int | None = None,
+        order_code: str | None = None,
+    ) -> OrderPositionImportOutput:
+        """Get a single order position by ID, or by code plus its parent order.
+
+        Args:
+            order_position_id: The internal order position ID.
+            order_position_code: The per-tenant order position code.
+            order_id: The internal ID of the parent order.
+            order_code: The code of the parent order.
+
+        Returns:
+            An OrderPositionImportOutput object.
+        """
+        params: dict[str, str] = {}
+        if order_position_id is not None:
+            params["orderPositionId"] = str(order_position_id)
+        if order_position_code is not None:
+            params["orderPositionCode"] = order_position_code
+        if order_id is not None:
+            params["orderId"] = str(order_id)
+        if order_code is not None:
+            params["orderCode"] = order_code
+
+        response_text = await self._get("/importapi/Order/Position/Single", params or None)
+        return OrderPositionImportOutput.model_validate_json(response_text)
+
+    async def import_order_positions(
+        self,
+        batch: OrderPositionImportBatch,
+    ) -> OrderPositionImportBatchResult:
+        """Create, update, or delete order positions.
+
+        Each position names its parent order by ID or code.
+
+        Args:
+            batch: The batch of order positions to import.
+
+        Returns:
+            An OrderPositionImportBatchResult with the per-position import status.
+        """
+        data = batch.model_dump_json(by_alias=True, exclude_none=True)
+        response_text = await self._post("/importapi/Order/Position", data)
+        return OrderPositionImportBatchResult.model_validate_json(response_text)
+
+    async def get_order_position_recording_targets(
+        self,
+        *,
+        order_position_id: int | None = None,
+        order_id: int | None = None,
+        order_code: str | None = None,
+        order_position_code: str | None = None,
+    ) -> list[OrderPositionRecordingTargetOutput]:
+        """Get an order position's allowed activity types (direct-recording targets).
+
+        Args:
+            order_position_id: The internal order position ID.
+            order_id: The internal ID of the parent order.
+            order_code: The code of the parent order.
+            order_position_code: The per-tenant order position code.
+
+        Returns:
+            A list of OrderPositionRecordingTargetOutput objects.
+        """
+        params: dict[str, str] = {}
+        if order_position_id is not None:
+            params["orderPositionId"] = str(order_position_id)
+        if order_id is not None:
+            params["orderId"] = str(order_id)
+        if order_code is not None:
+            params["orderCode"] = order_code
+        if order_position_code is not None:
+            params["orderPositionCode"] = order_position_code
+
+        response_text = await self._get("/importapi/Order/Position/RecordingTargets", params or None)
+        adapter = TypeAdapter(list[OrderPositionRecordingTargetOutput])
+        return adapter.validate_json(response_text)
+
+    async def import_order_position_recording_targets(
+        self,
+        batch: OrderPositionRecordingTargetImportBatch,
+    ) -> OrderPositionRecordingTargetImportBatchResult:
+        """Create, update, or remove order positions' allowed activity types.
+
+        One row per (position, activity type).
+
+        Args:
+            batch: The recording targets to import.
+
+        Returns:
+            An OrderPositionRecordingTargetImportBatchResult with the import status.
+        """
+        data = batch.model_dump_json(by_alias=True, exclude_none=True)
+        response_text = await self._post("/importapi/Order/Position/RecordingTargets", data)
+        return OrderPositionRecordingTargetImportBatchResult.model_validate_json(response_text)
+
+    async def get_order_position_work_packages(
+        self,
+        *,
+        order_position_id: int | None = None,
+        order_id: int | None = None,
+        order_code: str | None = None,
+        order_position_code: str | None = None,
+    ) -> list[OrderPositionWorkPackageOutput]:
+        """Get the work packages currently linked to an order position.
+
+        Args:
+            order_position_id: The internal order position ID.
+            order_id: The internal ID of the parent order.
+            order_code: The code of the parent order.
+            order_position_code: The per-tenant order position code.
+
+        Returns:
+            A list of OrderPositionWorkPackageOutput objects.
+        """
+        params: dict[str, str] = {}
+        if order_position_id is not None:
+            params["orderPositionId"] = str(order_position_id)
+        if order_id is not None:
+            params["orderId"] = str(order_id)
+        if order_code is not None:
+            params["orderCode"] = order_code
+        if order_position_code is not None:
+            params["orderPositionCode"] = order_position_code
+
+        response_text = await self._get("/importapi/Order/Position/WorkPackages", params or None)
+        adapter = TypeAdapter(list[OrderPositionWorkPackageOutput])
+        return adapter.validate_json(response_text)
+
+    async def import_order_position_work_packages(
+        self,
+        batch: OrderPositionWorkPackageImportBatch,
+    ) -> OrderPositionWorkPackageImportBatchResult:
+        """Add or remove order-position to work-package links.
+
+        One row per (position, work package).
+
+        Args:
+            batch: The links to import.
+
+        Returns:
+            An OrderPositionWorkPackageImportBatchResult with the import status.
+        """
+        data = batch.model_dump_json(by_alias=True, exclude_none=True)
+        response_text = await self._post("/importapi/Order/Position/WorkPackages", data)
+        return OrderPositionWorkPackageImportBatchResult.model_validate_json(response_text)
+
+    # =========================================================================
+    # Work Package Methods
+    # =========================================================================
+
+    async def get_work_packages(
+        self,
+        *,
+        work_package_id: int | None = None,
+        project_id: int | None = None,
+        project_code: str | None = None,
+        work_package_code: str | None = None,
+        status: WorkPackageStatus | None = None,
+        parent_work_package_id: int | None = None,
+        time_recording_allowed: bool | None = None,
+        start_date_before: str | None = None,
+        end_date_after: str | None = None,
+        created_on_or_after: str | None = None,
+        last_updated_on_or_after: str | None = None,
+        top: int | None = None,
+        skip: int | None = None,
+    ) -> list[WorkPackageOutput]:
+        """Get work packages matching the given filters.
+
+        Connected properties may be given by ID or by code (ID wins).
+
+        Args:
+            work_package_id: Filter by the internal work package ID.
+            project_id: Filter by the internal project ID.
+            project_code: Filter by the external project code.
+            work_package_code: Filter by the work package code.
+            status: Filter by work package status.
+            parent_work_package_id: Filter by the parent work package ID.
+            time_recording_allowed: Filter by whether time recording is allowed.
+            start_date_before: Only work packages starting before this date (ISO format).
+            end_date_after: Only work packages ending after this date (ISO format).
+            created_on_or_after: Incremental-sync filter on creation timestamp (ISO format).
+            last_updated_on_or_after: Incremental-sync filter on update timestamp (ISO format).
+            top: Maximum number of results to return (paging).
+            skip: Number of results to skip (paging).
+
+        Returns:
+            A list of WorkPackageOutput objects.
+        """
+        params: dict[str, str] = {}
+        if work_package_id is not None:
+            params["WorkPackageID"] = str(work_package_id)
+        if project_id is not None:
+            params["ProjectID"] = str(project_id)
+        if project_code is not None:
+            params["ProjectCode"] = project_code
+        if work_package_code is not None:
+            params["WorkPackageCode"] = work_package_code
+        if status is not None:
+            params["Status"] = status.value
+        if parent_work_package_id is not None:
+            params["ParentWorkPackageID"] = str(parent_work_package_id)
+        if time_recording_allowed is not None:
+            params["TimeRecordingAllowed"] = str(time_recording_allowed).lower()
+        if start_date_before is not None:
+            params["StartDateBefore"] = start_date_before
+        if end_date_after is not None:
+            params["EndDateAfter"] = end_date_after
+        if created_on_or_after is not None:
+            params["CreatedOnOrAfter"] = created_on_or_after
+        if last_updated_on_or_after is not None:
+            params["LastUpdatedOnOrAfter"] = last_updated_on_or_after
+        if top is not None:
+            params["Top"] = str(top)
+        if skip is not None:
+            params["Skip"] = str(skip)
+
+        response_text = await self._get("/importapi/WorkPackage", params or None)
+        adapter = TypeAdapter(list[WorkPackageOutput])
+        return adapter.validate_json(response_text)
+
+    async def get_work_package(
+        self,
+        workpackage_id: int,
+    ) -> WorkPackageOutput:
+        """Get a specific work package by ID.
+
+        Args:
+            workpackage_id: The internal work package ID.
+
+        Returns:
+            A WorkPackageOutput object.
+        """
+        response_text = await self._get(f"/importapi/WorkPackage/{workpackage_id}")
+        return WorkPackageOutput.model_validate_json(response_text)
+
+    async def import_work_package(
+        self,
+        work_package: WorkPackageInput,
+    ) -> ImportWorkPackageCommandResult:
+        """Create, update, or delete a work package.
+
+        Set the 'delete' flag on the input to delete it.
+
+        Args:
+            work_package: The work package data to import.
+
+        Returns:
+            An ImportWorkPackageCommandResult with the import status.
+        """
+        data = work_package.model_dump_json(by_alias=True, exclude_none=True)
+        response_text = await self._post("/importapi/WorkPackage", data)
+        return ImportWorkPackageCommandResult.model_validate_json(response_text)
+
+    async def get_work_package_candidates(
+        self,
+        *,
+        project_id: int | None = None,
+        work_package_id: int | None = None,
+    ) -> WorkPackageCandidateBatchInput:
+        """Get all work package candidate assignments for the tenant.
+
+        The response shape is identical to the import_work_package_candidates()
+        request body and can be submitted to it without modification.
+
+        Args:
+            project_id: Filter by the internal project ID.
+            work_package_id: Filter by the internal work package ID.
+
+        Returns:
+            A WorkPackageCandidateBatchInput with the candidate assignments.
+        """
+        params: dict[str, str] = {}
+        if project_id is not None:
+            params["projectID"] = str(project_id)
+        if work_package_id is not None:
+            params["workPackageID"] = str(work_package_id)
+
+        response_text = await self._get("/importapi/WorkPackage/Candidates", params or None)
+        return WorkPackageCandidateBatchInput.model_validate_json(response_text)
+
+    async def import_work_package_candidates(
+        self,
+        batch: WorkPackageCandidateBatchInput,
+    ) -> WorkPackageCandidateBatchResult:
+        """Create or delete work package candidate assignments in batch.
+
+        Each item is processed independently; per-item failures do not abort the batch.
+
+        Args:
+            batch: The candidate assignments to import.
+
+        Returns:
+            A WorkPackageCandidateBatchResult with the per-item import status.
+        """
+        data = batch.model_dump_json(by_alias=True, exclude_none=True)
+        response_text = await self._post("/importapi/WorkPackage/Candidates", data)
+        return WorkPackageCandidateBatchResult.model_validate_json(response_text)
+
+    async def get_work_package_order_positions(
+        self,
+        *,
+        work_package_id: int | None = None,
+        work_package_code: str | None = None,
+    ) -> list[WorkPackageOrderPositionOutput]:
+        """Get the order positions currently linked to a work package.
+
+        Args:
+            work_package_id: The internal work package ID.
+            work_package_code: The work package code.
+
+        Returns:
+            A list of WorkPackageOrderPositionOutput objects.
+        """
+        params: dict[str, str] = {}
+        if work_package_id is not None:
+            params["workPackageId"] = str(work_package_id)
+        if work_package_code is not None:
+            params["workPackageCode"] = work_package_code
+
+        response_text = await self._get("/importapi/WorkPackage/OrderPositions", params or None)
+        adapter = TypeAdapter(list[WorkPackageOrderPositionOutput])
+        return adapter.validate_json(response_text)
+
+    async def import_work_package_order_positions(
+        self,
+        batch: WorkPackageOrderPositionImportBatch,
+    ) -> WorkPackageOrderPositionImportBatchResult:
+        """Add or remove work-package to order-position links.
+
+        One row per (work package, position).
+
+        Args:
+            batch: The links to import.
+
+        Returns:
+            A WorkPackageOrderPositionImportBatchResult with the import status.
+        """
+        data = batch.model_dump_json(by_alias=True, exclude_none=True)
+        response_text = await self._post("/importapi/WorkPackage/OrderPositions", data)
+        return WorkPackageOrderPositionImportBatchResult.model_validate_json(response_text)
+
+    async def get_work_package_recording_targets(
+        self,
+        *,
+        work_package_id: int | None = None,
+        work_package_code: str | None = None,
+    ) -> list[WorkPackageRecordingTargetOutput]:
+        """Get a work package's allowed activity types (recording targets).
+
+        Args:
+            work_package_id: The internal work package ID.
+            work_package_code: The work package code.
+
+        Returns:
+            A list of WorkPackageRecordingTargetOutput objects.
+        """
+        params: dict[str, str] = {}
+        if work_package_id is not None:
+            params["workPackageId"] = str(work_package_id)
+        if work_package_code is not None:
+            params["workPackageCode"] = work_package_code
+
+        response_text = await self._get("/importapi/WorkPackage/RecordingTargets", params or None)
+        adapter = TypeAdapter(list[WorkPackageRecordingTargetOutput])
+        return adapter.validate_json(response_text)
+
+    async def import_work_package_recording_targets(
+        self,
+        batch: WorkPackageRecordingTargetImportBatch,
+    ) -> WorkPackageRecordingTargetImportBatchResult:
+        """Create, update, or remove a work package's allowed activity types.
+
+        One row per (work package, activity type).
+
+        Args:
+            batch: The recording targets to import.
+
+        Returns:
+            A WorkPackageRecordingTargetImportBatchResult with the import status.
+        """
+        data = batch.model_dump_json(by_alias=True, exclude_none=True)
+        response_text = await self._post("/importapi/WorkPackage/RecordingTargets", data)
+        return WorkPackageRecordingTargetImportBatchResult.model_validate_json(response_text)
+
+    # =========================================================================
+    # Time Recording Methods
+    # =========================================================================
+
+    async def get_recording_targets(
+        self,
+        *,
+        project_reference_id: int | None = None,
+        project_code: str | None = None,
+        work_package_id: int | None = None,
+        work_package_code: str | None = None,
+        order_position_id: int | None = None,
+        general_activity_id: int | None = None,
+        general_activity_code: str | None = None,
+        activity_type_id: int | None = None,
+        activity_type_code: str | None = None,
+        is_active: bool | None = None,
+    ) -> list[RecordingTargetOutput]:
+        """Get the tenant's recording targets across all subject kinds.
+
+        Covers project, work package, general activity, and order position targets.
+        All filters are optional and AND-combined. Only active targets are returned
+        unless is_active is set (True = active only, False = inactive only).
+
+        Args:
+            project_reference_id: Filter by internal project reference ID.
+            project_code: Filter by external project code.
+            work_package_id: Filter by internal work package ID.
+            work_package_code: Filter by work package code.
+            order_position_id: Filter by internal order position ID.
+            general_activity_id: Filter by internal general activity ID.
+            general_activity_code: Filter by general activity code.
+            activity_type_id: Filter by internal activity type ID.
+            activity_type_code: Filter by activity type code.
+            is_active: True returns active targets only, False inactive only.
+
+        Returns:
+            A list of RecordingTargetOutput objects.
+        """
+        params: dict[str, str] = {}
+        if project_reference_id is not None:
+            params["projectReferenceId"] = str(project_reference_id)
+        if project_code is not None:
+            params["projectCode"] = project_code
+        if work_package_id is not None:
+            params["workPackageId"] = str(work_package_id)
+        if work_package_code is not None:
+            params["workPackageCode"] = work_package_code
+        if order_position_id is not None:
+            params["orderPositionId"] = str(order_position_id)
+        if general_activity_id is not None:
+            params["generalActivityId"] = str(general_activity_id)
+        if general_activity_code is not None:
+            params["generalActivityCode"] = general_activity_code
+        if activity_type_id is not None:
+            params["activityTypeId"] = str(activity_type_id)
+        if activity_type_code is not None:
+            params["activityTypeCode"] = activity_type_code
+        if is_active is not None:
+            params["isActive"] = str(is_active).lower()
+
+        response_text = await self._get("/importapi/TimeRecording/RecordingTargets", params or None)
+        adapter = TypeAdapter(list[RecordingTargetOutput])
+        return adapter.validate_json(response_text)
+
+    async def get_user_time_sheet(
+        self,
+        *,
+        user_id: int | None = None,
+        employee_id: str | None = None,
+        email: str | None = None,
+        start_date: str | None = None,
+        end_date: str | None = None,
+    ) -> TimeRecordingImportOutputBatch:
+        """Get a user's timesheet.
+
+        Args:
+            user_id: The internal user ID.
+            employee_id: The external employee ID.
+            email: The user's email address.
+            start_date: Only entries on or after this date (ISO format).
+            end_date: Only entries on or before this date (ISO format).
+
+        Returns:
+            A TimeRecordingImportOutputBatch with the user's entries and work times.
+        """
+        params: dict[str, str] = {}
+        if user_id is not None:
+            params["userId"] = str(user_id)
+        if employee_id is not None:
+            params["employeeId"] = employee_id
+        if email is not None:
+            params["email"] = email
+        if start_date is not None:
+            params["startDate"] = start_date
+        if end_date is not None:
+            params["endDate"] = end_date
+
+        response_text = await self._get("/importapi/TimeRecording/UserTimeSheet", params or None)
+        return TimeRecordingImportOutputBatch.model_validate_json(response_text)
+
+    async def import_user_time_sheet(
+        self,
+        batch: TimeRecordingImportBatch,
+    ) -> TimeRecordingImportResult:
+        """Import a user's timesheet.
+
+        Args:
+            batch: The timesheet entries and work times to import.
+
+        Returns:
+            A TimeRecordingImportResult with the per-item import status.
+        """
+        data = batch.model_dump_json(by_alias=True, exclude_none=True)
+        response_text = await self._post("/importapi/TimeRecording/UserTimeSheet", data)
+        return TimeRecordingImportResult.model_validate_json(response_text)
+
+    # =========================================================================
+    # Profile Export Methods
+    # =========================================================================
+
+    async def get_profile_industries(
+        self,
+        *,
+        user_id: int | None = None,
+        employee_id: str | None = None,
+        industry_id: int | None = None,
+        industry_code: str | None = None,
+        top: int | None = None,
+        skip: int | None = None,
+    ) -> list[UserIndustryExportOutput]:
+        """Get users with their assigned industries.
+
+        Args:
+            user_id: Filter by internal user ID.
+            employee_id: Filter by external employee ID.
+            industry_id: Filter by internal industry ID.
+            industry_code: Filter by industry code.
+            top: Maximum number of results to return (paging).
+            skip: Number of results to skip (paging).
+
+        Returns:
+            A list of UserIndustryExportOutput objects.
+        """
+        params: dict[str, str] = {}
+        if user_id is not None:
+            params["userID"] = str(user_id)
+        if employee_id is not None:
+            params["employeeID"] = employee_id
+        if industry_id is not None:
+            params["industryID"] = str(industry_id)
+        if industry_code is not None:
+            params["industryCode"] = industry_code
+        if top is not None:
+            params["top"] = str(top)
+        if skip is not None:
+            params["skip"] = str(skip)
+
+        response_text = await self._get("/importapi/Profile/Industries", params or None)
+        adapter = TypeAdapter(list[UserIndustryExportOutput])
+        return adapter.validate_json(response_text)
+
+    async def get_profile_languages(
+        self,
+        *,
+        user_id: int | None = None,
+        employee_id: str | None = None,
+        language_id: int | None = None,
+        top: int | None = None,
+        skip: int | None = None,
+    ) -> list[UserLanguageExportOutput]:
+        """Get users with their spoken languages.
+
+        Args:
+            user_id: Filter by internal user ID.
+            employee_id: Filter by external employee ID.
+            language_id: Filter by internal language ID.
+            top: Maximum number of results to return (paging).
+            skip: Number of results to skip (paging).
+
+        Returns:
+            A list of UserLanguageExportOutput objects.
+        """
+        params: dict[str, str] = {}
+        if user_id is not None:
+            params["userID"] = str(user_id)
+        if employee_id is not None:
+            params["employeeID"] = employee_id
+        if language_id is not None:
+            params["languageID"] = str(language_id)
+        if top is not None:
+            params["top"] = str(top)
+        if skip is not None:
+            params["skip"] = str(skip)
+
+        response_text = await self._get("/importapi/Profile/Languages", params or None)
+        adapter = TypeAdapter(list[UserLanguageExportOutput])
+        return adapter.validate_json(response_text)
+
+    async def get_profile_professional_experience(
+        self,
+        *,
+        user_id: int | None = None,
+        employee_id: str | None = None,
+        top: int | None = None,
+        skip: int | None = None,
+    ) -> list[UserProfessionalExperienceExportOutput]:
+        """Get users with their professional experiences.
+
+        Args:
+            user_id: Filter by internal user ID.
+            employee_id: Filter by external employee ID.
+            top: Maximum number of results to return (paging).
+            skip: Number of results to skip (paging).
+
+        Returns:
+            A list of UserProfessionalExperienceExportOutput objects.
+        """
+        params: dict[str, str] = {}
+        if user_id is not None:
+            params["userID"] = str(user_id)
+        if employee_id is not None:
+            params["employeeID"] = employee_id
+        if top is not None:
+            params["top"] = str(top)
+        if skip is not None:
+            params["skip"] = str(skip)
+
+        response_text = await self._get("/importapi/Profile/ProfessionalExperience", params or None)
+        adapter = TypeAdapter(list[UserProfessionalExperienceExportOutput])
+        return adapter.validate_json(response_text)
+
+    async def get_profile_publications(
+        self,
+        *,
+        user_id: int | None = None,
+        employee_id: str | None = None,
+        top: int | None = None,
+        skip: int | None = None,
+    ) -> list[UserPublicationExportOutput]:
+        """Get users with their publications.
+
+        Args:
+            user_id: Filter by internal user ID.
+            employee_id: Filter by external employee ID.
+            top: Maximum number of results to return (paging).
+            skip: Number of results to skip (paging).
+
+        Returns:
+            A list of UserPublicationExportOutput objects.
+        """
+        params: dict[str, str] = {}
+        if user_id is not None:
+            params["userID"] = str(user_id)
+        if employee_id is not None:
+            params["employeeID"] = employee_id
+        if top is not None:
+            params["top"] = str(top)
+        if skip is not None:
+            params["skip"] = str(skip)
+
+        response_text = await self._get("/importapi/Profile/Publications", params or None)
+        adapter = TypeAdapter(list[UserPublicationExportOutput])
+        return adapter.validate_json(response_text)
+
+    async def get_profile_testimonials(
+        self,
+        *,
+        user_id: int | None = None,
+        employee_id: str | None = None,
+        top: int | None = None,
+        skip: int | None = None,
+    ) -> list[UserTestimonialExportOutput]:
+        """Get users with their testimonials.
+
+        Args:
+            user_id: Filter by internal user ID.
+            employee_id: Filter by external employee ID.
+            top: Maximum number of results to return (paging).
+            skip: Number of results to skip (paging).
+
+        Returns:
+            A list of UserTestimonialExportOutput objects.
+        """
+        params: dict[str, str] = {}
+        if user_id is not None:
+            params["userID"] = str(user_id)
+        if employee_id is not None:
+            params["employeeID"] = employee_id
+        if top is not None:
+            params["top"] = str(top)
+        if skip is not None:
+            params["skip"] = str(skip)
+
+        response_text = await self._get("/importapi/Profile/Testimonials", params or None)
+        adapter = TypeAdapter(list[UserTestimonialExportOutput])
+        return adapter.validate_json(response_text)
+
+    async def get_profile_trainings(
+        self,
+        *,
+        user_id: int | None = None,
+        employee_id: str | None = None,
+        training_reference_id: int | None = None,
+        top: int | None = None,
+        skip: int | None = None,
+    ) -> list[UserTrainingExportOutput]:
+        """Get users with their trainings.
+
+        Args:
+            user_id: Filter by internal user ID.
+            employee_id: Filter by external employee ID.
+            training_reference_id: Filter by internal training reference ID.
+            top: Maximum number of results to return (paging).
+            skip: Number of results to skip (paging).
+
+        Returns:
+            A list of UserTrainingExportOutput objects.
+        """
+        params: dict[str, str] = {}
+        if user_id is not None:
+            params["userID"] = str(user_id)
+        if employee_id is not None:
+            params["employeeID"] = employee_id
+        if training_reference_id is not None:
+            params["trainingReferenceID"] = str(training_reference_id)
+        if top is not None:
+            params["top"] = str(top)
+        if skip is not None:
+            params["skip"] = str(skip)
+
+        response_text = await self._get("/importapi/Profile/Trainings", params or None)
+        adapter = TypeAdapter(list[UserTrainingExportOutput])
+        return adapter.validate_json(response_text)
+
+    async def get_profile_user_skills(
+        self,
+        *,
+        user_id: int | None = None,
+        employee_id: str | None = None,
+        team_id: int | None = None,
+        team_code: str | None = None,
+        business_unit_id: int | None = None,
+        business_unit_name: str | None = None,
+        country_code: str | None = None,
+        legal_entity_id: int | None = None,
+        legal_entity_name: str | None = None,
+        practice_area_id: int | None = None,
+        practice_area_name: str | None = None,
+        service_line_id: int | None = None,
+        service_line_name: str | None = None,
+        top: int | None = None,
+        skip: int | None = None,
+        modified_since: str | None = None,
+    ) -> list[UserSkillsOutput]:
+        """Get users with their assessed skills.
+
+        All filters are optional and AND-combined.
+
+        Args:
+            user_id: Filter by internal user ID.
+            employee_id: Filter by external employee ID.
+            team_id: Filter by internal team ID.
+            team_code: Filter by team code.
+            business_unit_id: Filter by internal business unit ID.
+            business_unit_name: Filter by business unit name.
+            country_code: Filter by country code.
+            legal_entity_id: Filter by internal legal entity ID.
+            legal_entity_name: Filter by legal entity name.
+            practice_area_id: Filter by internal practice area ID.
+            practice_area_name: Filter by practice area name.
+            service_line_id: Filter by internal service line ID.
+            service_line_name: Filter by service line name.
+            top: Maximum number of results to return (paging).
+            skip: Number of results to skip (paging).
+            modified_since: Only skills modified since this date (ISO format).
+
+        Returns:
+            A list of UserSkillsOutput objects.
+        """
+        params: dict[str, str] = {}
+        if user_id is not None:
+            params["userID"] = str(user_id)
+        if employee_id is not None:
+            params["employeeID"] = employee_id
+        if team_id is not None:
+            params["teamID"] = str(team_id)
+        if team_code is not None:
+            params["teamCode"] = team_code
+        if business_unit_id is not None:
+            params["businessUnitID"] = str(business_unit_id)
+        if business_unit_name is not None:
+            params["businessUnitName"] = business_unit_name
+        if country_code is not None:
+            params["countryCode"] = country_code
+        if legal_entity_id is not None:
+            params["legalEntityID"] = str(legal_entity_id)
+        if legal_entity_name is not None:
+            params["legalEntityName"] = legal_entity_name
+        if practice_area_id is not None:
+            params["practiceAreaID"] = str(practice_area_id)
+        if practice_area_name is not None:
+            params["practiceAreaName"] = practice_area_name
+        if service_line_id is not None:
+            params["serviceLineID"] = str(service_line_id)
+        if service_line_name is not None:
+            params["serviceLineName"] = service_line_name
+        if top is not None:
+            params["top"] = str(top)
+        if skip is not None:
+            params["skip"] = str(skip)
+        if modified_since is not None:
+            params["modifiedSince"] = modified_since
+
+        response_text = await self._get("/importapi/Profile/UserSkills", params or None)
+        adapter = TypeAdapter(list[UserSkillsOutput])
+        return adapter.validate_json(response_text)
+
+    async def import_profile_user_skills(
+        self,
+        users: list[UserSkillsImportInput],
+    ) -> list[UserSkillsImportResult]:
+        """Add, update, or remove the assessed skills of a batch of users.
+
+        Args:
+            users: The per-user skill assignments to import.
+
+        Returns:
+            A list of UserSkillsImportResult objects with the per-user import status.
+        """
+        adapter = TypeAdapter(list[UserSkillsImportInput])
+        data = adapter.dump_json(users, by_alias=True, exclude_none=True).decode()
+        response_text = await self._post("/importapi/Profile/UserSkills", data)
+        result_adapter = TypeAdapter(list[UserSkillsImportResult])
+        return result_adapter.validate_json(response_text)
+
+    # =========================================================================
+    # Project (extended) Methods
+    # =========================================================================
+
+    async def get_project_contacts(
+        self,
+        *,
+        project_id: int | None = None,
+        project_code: str | None = None,
+        user_id: int | None = None,
+        employee_id: str | None = None,
+        top: int | None = None,
+        skip: int | None = None,
+    ) -> list[ProjectContactsExportOutput]:
+        """Get projects with their contacts.
+
+        Args:
+            project_id: Filter by internal project ID.
+            project_code: Filter by external project code.
+            user_id: Filter by internal user ID.
+            employee_id: Filter by external employee ID.
+            top: Maximum number of results to return (paging).
+            skip: Number of results to skip (paging).
+
+        Returns:
+            A list of ProjectContactsExportOutput objects.
+        """
+        params: dict[str, str] = {}
+        if project_id is not None:
+            params["projectId"] = str(project_id)
+        if project_code is not None:
+            params["projectCode"] = project_code
+        if user_id is not None:
+            params["userId"] = str(user_id)
+        if employee_id is not None:
+            params["employeeId"] = employee_id
+        if top is not None:
+            params["top"] = str(top)
+        if skip is not None:
+            params["skip"] = str(skip)
+
+        response_text = await self._get("/importapi/Project/Contacts", params or None)
+        adapter = TypeAdapter(list[ProjectContactsExportOutput])
+        return adapter.validate_json(response_text)
+
+    async def get_project_team_members(
+        self,
+        *,
+        project_id: int | None = None,
+        project_code: str | None = None,
+        user_id: int | None = None,
+        employee_id: str | None = None,
+        top: int | None = None,
+        skip: int | None = None,
+    ) -> list[ProjectTeamMembersExportOutput]:
+        """Get projects with their team members.
+
+        Args:
+            project_id: Filter by internal project ID.
+            project_code: Filter by external project code.
+            user_id: Filter by internal user ID.
+            employee_id: Filter by external employee ID.
+            top: Maximum number of results to return (paging).
+            skip: Number of results to skip (paging).
+
+        Returns:
+            A list of ProjectTeamMembersExportOutput objects.
+        """
+        params: dict[str, str] = {}
+        if project_id is not None:
+            params["projectId"] = str(project_id)
+        if project_code is not None:
+            params["projectCode"] = project_code
+        if user_id is not None:
+            params["userId"] = str(user_id)
+        if employee_id is not None:
+            params["employeeId"] = employee_id
+        if top is not None:
+            params["top"] = str(top)
+        if skip is not None:
+            params["skip"] = str(skip)
+
+        response_text = await self._get("/importapi/Project/TeamMembers", params or None)
+        adapter = TypeAdapter(list[ProjectTeamMembersExportOutput])
+        return adapter.validate_json(response_text)
+
+    async def get_project_recording_targets(
+        self,
+        *,
+        project_reference_id: int | None = None,
+        project_code: str | None = None,
+    ) -> list[ProjectRecordingTargetOutput]:
+        """Get a project's allowed activity types (project-direct recording targets).
+
+        Args:
+            project_reference_id: Filter by internal project reference ID.
+            project_code: Filter by external project code.
+
+        Returns:
+            A list of ProjectRecordingTargetOutput objects.
+        """
+        params: dict[str, str] = {}
+        if project_reference_id is not None:
+            params["projectReferenceId"] = str(project_reference_id)
+        if project_code is not None:
+            params["projectCode"] = project_code
+
+        response_text = await self._get("/importapi/Project/RecordingTargets", params or None)
+        adapter = TypeAdapter(list[ProjectRecordingTargetOutput])
+        return adapter.validate_json(response_text)
+
+    async def import_project_recording_targets(
+        self,
+        batch: ProjectRecordingTargetImportBatch,
+    ) -> ProjectRecordingTargetImportBatchResult:
+        """Create, update, or remove a project's allowed activity types.
+
+        One row per (project, activity type).
+
+        Args:
+            batch: The recording targets to import.
+
+        Returns:
+            A ProjectRecordingTargetImportBatchResult with the import status.
+        """
+        data = batch.model_dump_json(by_alias=True, exclude_none=True)
+        response_text = await self._post("/importapi/Project/RecordingTargets", data)
+        return ProjectRecordingTargetImportBatchResult.model_validate_json(response_text)
+
+    async def import_projects(
+        self,
+        batch: ProjectBatchInput,
+        *,
+        booking_extend_option: BookingExtendOption | None = None,
+    ) -> list[ProjectReferenceImportResult]:
+        """Create, update, or delete a batch of projects.
+
+        Args:
+            batch: The batch of projects to import.
+            booking_extend_option: How to handle bookings when project dates change.
+
+        Returns:
+            A list of ProjectReferenceImportResult objects with the per-project import status.
+        """
+        path = "/importapi/Project/ImportBatch"
+        if booking_extend_option is not None:
+            path = f"{path}?bookingExtendOption={booking_extend_option.value}"
+        data = batch.model_dump_json(by_alias=True, exclude_none=True)
+        response_text = await self._post(path, data)
+        adapter = TypeAdapter(list[ProjectReferenceImportResult])
+        return adapter.validate_json(response_text)
+
+    # =========================================================================
+    # Resource Request (extended) Methods
+    # =========================================================================
+
+    async def get_resource_request_contacts(
+        self,
+        *,
+        request_id: int | None = None,
+        request_code: str | None = None,
+        user_id: int | None = None,
+        employee_id: str | None = None,
+        skip: int | None = None,
+        top: int | None = None,
+    ) -> list[ResourceRequestContactOutput]:
+        """Get a (filtered) list of resource request contacts.
+
+        Args:
+            request_id: Filter by internal resource request ID.
+            request_code: Filter by external resource request code.
+            user_id: Filter by internal user ID.
+            employee_id: Filter by external employee ID.
+            skip: Number of results to skip (paging).
+            top: Maximum number of results to return (paging).
+
+        Returns:
+            A list of ResourceRequestContactOutput objects.
+        """
+        params: dict[str, str] = {}
+        if request_id is not None:
+            params["requestid"] = str(request_id)
+        if request_code is not None:
+            params["requestcode"] = request_code
+        if user_id is not None:
+            params["userid"] = str(user_id)
+        if employee_id is not None:
+            params["employeeid"] = employee_id
+        if skip is not None:
+            params["skip"] = str(skip)
+        if top is not None:
+            params["top"] = str(top)
+
+        response_text = await self._get("/importapi/ResourceRequest/Contacts", params or None)
+        adapter = TypeAdapter(list[ResourceRequestContactOutput])
+        return adapter.validate_json(response_text)
+
+    # =========================================================================
+    # User (extended) Methods
+    # =========================================================================
+
+    async def get_employee_types(self) -> list[EmployeeTypeOutput]:
+        """Get all employee types. Names are returned in English.
+
+        Returns:
+            A list of EmployeeTypeOutput objects.
+        """
+        response_text = await self._get("/importapi/User/EmployeeTypes")
+        adapter = TypeAdapter(list[EmployeeTypeOutput])
+        return adapter.validate_json(response_text)
