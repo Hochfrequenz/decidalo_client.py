@@ -760,6 +760,8 @@ class TestGetProject:
                 "name": {"value": "Test Project"},
             },
             "keywords": [],
+            "creator": {"userID": 1},
+            "lastEditor": {"userID": 1},
         }
         mock_aiohttp.get(
             f"{BASE_URL}/importapi/Project?projectId=1",
@@ -797,11 +799,15 @@ class TestGetAllProjects:
                 "identifier": {"projectID": 1, "projectCode": "PROJ001"},
                 "properties": {"name": {"value": "Project One"}},
                 "keywords": [],
+                "creator": {"userID": 1},
+                "lastEditor": {"userID": 1},
             },
             {
                 "identifier": {"projectID": 2, "projectCode": "PROJ002"},
                 "properties": {"name": {"value": "Project Two"}},
                 "keywords": [],
+                "creator": {"userID": 1},
+                "lastEditor": {"userID": 1},
             },
         ]
         mock_aiohttp.get(
@@ -1075,6 +1081,7 @@ class TestGetResourceRequest:
                     "title": "Senior Developer",
                     "requestedCandidateCount": 2,
                 },
+                "metrics": {},
                 "creationDate": "2024-01-10T08:00:00Z",
                 "lastEditDate": "2024-01-15T10:00:00Z",
             },
