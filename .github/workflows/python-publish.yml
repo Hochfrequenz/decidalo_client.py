@@ -41,7 +41,7 @@ jobs:
           PYTHONPATH: ../src
         run: |
           uv run --group coverage coverage run -m pytest
-          uv run --group coverage coverage report --fail-under 80 --omit ".tox/*,unittests/*,*/decidalo_app_client/auth.py"
+          uv run --group coverage coverage report --fail-under 80 --omit ".venv/*,unittests/*,*/decidalo_app_client/auth.py"
 
   build-n-publish:
     name: Build and publish Python 🐍 distributions 📦 to PyPI and TestPyPI

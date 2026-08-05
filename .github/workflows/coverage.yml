@@ -18,5 +18,5 @@ jobs:
           PYTHONPATH: ../src
         run: |
           uv run --group coverage coverage run -m pytest
-          uv run --group coverage coverage html --omit ".tox/*,unittests/*,*/decidalo_app_client/auth.py"
-          uv run --group coverage coverage report --fail-under 80 --omit ".tox/*,unittests/*,*/decidalo_app_client/auth.py"
+          uv run --group coverage coverage html --omit ".venv/*,unittests/*,*/decidalo_app_client/auth.py"
+          uv run --group coverage coverage report --fail-under 80 --omit ".venv/*,unittests/*,*/decidalo_app_client/auth.py"
