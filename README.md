@@ -78,15 +78,20 @@ if __name__ == "__main__":
 - Async HTTP client built on `aiohttp`
 - Type-safe request/response models using `pydantic`
 - All major API endpoints:
-  - **Users** - Get users, import users (sync/async), check import status
+  - **Users** - Get users, import users (sync/async), check import status, get employee types
   - **Teams** - Get teams, import teams (sync/async), check import status
   - **Companies** - Get companies, import companies
-  - **Projects** - Get projects, get all projects, import projects, check existence
+  - **Projects** - Get projects, get all projects, import projects (single/batch), check existence, get contacts, get team members, get/import recording targets
   - **Bookings** - Get bookings, get bookings by project, import bookings
   - **Absences** - Get absences, import absences
-  - **Resource Requests** - Get resource requests, import resource requests
+  - **Resource Requests** - Get resource requests, import resource requests, get contacts
   - **Roles** - Import roles
   - **Working Time Patterns** - Get working time patterns, import working time patterns
+  - **Orders** - Get/import orders and order positions, custom properties, recording targets, work-package links
+  - **Work Packages** - Get/import work packages, candidates, order-position links, recording targets
+  - **Time Recording** - Get recording targets, get/import user timesheets
+  - **Activities** - Get/import activity types and general activities
+  - **Profile Exports** - Get industries, languages, professional experience, publications, testimonials, trainings, and get/import assessed skills
 
 ## App Client (`DecidaloAppClient`)
 
