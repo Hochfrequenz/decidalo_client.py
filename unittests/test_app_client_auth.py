@@ -1,9 +1,9 @@
 """Auth manual verification steps for decidalo_app_client.
 
 Device Code Flow and Token Refresh cannot be tested without a live OIDC server.
-The source module src/decidalo_app_client/auth.py is excluded from automated
-coverage via the workflow --omit flag; this test file is only covered by the
-blanket unittests/* omit entry.
+The source module src/decidalo_app_client/auth.py is omitted from the CI
+coverage report via the workflow --omit flag; this test file itself is omitted
+only by the blanket unittests/* entry in that same flag.
 
 MANUAL VERIFICATION STEPS
 --------------------------
