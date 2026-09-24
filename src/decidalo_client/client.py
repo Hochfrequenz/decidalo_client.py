@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import date, datetime
 from typing import TYPE_CHECKING
 from uuid import UUID
 
@@ -120,6 +121,41 @@ def _flatten_query(params: Mapping[str, str | list[str]] | None) -> list[tuple[s
     if not params:
         return None
     return [(key, item) for key, value in params.items() for item in ([value] if isinstance(value, str) else value)]
+
+
+def _format_date(value: date) -> str:
+    """Format a value for a query parameter of format "date" (YYYY-MM-DD).
+
+    Args:
+        value: The date.
+
+    Returns:
+        The ISO 8601 date.
+
+    Raises:
+        TypeError: If a datetime is passed. Date parameters carry no time of day.
+    """
+    if isinstance(value, datetime):
+        raise TypeError(f"expected a date, got a datetime: {value!r}")
+    return value.isoformat()
+
+
+def _format_datetime(value: datetime) -> str:
+    """Format a value for a query parameter of format "date-time" (ISO 8601 with UTC offset).
+
+    Args:
+        value: The timezone-aware datetime.
+
+    Returns:
+        The ISO 8601 timestamp including the UTC offset.
+
+    Raises:
+        ValueError: If the datetime is naive. The API would interpret it in the
+            local time of the server.
+    """
+    if value.utcoffset() is None:
+        raise ValueError(f"timezone-aware datetime required, got a naive datetime: {value!r}")
+    return value.isoformat()
 
 
 class DecidaloClient:
@@ -912,8 +948,8 @@ class DecidaloClient:
     async def get_absences(
         self,
         *,
-        start_date: str | None = None,
-        end_date: str | None = None,
+        start_date: datetime | None = None,
+        end_date: datetime | None = None,
     ) -> AbsenceOutputResult:
         """Get absences from the API.
 
@@ -921,17 +957,19 @@ class DecidaloClient:
         If no timeframe is provided, all absences are returned.
 
         Args:
-            start_date: If provided, only absences occurring after this date will be returned.
-            end_date: If provided, only absences occurring before this date will be returned.
+            start_date: If provided, only absences occurring after this point in time
+                will be returned (timezone-aware).
+            end_date: If provided, only absences occurring before this point in time
+                will be returned (timezone-aware).
 
         Returns:
             An AbsenceOutputResult object containing the list of absences.
         """
         params: dict[str, str] = {}
-        if start_date:
-            params["startDate"] = start_date
-        if end_date:
-            params["endDate"] = end_date
+        if start_date is not None:
+            params["startDate"] = _format_datetime(start_date)
+        if end_date is not None:
+            params["endDate"] = _format_datetime(end_date)
 
         response_text = await self._get("/importapi/Absence", params)
         return AbsenceOutputResult.model_validate_json(response_text)
@@ -1409,10 +1447,10 @@ class DecidaloClient:
         status: WorkPackageStatus | None = None,
         parent_work_package_id: int | None = None,
         time_recording_allowed: bool | None = None,
-        start_date_before: str | None = None,
-        end_date_after: str | None = None,
-        created_on_or_after: str | None = None,
-        last_updated_on_or_after: str | None = None,
+        start_date_before: date | None = None,
+        end_date_after: date | None = None,
+        created_on_or_after: datetime | None = None,
+        last_updated_on_or_after: datetime | None = None,
         top: int | None = None,
         skip: int | None = None,
     ) -> list[WorkPackageOutput]:
@@ -1428,10 +1466,10 @@ class DecidaloClient:
             status: Filter by work package status.
             parent_work_package_id: Filter by the parent work package ID.
             time_recording_allowed: Filter by whether time recording is allowed.
-            start_date_before: Only work packages starting before this date (ISO format).
-            end_date_after: Only work packages ending after this date (ISO format).
-            created_on_or_after: Incremental-sync filter on creation timestamp (ISO format).
-            last_updated_on_or_after: Incremental-sync filter on update timestamp (ISO format).
+            start_date_before: Only work packages starting before this date.
+            end_date_after: Only work packages ending after this date.
+            created_on_or_after: Incremental-sync filter on the creation timestamp (timezone-aware).
+            last_updated_on_or_after: Incremental-sync filter on the update timestamp (timezone-aware).
             top: Maximum number of results to return (paging).
             skip: Number of results to skip (paging).
 
@@ -1454,13 +1492,13 @@ class DecidaloClient:
         if time_recording_allowed is not None:
             params["TimeRecordingAllowed"] = str(time_recording_allowed).lower()
         if start_date_before is not None:
-            params["StartDateBefore"] = start_date_before
+            params["StartDateBefore"] = _format_date(start_date_before)
         if end_date_after is not None:
-            params["EndDateAfter"] = end_date_after
+            params["EndDateAfter"] = _format_date(end_date_after)
         if created_on_or_after is not None:
-            params["CreatedOnOrAfter"] = created_on_or_after
+            params["CreatedOnOrAfter"] = _format_datetime(created_on_or_after)
         if last_updated_on_or_after is not None:
-            params["LastUpdatedOnOrAfter"] = last_updated_on_or_after
+            params["LastUpdatedOnOrAfter"] = _format_datetime(last_updated_on_or_after)
         if top is not None:
             params["Top"] = str(top)
         if skip is not None:
@@ -1705,8 +1743,8 @@ class DecidaloClient:
         user_id: int | None = None,
         employee_id: str | None = None,
         email: str | None = None,
-        start_date: str | None = None,
-        end_date: str | None = None,
+        start_date: date | None = None,
+        end_date: date | None = None,
     ) -> TimeRecordingImportOutputBatch:
         """Get a user's timesheet.
 
@@ -1714,8 +1752,8 @@ class DecidaloClient:
             user_id: The internal user ID.
             employee_id: The external employee ID.
             email: The user's email address.
-            start_date: Only entries on or after this date (ISO format).
-            end_date: Only entries on or before this date (ISO format).
+            start_date: Only entries on or after this date.
+            end_date: Only entries on or before this date.
 
         Returns:
             A TimeRecordingImportOutputBatch with the user's entries and work times.
@@ -1728,9 +1766,9 @@ class DecidaloClient:
         if email is not None:
             params["email"] = email
         if start_date is not None:
-            params["startDate"] = start_date
+            params["startDate"] = _format_date(start_date)
         if end_date is not None:
-            params["endDate"] = end_date
+            params["endDate"] = _format_date(end_date)
 
         response_text = await self._get("/importapi/TimeRecording/UserTimeSheet", params)
         return TimeRecordingImportOutputBatch.model_validate_json(response_text)
@@ -1987,7 +2025,7 @@ class DecidaloClient:
         service_line_name: str | None = None,
         top: int | None = None,
         skip: int | None = None,
-        modified_since: str | None = None,
+        modified_since: datetime | None = None,
     ) -> list[UserSkillsOutput]:
         """Get users with their assessed skills.
 
@@ -2009,7 +2047,7 @@ class DecidaloClient:
             service_line_name: Filter by service line name.
             top: Maximum number of results to return (paging).
             skip: Number of results to skip (paging).
-            modified_since: Only skills modified since this date (ISO format).
+            modified_since: Only skills modified since this point in time (timezone-aware).
 
         Returns:
             A list of UserSkillsOutput objects.
@@ -2046,7 +2084,7 @@ class DecidaloClient:
         if skip is not None:
             params["skip"] = str(skip)
         if modified_since is not None:
-            params["modifiedSince"] = modified_since
+            params["modifiedSince"] = _format_datetime(modified_since)
 
         response_text = await self._get("/importapi/Profile/UserSkills", params)
         adapter = TypeAdapter(list[UserSkillsOutput])

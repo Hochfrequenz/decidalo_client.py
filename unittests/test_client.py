@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import UTC, date, datetime, timedelta, timezone
 from uuid import UUID
 
 import pytest
@@ -191,7 +192,10 @@ class TestCustomBaseUrl:
 
 
 def requested_urls(mock: aioresponses) -> list[str]:
-    """Return the URLs of all requests recorded by the aioresponses mock, in request order."""
+    """Return the URLs of all requests recorded by the aioresponses mock.
+
+    aioresponses normalizes the URLs, i.e. the query parameters are sorted.
+    """
     return [str(url) for _, url in mock.requests]
 
 
@@ -238,6 +242,52 @@ class TestRequestHelpers:
 
         assert status == 204
         assert requested_urls(mock_aiohttp) == [f"{BASE_URL}/importapi/Project?projectcode=A%26B%23C"]
+
+
+class TestDateQueryParameters:
+    """Tests for query parameters of format date and date-time."""
+
+    async def test_dates_and_datetimes_are_sent_in_iso_format(self, mock_aiohttp: aioresponses) -> None:
+        """Test that dates are sent as YYYY-MM-DD and datetimes with their UTC offset."""
+        url = (
+            f"{BASE_URL}/importapi/WorkPackage?StartDateBefore=2026-01-31&EndDateAfter=2026-01-01"
+            "&CreatedOnOrAfter=2026-01-01T00:00:00%2B00:00&LastUpdatedOnOrAfter=2026-01-01T12:30:00%2B02:00"
+        )
+        mock_aiohttp.get(url, payload=[], status=200)
+
+        async with DecidaloClient(api_key=API_KEY, base_url=BASE_URL) as client:
+            await client.get_work_packages(
+                start_date_before=date(2026, 1, 31),
+                end_date_after=date(2026, 1, 1),
+                created_on_or_after=datetime(2026, 1, 1, tzinfo=UTC),
+                last_updated_on_or_after=datetime(2026, 1, 1, 12, 30, tzinfo=timezone(timedelta(hours=2))),
+            )
+
+        assert len(requested_urls(mock_aiohttp)) == 1
+
+    async def test_get_absences_sends_datetimes(self, mock_aiohttp: aioresponses) -> None:
+        """Test get_absences sends its time range as ISO 8601 timestamps."""
+        url = f"{BASE_URL}/importapi/Absence?startDate=2026-02-01T00:00:00%2B00:00&endDate=2026-02-28T00:00:00%2B00:00"
+        mock_aiohttp.get(url, payload={"absences": []}, status=200)
+
+        async with DecidaloClient(api_key=API_KEY, base_url=BASE_URL) as client:
+            result = await client.get_absences(
+                start_date=datetime(2026, 2, 1, tzinfo=UTC), end_date=datetime(2026, 2, 28, tzinfo=UTC)
+            )
+
+        assert result.absences == []
+
+    async def test_naive_datetime_is_rejected(self) -> None:
+        """Test that a datetime without timezone is rejected, as the API would assume its local time."""
+        async with DecidaloClient(api_key=API_KEY, base_url=BASE_URL) as client:
+            with pytest.raises(ValueError, match="timezone-aware datetime required"):
+                await client.get_profile_user_skills(modified_since=datetime(2026, 1, 1))
+
+    async def test_datetime_for_date_parameter_is_rejected(self) -> None:
+        """Test that a datetime passed to a date parameter is rejected instead of silently truncated."""
+        async with DecidaloClient(api_key=API_KEY, base_url=BASE_URL) as client:
+            with pytest.raises(TypeError, match="expected a date, got a datetime"):
+                await client.get_user_time_sheet(start_date=datetime(2026, 1, 1, tzinfo=UTC))
 
 
 # =============================================================================
