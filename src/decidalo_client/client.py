@@ -186,9 +186,8 @@ def _format_datetime(value: datetime) -> str:
 class DecidaloClient:
     """Async client for the Decidalo Import API.
 
-    This client provides methods to interact with the Decidalo Import API,
-    including operations for users, teams, companies, projects, bookings,
-    absences, resource requests, roles, and working time patterns.
+    Every public method wraps exactly one operation of the V3 Import API; the
+    "API Coverage" section of the README lists which operations are covered.
 
     The client can be used as an async context manager to ensure proper
     cleanup of resources.

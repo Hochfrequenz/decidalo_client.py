@@ -76,22 +76,251 @@ if __name__ == "__main__":
 ### Import Client Features
 
 - Async HTTP client built on `aiohttp`
-- Type-safe request/response models using `pydantic`
-- All major API endpoints:
-  - **Users** - Get users, import users (sync/async), check import status, get employee types
-  - **Teams** - Get teams, import teams (sync/async), check import status
-  - **Companies** - Get companies, import companies
-  - **Projects** - Get projects, get all projects, import projects (single/batch), check existence, get contacts, get team members, get/import recording targets
-  - **Bookings** - Get bookings, get bookings by project, import bookings
-  - **Absences** - Get absences, import absences
-  - **Resource Requests** - Get resource requests, import resource requests, get contacts
-  - **Roles** - Import roles
-  - **Working Time Patterns** - Get working time patterns, import working time patterns
-  - **Orders** - Get/import orders and order positions, custom properties, recording targets, work-package links
-  - **Work Packages** - Get/import work packages, candidates, order-position links, recording targets
-  - **Time Recording** - Get recording targets, get/import user timesheets
-  - **Activities** - Get/import activity types and general activities
-  - **Profile Exports** - Get industries, languages, professional experience, publications, testimonials, trainings, and get/import assessed skills
+- Type-safe request/response models using `pydantic`, generated from the OpenAPI spec of the Import API
+- Every public method of `DecidaloClient` wraps exactly one API operation (see [API Coverage](#api-coverage)): path, query parameters, request body and response type follow the spec, and the keyword arguments are the snake_case names of the query parameters (e.g. `created_on_or_after` for `CreatedOnOrAfter`)
+- Query parameters of format `date` take a `datetime.date`, those of format `date-time` a timezone-aware `datetime.datetime`
+- Fields the models don't know (e.g. fields the API added to a response) are ignored instead of failing the validation
+
+> [!TIP]
+> Because unknown fields are ignored, a misspelled or outdated keyword argument of a request model is dropped silently at runtime, e.g. `OrderImportItem(projectCode="P1")`.
+> Let mypy catch such mistakes with the [pydantic mypy plugin](https://docs.pydantic.dev/latest/integrations/mypy/) and `init_forbid_extra`:
+>
+> ```toml
+> [tool.mypy]
+> plugins = ["pydantic.mypy"]
+>
+> [tool.pydantic-mypy]
+> init_forbid_extra = true
+> ```
+
+### API Coverage
+
+The client covers the V3 Import API as described by [`openapi/v1/swagger.json`](openapi/v1/swagger.json), synced from [import.decidalo.dev](https://import.decidalo.dev/swagger/v1/swagger.json) on 2026-09-24.
+The tables are grouped by the tags of the spec (as in the [Swagger UI](https://import.decidalo.dev/index.html)).
+
+<!-- api-coverage:start -->
+**83 of 110** operations are implemented.
+
+#### Absence
+
+| Endpoint | Method |
+| --- | --- |
+| `GET /importapi/Absence` | `get_absences()` |
+| `POST /importapi/Absence/Import` | `import_absences()` |
+
+#### ActivityType
+
+| Endpoint | Method |
+| --- | --- |
+| `GET /importapi/ActivityType` | `get_activity_types()` |
+| `POST /importapi/ActivityType` | `import_activity_type()` |
+
+#### Booking
+
+| Endpoint | Method |
+| --- | --- |
+| `GET /importapi/Booking` | `get_bookings()` |
+| `GET /importapi/Booking/BookingAccountingTypes` | not implemented |
+| `GET /importapi/Booking/ByProject` | `get_bookings_by_project()` |
+| `POST /importapi/Booking/Comments/Batch` | `import_booking_comments()` |
+| `GET /importapi/Booking/CustomProperties` | not implemented |
+| `POST /importapi/Booking/ImportAsync` | `import_bookings_async()` |
+| `GET /importapi/Booking/RejectionReasons` | not implemented |
+
+#### Certificate
+
+| Endpoint | Method |
+| --- | --- |
+| `GET /importapi/Certificate` | not implemented |
+
+#### Company
+
+| Endpoint | Method |
+| --- | --- |
+| `GET /importapi/Company` | `get_companies()` |
+| `POST /importapi/Company/Import` | `import_company()` |
+
+#### CompanyDeprecated
+
+| Endpoint | Method |
+| --- | --- |
+| `POST /api/Company/Import` | not implemented (deprecated) |
+
+#### GeneralActivity
+
+| Endpoint | Method |
+| --- | --- |
+| `GET /importapi/GeneralActivity` | `get_general_activities()` |
+| `POST /importapi/GeneralActivity` | `import_general_activity()` |
+
+#### HolidayCalendar
+
+| Endpoint | Method |
+| --- | --- |
+| `GET /importapi/HolidayCalendar` | `get_holiday_calendars()` |
+| `POST /importapi/HolidayCalendar/Import` | `import_holiday_calendars()` |
+
+#### Order
+
+| Endpoint | Method |
+| --- | --- |
+| `GET /importapi/Order` | `get_orders()` |
+| `POST /importapi/Order` | `import_orders()` |
+| `GET /importapi/Order/CustomProperties` | `get_order_custom_properties()` |
+| `POST /importapi/Order/Position` | `import_order_positions()` |
+| `GET /importapi/Order/Position/RecordingTargets` | `get_order_position_recording_targets()` |
+| `POST /importapi/Order/Position/RecordingTargets` | `import_order_position_recording_targets()` |
+| `GET /importapi/Order/Position/RecordingTypeRates` | `get_order_position_recording_type_rates()` |
+| `POST /importapi/Order/Position/RecordingTypeRates` | `import_order_position_recording_type_rates()` |
+| `GET /importapi/Order/Position/Single` | `get_order_position()` |
+| `GET /importapi/Order/Position/WorkPackages` | `get_order_position_work_packages()` |
+| `POST /importapi/Order/Position/WorkPackages` | `import_order_position_work_packages()` |
+| `GET /importapi/Order/Single` | `get_order()` |
+
+#### Profile
+
+| Endpoint | Method |
+| --- | --- |
+| `GET /importapi/Profile/Certificates` | not implemented |
+| `GET /importapi/Profile/Industries` | `get_profile_industries()` |
+| `GET /importapi/Profile/Languages` | `get_profile_languages()` |
+| `GET /importapi/Profile/ProfessionalExperience` | `get_profile_professional_experience()` |
+| `GET /importapi/Profile/Publications` | `get_profile_publications()` |
+| `GET /importapi/Profile/Roles` | not implemented |
+| `GET /importapi/Profile/Testimonials` | `get_profile_testimonials()` |
+| `GET /importapi/Profile/Trainings` | `get_profile_trainings()` |
+| `GET /importapi/Profile/UserSkills` | `get_profile_user_skills()` |
+| `POST /importapi/Profile/UserSkills` | `import_profile_user_skills()` |
+
+#### Project
+
+| Endpoint | Method |
+| --- | --- |
+| `GET /importapi/Project` | `get_project()` |
+| `HEAD /importapi/Project` | `project_exists()` |
+| `GET /importapi/Project/AllProjects` | `get_all_projects()` |
+| `GET /importapi/Project/BusinessUnits` | not implemented |
+| `POST /importapi/Project/Comments/Batch` | `import_project_comments()` |
+| `GET /importapi/Project/Contacts` | `get_project_contacts()` |
+| `GET /importapi/Project/CustomProperties` | not implemented |
+| `GET /importapi/Project/DeliveryModels` | not implemented |
+| `POST /importapi/Project/Import` | `import_project()` |
+| `POST /importapi/Project/ImportBatch` | `import_projects()` |
+| `GET /importapi/Project/LegalEntities` | not implemented |
+| `GET /importapi/Project/PracticeAreas` | not implemented |
+| `GET /importapi/Project/Priorities` | not implemented |
+| `GET /importapi/Project/ProjectStatus` | not implemented |
+| `GET /importapi/Project/RecordingTargets` | `get_project_recording_targets()` |
+| `POST /importapi/Project/RecordingTargets` | `import_project_recording_targets()` |
+| `GET /importapi/Project/ReferenceStatus` | not implemented |
+| `GET /importapi/Project/ResourceGroups` | not implemented |
+| `GET /importapi/Project/ServiceLines` | not implemented |
+| `GET /importapi/Project/TeamMembers` | `get_project_team_members()` |
+
+#### Rate
+
+| Endpoint | Method |
+| --- | --- |
+| `GET /importapi/Rate` | `get_rates()` |
+| `POST /importapi/Rate` | `import_rate()` |
+
+#### RecordingType
+
+| Endpoint | Method |
+| --- | --- |
+| `GET /importapi/RecordingType` | `get_recording_types()` |
+| `POST /importapi/RecordingType` | `import_recording_type()` |
+
+#### ResourceRequest
+
+| Endpoint | Method |
+| --- | --- |
+| `GET /importapi/ResourceRequest` | not implemented |
+| `POST /importapi/ResourceRequest` | `import_resource_request()` |
+| `GET /importapi/ResourceRequest/Contacts` | `get_resource_request_contacts()` |
+| `GET /importapi/ResourceRequest/CustomProperties` | not implemented |
+| `GET /importapi/ResourceRequest/ServiceCategories` | `get_resource_request_service_categories()` |
+| `GET /importapi/ResourceRequest/{requestid}` | `get_resource_request()` |
+
+#### Role
+
+| Endpoint | Method |
+| --- | --- |
+| `GET /importapi/Role` | not implemented |
+| `POST /importapi/Role` | `import_role()` |
+
+#### Skill
+
+| Endpoint | Method |
+| --- | --- |
+| `GET /importapi/Skill` | not implemented |
+| `GET /importapi/Skill/UserSkills` | not implemented |
+
+#### Team
+
+| Endpoint | Method |
+| --- | --- |
+| `GET /importapi/Team` | `get_teams()` |
+| `POST /importapi/Team/ImportAsync` | `import_teams_async()` |
+| `GET /importapi/Team/ImportStatus` | `get_team_import_status()` |
+| `POST /importapi/Team/ImportSync` | `import_teams_sync()` |
+| `GET /importapi/Team/Managers` | not implemented |
+| `POST /importapi/Team/Managers` | not implemented |
+
+#### TimeRecording
+
+| Endpoint | Method |
+| --- | --- |
+| `GET /importapi/TimeRecording/RecordingEntries` | `get_recording_entries()` |
+| `POST /importapi/TimeRecording/RecordingEntries` | `import_recording_entries()` |
+| `GET /importapi/TimeRecording/RecordingTargets` | `get_recording_targets()` |
+| `GET /importapi/TimeRecording/UserTimeSheet` | `get_user_time_sheet()` |
+| `POST /importapi/TimeRecording/UserTimeSheet` | `import_user_time_sheet()` |
+
+#### User
+
+| Endpoint | Method |
+| --- | --- |
+| `GET /importapi/User` | `get_users()` |
+| `GET /importapi/User/AuthorizationRoles` | `get_authorization_roles()` |
+| `GET /importapi/User/CustomProperties` | not implemented |
+| `POST /importapi/User/Echo` | not implemented |
+| `GET /importapi/User/EmployeeTypes` | `get_employee_types()` |
+| `POST /importapi/User/ImportAsync` | `import_users_async()` |
+| `GET /importapi/User/ImportStatus` | `get_user_import_status()` |
+| `POST /importapi/User/ImportSync` | `import_users_sync()` |
+| `POST /importapi/User/ProfileImage` | not implemented |
+
+#### UserHolidayCalendar
+
+| Endpoint | Method |
+| --- | --- |
+| `GET /importapi/UserHolidayCalendar` | `get_user_holiday_calendars()` |
+| `POST /importapi/UserHolidayCalendar/Import` | `import_user_holiday_calendars()` |
+
+#### WorkingTimePattern
+
+| Endpoint | Method |
+| --- | --- |
+| `GET /importapi/WorkingTimePattern` | `get_working_time_patterns()` |
+| `POST /importapi/WorkingTimePattern/Import` | `import_working_time_patterns()` |
+
+#### WorkPackage
+
+| Endpoint | Method |
+| --- | --- |
+| `GET /importapi/WorkPackage` | `get_work_packages()` |
+| `POST /importapi/WorkPackage` | `import_work_package()` |
+| `GET /importapi/WorkPackage/Candidates` | `get_work_package_candidates()` |
+| `POST /importapi/WorkPackage/Candidates` | `import_work_package_candidates()` |
+| `GET /importapi/WorkPackage/CustomProperties` | `get_work_package_custom_properties()` |
+| `GET /importapi/WorkPackage/OrderPositions` | `get_work_package_order_positions()` |
+| `POST /importapi/WorkPackage/OrderPositions` | `import_work_package_order_positions()` |
+| `GET /importapi/WorkPackage/OrderPositions/RecordingTargets` | `get_work_package_order_position_recording_targets()` |
+| `GET /importapi/WorkPackage/RecordingTargets` | `get_work_package_recording_targets()` |
+| `POST /importapi/WorkPackage/RecordingTargets` | `import_work_package_recording_targets()` |
+| `GET /importapi/WorkPackage/{workpackageid}` | `get_work_package()` |
+<!-- api-coverage:end -->
 
 ## App Client (`DecidaloAppClient`)
 
@@ -192,12 +421,20 @@ cd decidalo_client.py
 uv sync --group dev
 ```
 
-To regenerate the Pydantic models from the OpenAPI spec:
+To sync the Import Client with the current API, download the spec and regenerate the Pydantic models from it:
 
 ```bash
+curl -o openapi/v1/swagger.json https://import.decidalo.dev/swagger/v1/swagger.json
 uv run --group codegen datamodel-codegen --input openapi/v1/swagger.json --output src/decidalo_client/models/_autogenerated.py --input-file-type openapi --output-model-type pydantic_v2.BaseModel --target-python-version 3.11 --use-annotated --use-double-quotes --collapse-root-models --field-constraints --strict-nullable --use-standard-collections --enum-field-as-literal one --extra-fields ignore
 uv run --group codegen ruff format src/decidalo_client/models/_autogenerated.py
 uv run --group codegen ruff check --select I --fix src/decidalo_client/models/_autogenerated.py
+```
+
+Then run the tests: `unittests/test_models.py` checks that the models match the spec, and `unittests/test_api_coverage.py` checks the [API Coverage](#api-coverage) section of this README against the spec and the client.
+To print the expected content of that section, run:
+
+```bash
+PYTHONPATH=src uv run --group tests python unittests/test_api_coverage.py
 ```
 
 For detailed information on the development setup (uv configuration, IDE setup, etc.), see the [Hochfrequenz Python Template Repository](https://github.com/Hochfrequenz/python_template_repository).
