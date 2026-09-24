@@ -10,31 +10,6 @@ from aioresponses import aioresponses
 from decidalo_client import DecidaloClient
 from decidalo_client import models as dm
 from decidalo_client.exceptions import DecidaloAPIError, DecidaloAuthenticationError
-from decidalo_client.models import (
-    AbsenceImportItem,
-    BookingInput,
-    BookingType,
-    ImportAbsencesCommand,
-    ImportCompanyCommand,
-    ProjectReferenceIdentityInput,
-    ProjectReferenceInput,
-    ProjectReferencePropertiesInput,
-    ResourceRequestInput,
-    ResourceRequestPropertiesInput,
-    ResourceRequestStatus,
-    RoleIdentityInput,
-    RoleImportInput,
-    RolePropertiesInput,
-    TeamBatchInput,
-    TeamInput,
-    TextFieldInput,
-    TextFieldTranslationInput,
-    UserBatchInput,
-    UserIdentityInput,
-    UserInput,
-    UserWorkingProfileInput,
-    WorkingProfileInput,
-)
 
 BASE_URL = "https://import.decidalo.dev"
 API_KEY = "test-api-key"
@@ -167,7 +142,7 @@ class TestErrorHandling:
         )
 
         async with DecidaloClient(api_key=API_KEY, base_url=BASE_URL) as client:
-            batch = UserBatchInput(users=[])
+            batch = dm.UserBatchInput(users=[])
             with pytest.raises(DecidaloAPIError) as exc_info:
                 await client.import_users_sync(batch)
 
@@ -336,9 +311,9 @@ class TestImportUsersSync:
             status=200,
         )
 
-        batch = UserBatchInput(
+        batch = dm.UserBatchInput(
             users=[
-                UserInput(
+                dm.UserInput(
                     email="new.user@example.com",
                     displayName="New User",
                     employeeID="EMP003",
@@ -393,14 +368,14 @@ class TestImportUsersSync:
             status=500,
         )
 
-        batch = UserBatchInput(
+        batch = dm.UserBatchInput(
             users=[
-                UserInput(
+                dm.UserInput(
                     email="new.user@example.com",
                     displayName="New User",
                     employeeID="EMP003",
                 ),
-                UserInput(
+                dm.UserInput(
                     email="broken",
                     displayName="Broken User",
                     employeeID="EMP004",
@@ -432,9 +407,9 @@ class TestImportUsersAsync:
             status=200,
         )
 
-        batch = UserBatchInput(
+        batch = dm.UserBatchInput(
             users=[
-                UserInput(
+                dm.UserInput(
                     email="new.user@example.com",
                     displayName="New User",
                     employeeID="EMP003",
@@ -474,7 +449,7 @@ class TestGetUserImportStatus:
 
 
 class TestEmployeeTypesEndpoint:
-    """Tests for the user (extended) methods."""
+    """Tests for the get_employee_types method."""
 
     async def test_get_employee_types(self, mock_aiohttp: aioresponses) -> None:
         """Test get_employee_types hits the correct endpoint and parses the response."""
@@ -556,9 +531,9 @@ class TestImportTeamsAsync:
             status=200,
         )
 
-        batch = TeamBatchInput(
+        batch = dm.TeamBatchInput(
             teams=[
-                TeamInput(
+                dm.TeamInput(
                     teamCode="TEAM003",
                     teamName="Marketing",
                 )
@@ -597,7 +572,7 @@ class TestImportTeamsSync:
         )
 
         teams = [
-            TeamInput(
+            dm.TeamInput(
                 teamCode="TEAM003",
                 teamName="Marketing",
             )
@@ -649,8 +624,8 @@ class TestImportTeamsSync:
         )
 
         teams = [
-            TeamInput(teamCode="TEAM003", teamName="Marketing"),
-            TeamInput(teamCode="TEAM004", teamName="Sales"),
+            dm.TeamInput(teamCode="TEAM003", teamName="Marketing"),
+            dm.TeamInput(teamCode="TEAM004", teamName="Sales"),
         ]
 
         async with DecidaloClient(api_key=API_KEY, base_url=BASE_URL) as client:
@@ -756,7 +731,7 @@ class TestImportCompany:
             status=200,
         )
 
-        company = ImportCompanyCommand(
+        company = dm.ImportCompanyCommand(
             companyName="NewCorp",
             companyCode="NEW001",
             isCustomer=True,
@@ -877,10 +852,10 @@ class TestImportProject:
             status=200,
         )
 
-        project = ProjectReferenceInput(
-            identifier=ProjectReferenceIdentityInput(projectCode="PROJ003"),
-            properties=ProjectReferencePropertiesInput(
-                name=TextFieldInput(value="New Project"),
+        project = dm.ProjectReferenceInput(
+            identifier=dm.ProjectReferenceIdentityInput(projectCode="PROJ003"),
+            properties=dm.ProjectReferencePropertiesInput(
+                name=dm.TextFieldInput(value="New Project"),
             ),
         )
 
@@ -920,8 +895,8 @@ class TestProjectExists:
         assert result is False
 
 
-class TestProjectExtendedEndpoints:
-    """Tests for the project (extended) methods."""
+class TestProjectEndpoints:
+    """Tests for the project contacts, team members, recording targets and batch import methods."""
 
     async def test_get_project_contacts(self, mock_aiohttp: aioresponses) -> None:
         """Test get_project_contacts hits the correct endpoint and parses the response."""
@@ -1047,7 +1022,7 @@ class TestGetBookings:
         assert len(result) == 1
         assert result[0].bookingID == 1
         assert result[0].subject == "Project Work"
-        assert result[0].bookingType == BookingType.Confirmed
+        assert result[0].bookingType == dm.BookingType.Confirmed
 
 
 class TestGetBookingsByProject:
@@ -1096,7 +1071,7 @@ class TestImportBookingsAsync:
         )
 
         bookings = [
-            BookingInput(
+            dm.BookingInput(
                 bookingCode="BOOK003",
                 userID=30,
                 subject="New Booking",
@@ -1166,9 +1141,9 @@ class TestImportAbsences:
             status=200,
         )
 
-        absences = ImportAbsencesCommand(
+        absences = dm.ImportAbsencesCommand(
             absences=[
-                AbsenceImportItem(
+                dm.AbsenceImportItem(
                     userId=20,
                     startDate="2024-03-01",
                     endDate="2024-03-05",
@@ -1217,7 +1192,7 @@ class TestGetResourceRequest:
             result = await client.get_resource_request(123)
 
         assert result.identifier.requestID == 123
-        assert result.status == ResourceRequestStatus.Open
+        assert result.status == dm.ResourceRequestStatus.Open
         assert result.accountingType is not None
         assert result.accountingType.accountingTypeName == "Billable"
         assert result.serviceCategory is not None
@@ -1238,9 +1213,9 @@ class TestImportResourceRequest:
             status=200,
         )
 
-        request = ResourceRequestInput(
-            status=ResourceRequestStatus.Open,
-            properties=ResourceRequestPropertiesInput(
+        request = dm.ResourceRequestInput(
+            status=dm.ResourceRequestStatus.Open,
+            properties=dm.ResourceRequestPropertiesInput(
                 title="New Developer Request",
                 requestedCandidateCount=1,
             ),
@@ -1253,7 +1228,7 @@ class TestImportResourceRequest:
 
 
 class TestResourceRequestContactsEndpoint:
-    """Tests for the resource request (extended) methods."""
+    """Tests for the get_resource_request_contacts method."""
 
     async def test_get_resource_request_contacts(self, mock_aiohttp: aioresponses) -> None:
         """Test get_resource_request_contacts hits the correct endpoint and parses the response."""
@@ -1290,10 +1265,10 @@ class TestImportRole:
             status=200,
         )
 
-        role = RoleImportInput(
-            identifier=RoleIdentityInput(roleCode="ROLE001"),
-            properties=RolePropertiesInput(
-                roleName=TextFieldTranslationInput(value="Software Engineer"),
+        role = dm.RoleImportInput(
+            identifier=dm.RoleIdentityInput(roleCode="ROLE001"),
+            properties=dm.RolePropertiesInput(
+                roleName=dm.TextFieldTranslationInput(value="Software Engineer"),
             ),
         )
 
@@ -1376,10 +1351,10 @@ class TestImportWorkingTimePattern:
             status=200,
         )
 
-        pattern = UserWorkingProfileInput(
-            userIdentity=UserIdentityInput(userID=10),
+        pattern = dm.UserWorkingProfileInput(
+            userIdentity=dm.UserIdentityInput(userID=10),
             workingTimePatterns=[
-                WorkingProfileInput(
+                dm.WorkingProfileInput(
                     startDate="2024-06-01",
                     hoursPerWeek=40.0,
                     hoursPerDay=8.0,

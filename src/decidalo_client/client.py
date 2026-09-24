@@ -106,7 +106,7 @@ if TYPE_CHECKING:
 DEFAULT_BASE_URL = "https://import.decidalo.dev"
 
 
-class DecidaloClient:  # pylint: disable=too-many-public-methods
+class DecidaloClient:
     """Async client for the Decidalo Import API.
 
     This client provides methods to interact with the Decidalo Import API,
@@ -302,7 +302,7 @@ class DecidaloClient:  # pylint: disable=too-many-public-methods
     # User Methods
     # =========================================================================
 
-    async def get_users(  # pylint: disable=too-many-arguments
+    async def get_users(
         self,
         *,
         employee_id: str | None = None,
@@ -825,7 +825,7 @@ class DecidaloClient:  # pylint: disable=too-many-public-methods
     # Booking Methods
     # =========================================================================
 
-    async def get_bookings(  # pylint: disable=too-many-arguments
+    async def get_bookings(
         self,
         *,
         employee_id: str | None = None,
@@ -1071,9 +1071,6 @@ class DecidaloClient:  # pylint: disable=too-many-public-methods
         user_id: int | None = None,
     ) -> list[GetImportUserWorkingProfileResult]:
         """Get all working time patterns from the API.
-
-        The correct endpoint per the OpenAPI spec is GET /importapi/WorkingTimePattern.
-        Note: the API only supports filtering by UserId, not by employeeId.
 
         Args:
             user_id: Optional filter by internal user ID.
