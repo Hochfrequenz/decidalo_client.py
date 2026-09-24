@@ -492,7 +492,7 @@ class DecidaloClient:
             A TeamImportAcceptedResponse with the batch ID.
         """
         data = batch.model_dump_json(by_alias=True, exclude_none=True)
-        response_text = await self._post("/importapi/Team", data)
+        response_text = await self._post("/importapi/Team/ImportAsync", data)
         return TeamImportAcceptedResponse.model_validate_json(response_text)
 
     async def import_teams_sync(
@@ -568,7 +568,7 @@ class DecidaloClient:
         if company_name is not None:
             params["companyName"] = company_name
 
-        response_text = await self._get("/importapi/Company/Import", params or None)
+        response_text = await self._get("/importapi/Company", params or None)
         adapter = TypeAdapter(list[CompanyCompleteOutput])
         return adapter.validate_json(response_text)
 
@@ -652,17 +652,25 @@ class DecidaloClient:
     async def import_project(
         self,
         project: ProjectReferenceInput,
+        *,
+        booking_extend_option: BookingExtendOption | None = None,
     ) -> ProjectReferenceImportResult:
-        """Import or update a project.
+        """Create or update a project.
 
         Args:
             project: The project data to import.
+            booking_extend_option: How to handle bookings when project dates change.
+                If omitted, only the project end date is updated.
 
         Returns:
             A ProjectReferenceImportResult with the import status.
         """
+        params: dict[str, str] = {}
+        if booking_extend_option is not None:
+            params["bookingExtendOption"] = booking_extend_option.value
+
         data = project.model_dump_json(by_alias=True, exclude_none=True)
-        response_text = await self._post("/importapi/Project", data)
+        response_text = await self._post("/importapi/Project/Import", data, params=params)
         return ProjectReferenceImportResult.model_validate_json(response_text)
 
     async def project_exists(

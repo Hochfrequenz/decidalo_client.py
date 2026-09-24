@@ -578,10 +578,10 @@ class TestImportTeamsAsync:
     """Tests for import_teams_async method."""
 
     async def test_import_teams_async(self, mock_aiohttp: aioresponses) -> None:
-        """Test import_teams_async returns batch ID."""
+        """Test import_teams_async posts to /Team/ImportAsync and returns the batch ID."""
         batch_id = "660e8400-e29b-41d4-a716-446655440001"
         mock_aiohttp.post(
-            f"{BASE_URL}/importapi/Team",
+            f"{BASE_URL}/importapi/Team/ImportAsync",
             payload={"batchID": batch_id},
             status=200,
         )
@@ -729,7 +729,7 @@ class TestGetCompanies:
     async def test_get_companies_empty_list(self, mock_aiohttp: aioresponses) -> None:
         """Test get_companies returns empty list."""
         mock_aiohttp.get(
-            f"{BASE_URL}/importapi/Company/Import",
+            f"{BASE_URL}/importapi/Company",
             payload=[],
             status=200,
         )
@@ -756,7 +756,7 @@ class TestGetCompanies:
             },
         ]
         mock_aiohttp.get(
-            f"{BASE_URL}/importapi/Company/Import",
+            f"{BASE_URL}/importapi/Company",
             payload=company_data,
             status=200,
         )
@@ -895,9 +895,9 @@ class TestImportProject:
     """Tests for import_project method."""
 
     async def test_import_project(self, mock_aiohttp: aioresponses) -> None:
-        """Test import_project returns import result."""
+        """Test import_project posts to /Project/Import and returns the import result."""
         mock_aiohttp.post(
-            f"{BASE_URL}/importapi/Project",
+            f"{BASE_URL}/importapi/Project/Import",
             payload={
                 "projectID": 3,
                 "projectCode": "PROJ003",
@@ -920,6 +920,26 @@ class TestImportProject:
         assert result.projectID == 3
         assert result.success is True
         assert result.status == dm.ImportItemStatusType.Created
+
+    async def test_import_project_with_booking_extend_option(self, mock_aiohttp: aioresponses) -> None:
+        """Test import_project sends the booking extend option as query parameter."""
+        mock_aiohttp.post(
+            f"{BASE_URL}/importapi/Project/Import?bookingExtendOption=RedistributePersonDays",
+            payload={"projectID": 3, "success": True},
+            status=200,
+        )
+
+        project = dm.ProjectReferenceInput(
+            identifier=dm.ProjectReferenceIdentityInput(projectCode="PROJ003"),
+            properties=dm.ProjectReferencePropertiesInput(name=dm.TextFieldInput(value="New Project")),
+        )
+
+        async with DecidaloClient(api_key=API_KEY, base_url=BASE_URL) as client:
+            result = await client.import_project(
+                project, booking_extend_option=dm.BookingExtendOption.RedistributePersonDays
+            )
+
+        assert result.projectID == 3
 
 
 class TestProjectExists:
