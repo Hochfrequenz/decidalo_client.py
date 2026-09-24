@@ -245,6 +245,8 @@ class TestGetUsers:
                 "hasLogin": True,
                 "creationDate": "2024-01-01T00:00:00Z",
                 "lastEditDate": "2024-01-15T00:00:00Z",
+                "lastLoginDate": "2026-09-01T08:00:00Z",
+                "isImported": True,
             },
             {
                 "userID": 2,
@@ -257,6 +259,8 @@ class TestGetUsers:
                 "hasLogin": True,
                 "creationDate": "2024-01-02T00:00:00Z",
                 "lastEditDate": "2024-01-16T00:00:00Z",
+                "lastLoginDate": None,
+                "isImported": False,
             },
         ]
         mock_aiohttp.get(
@@ -271,8 +275,11 @@ class TestGetUsers:
         assert len(result) == 2
         assert result[0].userID == 1
         assert result[0].email == "john.doe@example.com"
+        assert result[0].lastLoginDate is not None
+        assert result[0].lastLoginDate.year == 2026
         assert result[1].userID == 2
         assert result[1].displayName == "Jane Smith"
+        assert result[1].lastLoginDate is None
 
     async def test_get_users_with_email_filter(self, mock_aiohttp: aioresponses) -> None:
         """Test get_users with email filter parameter."""
@@ -287,6 +294,7 @@ class TestGetUsers:
                 "hasLogin": True,
                 "creationDate": "2024-01-01T00:00:00Z",
                 "lastEditDate": "2024-01-15T00:00:00Z",
+                "lastLoginDate": "2026-09-01T08:00:00Z",
             }
         ]
         mock_aiohttp.get(
@@ -759,6 +767,8 @@ class TestGetProject:
             },
             "properties": {
                 "name": {"value": "Test Project"},
+                "businessUnit": {"id": 3, "value": "Consulting"},
+                "accountingType": {"id": 1, "value": "Billable"},
             },
             "keywords": [],
             "creator": {"userID": 1},
@@ -775,6 +785,8 @@ class TestGetProject:
 
         assert result.identifier.projectID == 1
         assert result.identifier.projectCode == "PROJ001"
+        assert result.properties.businessUnit == dm.SelectOptionFieldInput(id=3, value="Consulting")
+        assert result.properties.accountingType == dm.SelectOptionFieldInput(id=1, value="Billable")
 
 
 class TestGetAllProjects:
@@ -805,7 +817,10 @@ class TestGetAllProjects:
             },
             {
                 "identifier": {"projectID": 2, "projectCode": "PROJ002"},
-                "properties": {"name": {"value": "Project Two"}},
+                "properties": {
+                    "name": {"value": "Project Two"},
+                    "projectStatus": {"id": 2, "value": "Active"},
+                },
                 "keywords": [],
                 "creator": {"userID": 1},
                 "lastEditor": {"userID": 1},
@@ -823,6 +838,8 @@ class TestGetAllProjects:
         assert len(result) == 2
         assert result[0].identifier.projectID == 1
         assert result[1].identifier.projectCode == "PROJ002"
+        assert result[1].properties.projectStatus is not None
+        assert result[1].properties.projectStatus.value == "Active"
 
 
 class TestImportProject:
@@ -836,6 +853,7 @@ class TestImportProject:
                 "projectID": 3,
                 "projectCode": "PROJ003",
                 "success": True,
+                "status": "Created",
             },
             status=200,
         )
@@ -852,6 +870,7 @@ class TestImportProject:
 
         assert result.projectID == 3
         assert result.success is True
+        assert result.status == dm.ImportItemStatusType.Created
 
 
 class TestProjectExists:
@@ -1012,6 +1031,7 @@ class TestGetAbsences:
                         "startDate": "2024-02-01",
                         "endDate": "2024-02-05",
                         "subject": "Vacation",
+                        "minutesPerDay": 240.0,
                     }
                 ]
             },
@@ -1024,6 +1044,7 @@ class TestGetAbsences:
         assert result.absences is not None
         assert len(result.absences) == 1
         assert result.absences[0].absenceId == 1
+        assert result.absences[0].minutesPerDay == 240.0
 
 
 class TestImportAbsences:
@@ -1039,6 +1060,7 @@ class TestImportAbsences:
                     "userId": 20,
                     "startDate": "2024-03-01",
                     "endDate": "2024-03-05",
+                    "minutesPerDay": 480.0,
                     "importStatus": {"status": "Created"},
                 }
             ],
@@ -1061,6 +1083,7 @@ class TestImportAbsences:
 
         assert len(result) == 1
         assert result[0].absenceId == 2
+        assert result[0].minutesPerDay == 480.0
 
 
 # =============================================================================
@@ -1083,6 +1106,8 @@ class TestGetResourceRequest:
                     "requestedCandidateCount": 2,
                 },
                 "metrics": {},
+                "accountingType": {"accountingTypeID": 1, "accountingTypeName": "Billable"},
+                "serviceCategory": {"serviceCategoryID": 4, "serviceCategoryName": "Senior Consultant"},
                 "creationDate": "2024-01-10T08:00:00Z",
                 "lastEditDate": "2024-01-15T10:00:00Z",
             },
@@ -1094,6 +1119,10 @@ class TestGetResourceRequest:
 
         assert result.identifier.requestID == 123
         assert result.status == ResourceRequestStatus.Open
+        assert result.accountingType is not None
+        assert result.accountingType.accountingTypeName == "Billable"
+        assert result.serviceCategory is not None
+        assert result.serviceCategory.serviceCategoryID == 4
 
 
 class TestImportResourceRequest:
@@ -1260,7 +1289,7 @@ class TestActivitiesEndpoints:
         """Test get_activity_types hits the correct endpoint and parses the response."""
         mock_aiohttp.get(
             f"{BASE_URL}/importapi/ActivityType",
-            payload=[{"activityTypeID": 42}],
+            payload=[{"activityTypeID": 42, "code": "DEV", "category": "Consulting", "targetSystemCode": "SAP-DEV"}],
             status=200,
         )
 
@@ -1270,6 +1299,8 @@ class TestActivitiesEndpoints:
         assert len(result) == 1
         assert isinstance(result[0], dm.ActivityTypeResult)
         assert result[0].activityTypeID == 42
+        assert result[0].category == "Consulting"
+        assert result[0].targetSystemCode == "SAP-DEV"
 
     async def test_import_activity_type(self, mock_aiohttp: aioresponses) -> None:
         """Test import_activity_type hits the correct endpoint and parses the response."""
@@ -1289,7 +1320,15 @@ class TestActivitiesEndpoints:
         """Test get_general_activities hits the correct endpoint and parses the response."""
         mock_aiohttp.get(
             f"{BASE_URL}/importapi/GeneralActivity",
-            payload=[{"generalActivityID": 42}],
+            payload=[
+                {
+                    "generalActivityID": 42,
+                    "code": "TRAINING",
+                    "targetSystemCode": "SAP-TRN",
+                    "recordingTargetID": 7,
+                    "recordingTypeIDs": [1, 2],
+                }
+            ],
             status=200,
         )
 
@@ -1299,6 +1338,8 @@ class TestActivitiesEndpoints:
         assert len(result) == 1
         assert isinstance(result[0], dm.GeneralActivityResult)
         assert result[0].generalActivityID == 42
+        assert result[0].recordingTargetID == 7
+        assert result[0].recordingTypeIDs == [1, 2]
 
     async def test_import_general_activity(self, mock_aiohttp: aioresponses) -> None:
         """Test import_general_activity hits the correct endpoint and parses the response."""
@@ -1322,7 +1363,18 @@ class TestOrderEndpoints:
         """Test get_orders hits the correct endpoint and parses the response."""
         mock_aiohttp.get(
             f"{BASE_URL}/importapi/Order",
-            payload={},
+            payload={
+                "orders": [
+                    {
+                        "orderID": 42,
+                        "code": "ORDER-1",
+                        "projects": [{"projectReferenceID": 7, "projectCode": "PROJ001"}],
+                        "validFromDate": "2026-01-01",
+                        "expiryDate": "2026-12-31",
+                        "positions": [{"orderPositionID": 1, "rateID": 5, "rateCode": "RATE-1"}],
+                    }
+                ]
+            },
             status=200,
         )
 
@@ -1330,12 +1382,19 @@ class TestOrderEndpoints:
             result = await client.get_orders()
 
         assert isinstance(result, dm.OrderImportOutputBatch)
+        assert result.orders is not None
+        order = result.orders[0]
+        assert order.projects == [dm.OrderProjectImportItem(projectReferenceID=7, projectCode="PROJ001")]
+        assert order.expiryDate is not None
+        assert order.expiryDate.year == 2026
+        assert order.positions is not None
+        assert order.positions[0].rateCode == "RATE-1"
 
     async def test_get_order(self, mock_aiohttp: aioresponses) -> None:
         """Test get_order hits the correct endpoint and parses the response."""
         mock_aiohttp.get(
             f"{BASE_URL}/importapi/Order/Single",
-            payload={"orderID": 42},
+            payload={"orderID": 42, "projects": [{"projectCode": "PROJ001"}], "validFromDate": "2026-01-01"},
             status=200,
         )
 
@@ -1344,6 +1403,7 @@ class TestOrderEndpoints:
 
         assert isinstance(result, dm.OrderImportOutput)
         assert result.orderID == 42
+        assert result.projects == [dm.OrderProjectImportItem(projectCode="PROJ001")]
 
     async def test_import_orders(self, mock_aiohttp: aioresponses) -> None:
         """Test import_orders hits the correct endpoint and parses the response."""
@@ -1377,7 +1437,7 @@ class TestOrderEndpoints:
         """Test get_order_position hits the correct endpoint and parses the response."""
         mock_aiohttp.get(
             f"{BASE_URL}/importapi/Order/Position/Single",
-            payload={"orderID": 42},
+            payload={"orderID": 42, "orderPositionID": 1, "rateID": 5, "rateCode": "RATE-1"},
             status=200,
         )
 
@@ -1386,6 +1446,8 @@ class TestOrderEndpoints:
 
         assert isinstance(result, dm.OrderPositionImportOutput)
         assert result.orderID == 42
+        assert result.rateID == 5
+        assert result.rateCode == "RATE-1"
 
     async def test_import_order_positions(self, mock_aiohttp: aioresponses) -> None:
         """Test import_order_positions hits the correct endpoint and parses the response."""
@@ -1404,7 +1466,15 @@ class TestOrderEndpoints:
         """Test get_order_position_recording_targets hits the correct endpoint and parses the response."""
         mock_aiohttp.get(
             f"{BASE_URL}/importapi/Order/Position/RecordingTargets",
-            payload=[{"orderPositionID": 42}],
+            payload=[
+                {
+                    "orderPositionID": 42,
+                    "orderPositionCode": "POS-1",
+                    "orderID": 1,
+                    "orderCode": "ORDER-1",
+                    "recordingTypes": [{"recordingTypeID": 3, "recordingTypeCode": "TRAVEL"}],
+                }
+            ],
             status=200,
         )
 
@@ -1414,6 +1484,10 @@ class TestOrderEndpoints:
         assert len(result) == 1
         assert isinstance(result[0], dm.OrderPositionRecordingTargetOutput)
         assert result[0].orderPositionID == 42
+        assert result[0].orderCode == "ORDER-1"
+        assert result[0].recordingTypes == [
+            dm.RecordingTypeReferenceOutput(recordingTypeID=3, recordingTypeCode="TRAVEL")
+        ]
 
     async def test_import_order_position_recording_targets(self, mock_aiohttp: aioresponses) -> None:
         """Test import_order_position_recording_targets hits the correct endpoint and parses the response."""
@@ -1467,10 +1541,11 @@ class TestWorkPackageEndpoints:
             payload=[
                 {
                     "creationDate": "2024-01-01T00:00:00Z",
-                    "identifier": {"workPackageID": 1},
+                    "identifier": {"workPackageID": 1, "workPackageCode": "WP-1"},
                     "lastEditDate": "2024-01-01T00:00:00Z",
                     "project": {"projectID": 1},
-                    "properties": {"name": "x", "status": "Planned", "timeRecordingAllowed": True},
+                    "properties": {"name": "x", "status": "Planned", "timeRecordingAllowed": True, "sortOrder": 2},
+                    "customProperties": {"costCenter": "4711"},
                 }
             ],
             status=200,
@@ -1481,6 +1556,9 @@ class TestWorkPackageEndpoints:
 
         assert len(result) == 1
         assert isinstance(result[0], dm.WorkPackageOutput)
+        assert result[0].identifier.workPackageCode == "WP-1"
+        assert result[0].properties.sortOrder == 2
+        assert result[0].customProperties == {"costCenter": "4711"}
 
     async def test_get_work_package(self, mock_aiohttp: aioresponses) -> None:
         """Test get_work_package hits the correct endpoint and parses the response."""
@@ -1573,7 +1651,7 @@ class TestWorkPackageEndpoints:
         """Test get_work_package_recording_targets hits the correct endpoint and parses the response."""
         mock_aiohttp.get(
             f"{BASE_URL}/importapi/WorkPackage/RecordingTargets",
-            payload=[{"workPackageID": 42}],
+            payload=[{"workPackageID": 42, "recordingTypes": [{"recordingTypeID": 3, "recordingTypeCode": "TRAVEL"}]}],
             status=200,
         )
 
@@ -1583,6 +1661,9 @@ class TestWorkPackageEndpoints:
         assert len(result) == 1
         assert isinstance(result[0], dm.WorkPackageRecordingTargetOutput)
         assert result[0].workPackageID == 42
+        assert result[0].recordingTypes == [
+            dm.RecordingTypeReferenceOutput(recordingTypeID=3, recordingTypeCode="TRAVEL")
+        ]
 
     async def test_import_work_package_recording_targets(self, mock_aiohttp: aioresponses) -> None:
         """Test import_work_package_recording_targets hits the correct endpoint and parses the response."""
@@ -1605,7 +1686,14 @@ class TestTimeRecordingEndpoints:
         """Test get_recording_targets hits the correct endpoint and parses the response."""
         mock_aiohttp.get(
             f"{BASE_URL}/importapi/TimeRecording/RecordingTargets",
-            payload=[{"recordingTargetID": 42}],
+            payload=[
+                {
+                    "recordingTargetID": 42,
+                    "orderID": 1,
+                    "orderCode": "ORDER-1",
+                    "recordingTypes": [{"recordingTypeID": 3, "recordingTypeCode": "TRAVEL"}],
+                }
+            ],
             status=200,
         )
 
@@ -1615,12 +1703,32 @@ class TestTimeRecordingEndpoints:
         assert len(result) == 1
         assert isinstance(result[0], dm.RecordingTargetOutput)
         assert result[0].recordingTargetID == 42
+        assert result[0].orderCode == "ORDER-1"
+        assert result[0].recordingTypes == [
+            dm.RecordingTypeReferenceOutput(recordingTypeID=3, recordingTypeCode="TRAVEL")
+        ]
 
     async def test_get_user_time_sheet(self, mock_aiohttp: aioresponses) -> None:
         """Test get_user_time_sheet hits the correct endpoint and parses the response."""
         mock_aiohttp.get(
             f"{BASE_URL}/importapi/TimeRecording/UserTimeSheet",
-            payload={},
+            payload={
+                "entries": [
+                    {
+                        "recordingEntryID": 1,
+                        "userID": 10,
+                        "workDate": "2026-09-01",
+                        "timeMinutes": 480,
+                        "status": "Open",
+                        "recordingTypeValues": [{"recordingTypeCode": "TRAVEL", "value": 1.5}],
+                        "orderID": 3,
+                        "rateCode": "RATE-1",
+                        "creationDate": "2026-09-01T17:00:00Z",
+                        "lastEditDate": "2026-09-02T08:00:00Z",
+                    }
+                ],
+                "workTimes": [],
+            },
             status=200,
         )
 
@@ -1628,6 +1736,11 @@ class TestTimeRecordingEndpoints:
             result = await client.get_user_time_sheet()
 
         assert isinstance(result, dm.TimeRecordingImportOutputBatch)
+        assert result.entries is not None
+        entry = result.entries[0]
+        assert entry.status == dm.TimeRecordingEntryStatus.Open
+        assert entry.recordingTypeValues == [dm.RecordingEntryTypeValueImport(recordingTypeCode="TRAVEL", value=1.5)]
+        assert entry.rateCode == "RATE-1"
 
     async def test_import_user_time_sheet(self, mock_aiohttp: aioresponses) -> None:
         """Test import_user_time_sheet hits the correct endpoint and parses the response."""
@@ -1795,7 +1908,9 @@ class TestProjectExtendedEndpoints:
         """Test get_project_recording_targets hits the correct endpoint and parses the response."""
         mock_aiohttp.get(
             f"{BASE_URL}/importapi/Project/RecordingTargets",
-            payload=[{"projectReferenceID": 42}],
+            payload=[
+                {"projectReferenceID": 42, "recordingTypes": [{"recordingTypeID": 3, "recordingTypeCode": "TRAVEL"}]}
+            ],
             status=200,
         )
 
@@ -1805,6 +1920,9 @@ class TestProjectExtendedEndpoints:
         assert len(result) == 1
         assert isinstance(result[0], dm.ProjectRecordingTargetOutput)
         assert result[0].projectReferenceID == 42
+        assert result[0].recordingTypes == [
+            dm.RecordingTypeReferenceOutput(recordingTypeID=3, recordingTypeCode="TRAVEL")
+        ]
 
     async def test_import_project_recording_targets(self, mock_aiohttp: aioresponses) -> None:
         """Test import_project_recording_targets hits the correct endpoint and parses the response."""
