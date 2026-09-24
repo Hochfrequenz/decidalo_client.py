@@ -689,20 +689,24 @@ class DecidaloClient:
             project_code: The external project code.
 
         Returns:
-            True if the project exists, False otherwise.
+            True if the project exists (HTTP 204), False if it does not (HTTP 404).
+
+        Raises:
+            DecidaloAPIError: For any other status, e.g. HTTP 400 if neither
+                project_id nor project_code is given.
         """
         params: dict[str, str] = {}
         if project_id is not None:
-            params["projectId"] = str(project_id)
+            params["projectid"] = str(project_id)
         if project_code is not None:
-            params["projectCode"] = project_code
+            params["projectcode"] = project_code
 
-        # Build query string manually for HEAD request
-        query_string = "&".join(f"{k}={v}" for k, v in params.items())
-        path = f"/importapi/Project?{query_string}" if query_string else "/importapi/Project"
-
-        status = await self._head(path)
-        return status == 200
+        status = await self._head("/importapi/Project", params)
+        if status == 404:
+            return False
+        if 200 <= status < 300:
+            return True
+        raise DecidaloAPIError(status_code=status, message=f"Request failed with status {status}")
 
     async def get_project_contacts(
         self,

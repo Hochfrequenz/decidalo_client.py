@@ -946,10 +946,10 @@ class TestProjectExists:
     """Tests for project_exists method."""
 
     async def test_project_exists_true(self, mock_aiohttp: aioresponses) -> None:
-        """Test project_exists returns True when project exists."""
+        """Test project_exists returns True for HTTP 204, which the API returns for an existing project."""
         mock_aiohttp.head(
-            f"{BASE_URL}/importapi/Project?projectCode=PROJ001",
-            status=200,
+            f"{BASE_URL}/importapi/Project?projectcode=PROJ001",
+            status=204,
         )
 
         async with DecidaloClient(api_key=API_KEY, base_url=BASE_URL) as client:
@@ -957,10 +957,22 @@ class TestProjectExists:
 
         assert result is True
 
+    async def test_project_exists_by_id(self, mock_aiohttp: aioresponses) -> None:
+        """Test project_exists sends the project ID as query parameter."""
+        mock_aiohttp.head(
+            f"{BASE_URL}/importapi/Project?projectid=1",
+            status=204,
+        )
+
+        async with DecidaloClient(api_key=API_KEY, base_url=BASE_URL) as client:
+            result = await client.project_exists(project_id=1)
+
+        assert result is True
+
     async def test_project_exists_false(self, mock_aiohttp: aioresponses) -> None:
         """Test project_exists returns False when project doesn't exist."""
         mock_aiohttp.head(
-            f"{BASE_URL}/importapi/Project?projectCode=NONEXISTENT",
+            f"{BASE_URL}/importapi/Project?projectcode=NONEXISTENT",
             status=404,
         )
 
@@ -968,6 +980,27 @@ class TestProjectExists:
             result = await client.project_exists(project_code="NONEXISTENT")
 
         assert result is False
+
+    @pytest.mark.parametrize("status", [400, 500])
+    async def test_project_exists_raises_on_unexpected_status(self, mock_aiohttp: aioresponses, status: int) -> None:
+        """Test project_exists raises instead of reporting a missing project for other error statuses."""
+        mock_aiohttp.head(f"{BASE_URL}/importapi/Project", status=status)
+
+        async with DecidaloClient(api_key=API_KEY, base_url=BASE_URL) as client:
+            with pytest.raises(DecidaloAPIError) as exc_info:
+                await client.project_exists()
+
+        assert exc_info.value.status_code == status
+
+    async def test_project_exists_url_encodes_project_code(self, mock_aiohttp: aioresponses) -> None:
+        """Test project_exists URL-encodes the project code instead of splitting it at '&'."""
+        mock_aiohttp.head(f"{BASE_URL}/importapi/Project?projectcode=R%26D", status=204)
+
+        async with DecidaloClient(api_key=API_KEY, base_url=BASE_URL) as client:
+            result = await client.project_exists(project_code="R&D")
+
+        assert result is True
+        assert requested_urls(mock_aiohttp) == [f"{BASE_URL}/importapi/Project?projectcode=R%26D"]
 
 
 class TestProjectEndpoints:
