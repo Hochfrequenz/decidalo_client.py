@@ -403,6 +403,16 @@ class DecidaloClient:  # pylint: disable=too-many-public-methods
         response_text = await self._get("/importapi/User/ImportStatus", {"batchId": str(batch_id)})
         return UserImportBatchResult.model_validate_json(response_text)
 
+    async def get_employee_types(self) -> list[EmployeeTypeOutput]:
+        """Get all employee types. Names are returned in English.
+
+        Returns:
+            A list of EmployeeTypeOutput objects.
+        """
+        response_text = await self._get("/importapi/User/EmployeeTypes")
+        adapter = TypeAdapter(list[EmployeeTypeOutput])
+        return adapter.validate_json(response_text)
+
     # =========================================================================
     # Team Methods
     # =========================================================================
@@ -663,6 +673,154 @@ class DecidaloClient:  # pylint: disable=too-many-public-methods
         status = await self._head(path)
         return status == 200
 
+    async def get_project_contacts(
+        self,
+        *,
+        project_id: int | None = None,
+        project_code: str | None = None,
+        user_id: int | None = None,
+        employee_id: str | None = None,
+        top: int | None = None,
+        skip: int | None = None,
+    ) -> list[ProjectContactsExportOutput]:
+        """Get projects with their contacts.
+
+        Args:
+            project_id: Filter by internal project ID.
+            project_code: Filter by external project code.
+            user_id: Filter by internal user ID.
+            employee_id: Filter by external employee ID.
+            top: Maximum number of results to return (paging).
+            skip: Number of results to skip (paging).
+
+        Returns:
+            A list of ProjectContactsExportOutput objects.
+        """
+        params: dict[str, str] = {}
+        if project_id is not None:
+            params["projectId"] = str(project_id)
+        if project_code is not None:
+            params["projectCode"] = project_code
+        if user_id is not None:
+            params["userId"] = str(user_id)
+        if employee_id is not None:
+            params["employeeId"] = employee_id
+        if top is not None:
+            params["top"] = str(top)
+        if skip is not None:
+            params["skip"] = str(skip)
+
+        response_text = await self._get("/importapi/Project/Contacts", params or None)
+        adapter = TypeAdapter(list[ProjectContactsExportOutput])
+        return adapter.validate_json(response_text)
+
+    async def get_project_team_members(
+        self,
+        *,
+        project_id: int | None = None,
+        project_code: str | None = None,
+        user_id: int | None = None,
+        employee_id: str | None = None,
+        top: int | None = None,
+        skip: int | None = None,
+    ) -> list[ProjectTeamMembersExportOutput]:
+        """Get projects with their team members.
+
+        Args:
+            project_id: Filter by internal project ID.
+            project_code: Filter by external project code.
+            user_id: Filter by internal user ID.
+            employee_id: Filter by external employee ID.
+            top: Maximum number of results to return (paging).
+            skip: Number of results to skip (paging).
+
+        Returns:
+            A list of ProjectTeamMembersExportOutput objects.
+        """
+        params: dict[str, str] = {}
+        if project_id is not None:
+            params["projectId"] = str(project_id)
+        if project_code is not None:
+            params["projectCode"] = project_code
+        if user_id is not None:
+            params["userId"] = str(user_id)
+        if employee_id is not None:
+            params["employeeId"] = employee_id
+        if top is not None:
+            params["top"] = str(top)
+        if skip is not None:
+            params["skip"] = str(skip)
+
+        response_text = await self._get("/importapi/Project/TeamMembers", params or None)
+        adapter = TypeAdapter(list[ProjectTeamMembersExportOutput])
+        return adapter.validate_json(response_text)
+
+    async def get_project_recording_targets(
+        self,
+        *,
+        project_reference_id: int | None = None,
+        project_code: str | None = None,
+    ) -> list[ProjectRecordingTargetOutput]:
+        """Get a project's allowed activity types (project-direct recording targets).
+
+        Args:
+            project_reference_id: Filter by internal project reference ID.
+            project_code: Filter by external project code.
+
+        Returns:
+            A list of ProjectRecordingTargetOutput objects.
+        """
+        params: dict[str, str] = {}
+        if project_reference_id is not None:
+            params["projectReferenceId"] = str(project_reference_id)
+        if project_code is not None:
+            params["projectCode"] = project_code
+
+        response_text = await self._get("/importapi/Project/RecordingTargets", params or None)
+        adapter = TypeAdapter(list[ProjectRecordingTargetOutput])
+        return adapter.validate_json(response_text)
+
+    async def import_project_recording_targets(
+        self,
+        batch: ProjectRecordingTargetImportBatch,
+    ) -> ProjectRecordingTargetImportBatchResult:
+        """Create, update, or remove a project's allowed activity types.
+
+        One row per (project, activity type).
+
+        Args:
+            batch: The recording targets to import.
+
+        Returns:
+            A ProjectRecordingTargetImportBatchResult with the import status.
+        """
+        data = batch.model_dump_json(by_alias=True, exclude_none=True)
+        response_text = await self._post("/importapi/Project/RecordingTargets", data)
+        return ProjectRecordingTargetImportBatchResult.model_validate_json(response_text)
+
+    async def import_projects(
+        self,
+        batch: ProjectBatchInput,
+        *,
+        booking_extend_option: BookingExtendOption | None = None,
+    ) -> list[ProjectReferenceImportResult]:
+        """Create, update, or delete a batch of projects.
+
+        Args:
+            batch: The batch of projects to import.
+            booking_extend_option: How to handle bookings when project dates change.
+
+        Returns:
+            A list of ProjectReferenceImportResult objects with the per-project import status.
+        """
+        path = "/importapi/Project/ImportBatch"
+        if booking_extend_option is not None:
+            path = f"{path}?bookingExtendOption={booking_extend_option.value}"
+        data = batch.model_dump_json(by_alias=True, exclude_none=True)
+        response_text = await self._post(path, data)
+        adapter = TypeAdapter(list[ProjectReferenceImportResult])
+        return adapter.validate_json(response_text)
+
     # =========================================================================
     # Booking Methods
     # =========================================================================
@@ -839,6 +997,47 @@ class DecidaloClient:  # pylint: disable=too-many-public-methods
         data = resource_request.model_dump_json(by_alias=True, exclude_none=True)
         response_text = await self._post("/importapi/ResourceRequest", data)
         return ImportResourceRequestCommandResult.model_validate_json(response_text)
+
+    async def get_resource_request_contacts(
+        self,
+        *,
+        request_id: int | None = None,
+        request_code: str | None = None,
+        user_id: int | None = None,
+        employee_id: str | None = None,
+        skip: int | None = None,
+        top: int | None = None,
+    ) -> list[ResourceRequestContactOutput]:
+        """Get a (filtered) list of resource request contacts.
+
+        Args:
+            request_id: Filter by internal resource request ID.
+            request_code: Filter by external resource request code.
+            user_id: Filter by internal user ID.
+            employee_id: Filter by external employee ID.
+            skip: Number of results to skip (paging).
+            top: Maximum number of results to return (paging).
+
+        Returns:
+            A list of ResourceRequestContactOutput objects.
+        """
+        params: dict[str, str] = {}
+        if request_id is not None:
+            params["requestid"] = str(request_id)
+        if request_code is not None:
+            params["requestcode"] = request_code
+        if user_id is not None:
+            params["userid"] = str(user_id)
+        if employee_id is not None:
+            params["employeeid"] = employee_id
+        if skip is not None:
+            params["skip"] = str(skip)
+        if top is not None:
+            params["top"] = str(top)
+
+        response_text = await self._get("/importapi/ResourceRequest/Contacts", params or None)
+        adapter = TypeAdapter(list[ResourceRequestContactOutput])
+        return adapter.validate_json(response_text)
 
     # =========================================================================
     # Role Methods
@@ -1883,214 +2082,3 @@ class DecidaloClient:  # pylint: disable=too-many-public-methods
         response_text = await self._post("/importapi/Profile/UserSkills", data)
         result_adapter = TypeAdapter(list[UserSkillsImportResult])
         return result_adapter.validate_json(response_text)
-
-    # =========================================================================
-    # Project (extended) Methods
-    # =========================================================================
-
-    async def get_project_contacts(
-        self,
-        *,
-        project_id: int | None = None,
-        project_code: str | None = None,
-        user_id: int | None = None,
-        employee_id: str | None = None,
-        top: int | None = None,
-        skip: int | None = None,
-    ) -> list[ProjectContactsExportOutput]:
-        """Get projects with their contacts.
-
-        Args:
-            project_id: Filter by internal project ID.
-            project_code: Filter by external project code.
-            user_id: Filter by internal user ID.
-            employee_id: Filter by external employee ID.
-            top: Maximum number of results to return (paging).
-            skip: Number of results to skip (paging).
-
-        Returns:
-            A list of ProjectContactsExportOutput objects.
-        """
-        params: dict[str, str] = {}
-        if project_id is not None:
-            params["projectId"] = str(project_id)
-        if project_code is not None:
-            params["projectCode"] = project_code
-        if user_id is not None:
-            params["userId"] = str(user_id)
-        if employee_id is not None:
-            params["employeeId"] = employee_id
-        if top is not None:
-            params["top"] = str(top)
-        if skip is not None:
-            params["skip"] = str(skip)
-
-        response_text = await self._get("/importapi/Project/Contacts", params or None)
-        adapter = TypeAdapter(list[ProjectContactsExportOutput])
-        return adapter.validate_json(response_text)
-
-    async def get_project_team_members(
-        self,
-        *,
-        project_id: int | None = None,
-        project_code: str | None = None,
-        user_id: int | None = None,
-        employee_id: str | None = None,
-        top: int | None = None,
-        skip: int | None = None,
-    ) -> list[ProjectTeamMembersExportOutput]:
-        """Get projects with their team members.
-
-        Args:
-            project_id: Filter by internal project ID.
-            project_code: Filter by external project code.
-            user_id: Filter by internal user ID.
-            employee_id: Filter by external employee ID.
-            top: Maximum number of results to return (paging).
-            skip: Number of results to skip (paging).
-
-        Returns:
-            A list of ProjectTeamMembersExportOutput objects.
-        """
-        params: dict[str, str] = {}
-        if project_id is not None:
-            params["projectId"] = str(project_id)
-        if project_code is not None:
-            params["projectCode"] = project_code
-        if user_id is not None:
-            params["userId"] = str(user_id)
-        if employee_id is not None:
-            params["employeeId"] = employee_id
-        if top is not None:
-            params["top"] = str(top)
-        if skip is not None:
-            params["skip"] = str(skip)
-
-        response_text = await self._get("/importapi/Project/TeamMembers", params or None)
-        adapter = TypeAdapter(list[ProjectTeamMembersExportOutput])
-        return adapter.validate_json(response_text)
-
-    async def get_project_recording_targets(
-        self,
-        *,
-        project_reference_id: int | None = None,
-        project_code: str | None = None,
-    ) -> list[ProjectRecordingTargetOutput]:
-        """Get a project's allowed activity types (project-direct recording targets).
-
-        Args:
-            project_reference_id: Filter by internal project reference ID.
-            project_code: Filter by external project code.
-
-        Returns:
-            A list of ProjectRecordingTargetOutput objects.
-        """
-        params: dict[str, str] = {}
-        if project_reference_id is not None:
-            params["projectReferenceId"] = str(project_reference_id)
-        if project_code is not None:
-            params["projectCode"] = project_code
-
-        response_text = await self._get("/importapi/Project/RecordingTargets", params or None)
-        adapter = TypeAdapter(list[ProjectRecordingTargetOutput])
-        return adapter.validate_json(response_text)
-
-    async def import_project_recording_targets(
-        self,
-        batch: ProjectRecordingTargetImportBatch,
-    ) -> ProjectRecordingTargetImportBatchResult:
-        """Create, update, or remove a project's allowed activity types.
-
-        One row per (project, activity type).
-
-        Args:
-            batch: The recording targets to import.
-
-        Returns:
-            A ProjectRecordingTargetImportBatchResult with the import status.
-        """
-        data = batch.model_dump_json(by_alias=True, exclude_none=True)
-        response_text = await self._post("/importapi/Project/RecordingTargets", data)
-        return ProjectRecordingTargetImportBatchResult.model_validate_json(response_text)
-
-    async def import_projects(
-        self,
-        batch: ProjectBatchInput,
-        *,
-        booking_extend_option: BookingExtendOption | None = None,
-    ) -> list[ProjectReferenceImportResult]:
-        """Create, update, or delete a batch of projects.
-
-        Args:
-            batch: The batch of projects to import.
-            booking_extend_option: How to handle bookings when project dates change.
-
-        Returns:
-            A list of ProjectReferenceImportResult objects with the per-project import status.
-        """
-        path = "/importapi/Project/ImportBatch"
-        if booking_extend_option is not None:
-            path = f"{path}?bookingExtendOption={booking_extend_option.value}"
-        data = batch.model_dump_json(by_alias=True, exclude_none=True)
-        response_text = await self._post(path, data)
-        adapter = TypeAdapter(list[ProjectReferenceImportResult])
-        return adapter.validate_json(response_text)
-
-    # =========================================================================
-    # Resource Request (extended) Methods
-    # =========================================================================
-
-    async def get_resource_request_contacts(
-        self,
-        *,
-        request_id: int | None = None,
-        request_code: str | None = None,
-        user_id: int | None = None,
-        employee_id: str | None = None,
-        skip: int | None = None,
-        top: int | None = None,
-    ) -> list[ResourceRequestContactOutput]:
-        """Get a (filtered) list of resource request contacts.
-
-        Args:
-            request_id: Filter by internal resource request ID.
-            request_code: Filter by external resource request code.
-            user_id: Filter by internal user ID.
-            employee_id: Filter by external employee ID.
-            skip: Number of results to skip (paging).
-            top: Maximum number of results to return (paging).
-
-        Returns:
-            A list of ResourceRequestContactOutput objects.
-        """
-        params: dict[str, str] = {}
-        if request_id is not None:
-            params["requestid"] = str(request_id)
-        if request_code is not None:
-            params["requestcode"] = request_code
-        if user_id is not None:
-            params["userid"] = str(user_id)
-        if employee_id is not None:
-            params["employeeid"] = employee_id
-        if skip is not None:
-            params["skip"] = str(skip)
-        if top is not None:
-            params["top"] = str(top)
-
-        response_text = await self._get("/importapi/ResourceRequest/Contacts", params or None)
-        adapter = TypeAdapter(list[ResourceRequestContactOutput])
-        return adapter.validate_json(response_text)
-
-    # =========================================================================
-    # User (extended) Methods
-    # =========================================================================
-
-    async def get_employee_types(self) -> list[EmployeeTypeOutput]:
-        """Get all employee types. Names are returned in English.
-
-        Returns:
-            A list of EmployeeTypeOutput objects.
-        """
-        response_text = await self._get("/importapi/User/EmployeeTypes")
-        adapter = TypeAdapter(list[EmployeeTypeOutput])
-        return adapter.validate_json(response_text)
