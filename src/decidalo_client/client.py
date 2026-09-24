@@ -332,8 +332,6 @@ class DecidaloClient:
         employee_id: str | None = None,
         user_id: int | None = None,
         email: str | None = None,
-        created_since: str | None = None,
-        edited_since: str | None = None,
     ) -> list[UserOverview]:
         """Get users from the API.
 
@@ -344,8 +342,6 @@ class DecidaloClient:
             employee_id: Filter by external employee ID.
             user_id: Filter by internal user ID. If provided, the email filter is ignored.
             email: Filter by email address. Must be an exact match (case insensitive).
-            created_since: Filter users created since this date (ISO format).
-            edited_since: Filter users edited since this date (ISO format).
 
         Returns:
             A list of UserOverview objects.
@@ -357,10 +353,6 @@ class DecidaloClient:
             params["userId"] = str(user_id)
         if email is not None:
             params["email"] = email
-        if created_since is not None:
-            params["createdSince"] = created_since
-        if edited_since is not None:
-            params["editedSince"] = edited_since
 
         response_text = await self._get("/importapi/User", params or None)
         adapter = TypeAdapter(list[UserOverview])
@@ -460,38 +452,13 @@ class DecidaloClient:
     # Team Methods
     # =========================================================================
 
-    async def get_teams(
-        self,
-        *,
-        team_id: int | None = None,
-        team_code: str | None = None,
-        created_since: str | None = None,
-        edited_since: str | None = None,
-    ) -> list[TeamOverview]:
-        """Get teams from the API.
-
-        Returns all teams in the system.
-
-        Args:
-            team_id: Filter by internal team ID.
-            team_code: Filter by external team code.
-            created_since: Filter teams created since this date (ISO format).
-            edited_since: Filter teams edited since this date (ISO format).
+    async def get_teams(self) -> list[TeamOverview]:
+        """Get all teams in the system.
 
         Returns:
             A list of TeamOverview objects.
         """
-        params: dict[str, str] = {}
-        if team_id is not None:
-            params["teamId"] = str(team_id)
-        if team_code is not None:
-            params["teamCode"] = team_code
-        if created_since is not None:
-            params["createdSince"] = created_since
-        if edited_since is not None:
-            params["editedSince"] = edited_since
-
-        response_text = await self._get("/importapi/Team", params or None)
+        response_text = await self._get("/importapi/Team")
         adapter = TypeAdapter(list[TeamOverview])
         return adapter.validate_json(response_text)
 
@@ -580,34 +547,13 @@ class DecidaloClient:
     # Company Methods
     # =========================================================================
 
-    async def get_companies(
-        self,
-        *,
-        company_id: int | None = None,
-        company_code: str | None = None,
-        company_name: str | None = None,
-    ) -> list[CompanyCompleteOutput]:
-        """Get companies from the API.
-
-        Returns all companies in the system.
-
-        Args:
-            company_id: Filter by internal company ID.
-            company_code: Filter by external company code.
-            company_name: Filter by company name.
+    async def get_companies(self) -> list[CompanyCompleteOutput]:
+        """Get all companies in the system.
 
         Returns:
             A list of CompanyCompleteOutput objects.
         """
-        params: dict[str, str] = {}
-        if company_id is not None:
-            params["companyId"] = str(company_id)
-        if company_code is not None:
-            params["companyCode"] = company_code
-        if company_name is not None:
-            params["companyName"] = company_name
-
-        response_text = await self._get("/importapi/Company", params or None)
+        response_text = await self._get("/importapi/Company")
         adapter = TypeAdapter(list[CompanyCompleteOutput])
         return adapter.validate_json(response_text)
 
@@ -661,30 +607,15 @@ class DecidaloClient:
         response_text = await self._get("/importapi/Project", params or None)
         return ProjectReferenceOutput.model_validate_json(response_text)
 
-    async def get_all_projects(
-        self,
-        *,
-        created_since: str | None = None,
-        edited_since: str | None = None,
-    ) -> list[ProjectReferenceOutput]:
+    async def get_all_projects(self) -> list[ProjectReferenceOutput]:
         """Get all projects from the API.
 
         Returns the core project data for all existing projects.
 
-        Args:
-            created_since: Filter projects created since this date (ISO format).
-            edited_since: Filter projects edited since this date (ISO format).
-
         Returns:
             A list of ProjectReferenceOutput objects.
         """
-        params: dict[str, str] = {}
-        if created_since is not None:
-            params["createdSince"] = created_since
-        if edited_since is not None:
-            params["editedSince"] = edited_since
-
-        response_text = await self._get("/importapi/Project/AllProjects", params or None)
+        response_text = await self._get("/importapi/Project/AllProjects")
         adapter = TypeAdapter(list[ProjectReferenceOutput])
         return adapter.validate_json(response_text)
 
@@ -906,8 +837,6 @@ class DecidaloClient:
         user_id: int | None = None,
         booking_id: int | None = None,
         booking_code: str | None = None,
-        created_since: str | None = None,
-        edited_since: str | None = None,
     ) -> list[BookingItemOutput]:
         """Get bookings from the API.
 
@@ -916,8 +845,6 @@ class DecidaloClient:
             user_id: Filter by internal user ID.
             booking_id: Filter by internal booking ID.
             booking_code: Filter by external booking code.
-            created_since: Filter bookings created since this date (ISO format).
-            edited_since: Filter bookings edited since this date (ISO format).
 
         Returns:
             A list of BookingItemOutput objects.
@@ -931,10 +858,6 @@ class DecidaloClient:
             params["bookingId"] = str(booking_id)
         if booking_code is not None:
             params["bookingCode"] = booking_code
-        if created_since is not None:
-            params["createdSince"] = created_since
-        if edited_since is not None:
-            params["editedSince"] = edited_since
 
         response_text = await self._get("/importapi/Booking", params or None)
         adapter = TypeAdapter(list[BookingItemOutput])
