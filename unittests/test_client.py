@@ -645,6 +645,54 @@ class TestEmployeeTypesEndpoint:
         assert result[0].employeeTypeID == 42
 
 
+class TestGetAuthorizationRoles:
+    """Tests for get_authorization_roles method."""
+
+    async def test_get_authorization_roles(self, mock_aiohttp: aioresponses) -> None:
+        """Test get_authorization_roles parses the roles with their categorization."""
+        mock_aiohttp.get(
+            f"{BASE_URL}/importapi/User/AuthorizationRoles",
+            payload=[
+                {
+                    "identifier": {"authorizationRoleID": 1, "authorizationRoleName": "Employee"},
+                    "description": "Default role for employees without special permissions.",
+                    "categorization": {
+                        "isDefaultEmployee": True,
+                        "isDefaultTeamLead": False,
+                        "isDefaultResourceGroupManager": False,
+                        "hasUserAdminPrivileges": False,
+                    },
+                },
+                {
+                    "identifier": {"authorizationRoleID": 2, "authorizationRoleName": "User Administrator"},
+                    "description": "Manages users and their permissions.",
+                    "categorization": {
+                        "isDefaultEmployee": False,
+                        "isDefaultTeamLead": False,
+                        "isDefaultResourceGroupManager": False,
+                        "hasUserAdminPrivileges": True,
+                    },
+                },
+            ],
+            status=200,
+        )
+
+        async with DecidaloClient(api_key=API_KEY, base_url=BASE_URL) as client:
+            result = await client.get_authorization_roles()
+
+        assert len(result) == 2
+        assert isinstance(result[0], dm.AuthorizationRoleOutput)
+        assert result[0].identifier == dm.AuthorizationRoleReferenceOutput(
+            authorizationRoleID=1, authorizationRoleName="Employee"
+        )
+        assert result[0].description == "Default role for employees without special permissions."
+        assert result[0].categorization.isDefaultEmployee is True
+        assert result[0].categorization.hasUserAdminPrivileges is False
+        assert result[1].identifier.authorizationRoleName == "User Administrator"
+        assert result[1].categorization.isDefaultEmployee is False
+        assert result[1].categorization.hasUserAdminPrivileges is True
+
+
 # =============================================================================
 # Team Method Tests
 # =============================================================================
@@ -1302,6 +1350,73 @@ class TestProjectEndpoints:
         assert result[0].projectID == 42
 
 
+class TestImportProjectComments:
+    """Tests for import_project_comments method."""
+
+    async def test_import_project_comments(self, mock_aiohttp: aioresponses) -> None:
+        """Test import_project_comments sends the comment rows and parses the per-row results."""
+        mock_aiohttp.post(
+            f"{BASE_URL}/importapi/Project/Comments/Batch",
+            payload=[
+                {"isSuccessful": True, "projectID": 1, "commentID": 78, "errorMessage": None},
+                {
+                    "isSuccessful": False,
+                    "projectID": 2,
+                    "commentID": 77,
+                    "errorMessage": "Comment 77 does not belong to the project with ProjectID 2.",
+                },
+            ],
+            status=200,
+        )
+        batch = dm.ProjectCommentBatchInput(
+            projectComments=[
+                dm.ProjectCommentInput(
+                    project=dm.ProjectReferenceIdentityInput(projectCode="PROJ001"),
+                    comment=dm.CommentPropertiesInput(
+                        comment="The kick-off meeting took place.",
+                        creator=dm.UserReferenceInput(email="jane.doe@example.com"),
+                        creationDate=datetime(2026, 9, 1, 9, 0, tzinfo=UTC),
+                    ),
+                ),
+                dm.ProjectCommentInput(
+                    project=dm.ProjectReferenceIdentityInput(projectID=2),
+                    comment=dm.CommentPropertiesInput(
+                        commentID=77, comment="Obsolete", creator=dm.UserReferenceInput(userID=10), delete=True
+                    ),
+                ),
+            ]
+        )
+
+        async with DecidaloClient(api_key=API_KEY, base_url=BASE_URL) as client:
+            result = await client.import_project_comments(batch)
+
+        body = json.loads(next(iter(mock_aiohttp.requests.values()))[0].kwargs["data"])
+        assert body == {
+            "projectComments": [
+                {
+                    "project": {"projectCode": "PROJ001"},
+                    "comment": {
+                        "comment": "The kick-off meeting took place.",
+                        "creator": {"email": "jane.doe@example.com"},
+                        "creationDate": "2026-09-01T09:00:00Z",
+                    },
+                },
+                {
+                    "project": {"projectID": 2},
+                    "comment": {"commentID": 77, "comment": "Obsolete", "creator": {"userID": 10}, "delete": True},
+                },
+            ]
+        }
+        assert len(result) == 2
+        assert isinstance(result[0], dm.ProjectCommentImportResult)
+        assert result[0].isSuccessful is True
+        assert result[0].projectID == 1
+        assert result[0].commentID == 78
+        assert result[0].errorMessage is None
+        assert result[1].isSuccessful is False
+        assert result[1].errorMessage == "Comment 77 does not belong to the project with ProjectID 2."
+
+
 # =============================================================================
 # Booking Method Tests
 # =============================================================================
@@ -1477,6 +1592,75 @@ class TestImportBookingsAsync:
 
         assert len(result) == 1
         assert result[0].bookingID == 3
+
+
+class TestImportBookingComments:
+    """Tests for import_booking_comments method."""
+
+    async def test_import_booking_comments(self, mock_aiohttp: aioresponses) -> None:
+        """Test import_booking_comments sends the comment rows and parses the per-row results."""
+        mock_aiohttp.post(
+            f"{BASE_URL}/importapi/Booking/Comments/Batch",
+            payload=[
+                {"isSuccessful": True, "bookingID": 3, "commentID": 91, "errorMessage": None},
+                {
+                    "isSuccessful": False,
+                    "bookingID": None,
+                    "commentID": None,
+                    "errorMessage": "No booking found with BookingCode BOOK999.",
+                },
+            ],
+            status=200,
+        )
+        batch = dm.BookingCommentBatchInput(
+            bookingComments=[
+                dm.BookingCommentInput(
+                    booking=dm.BookingReferenceIdentityInput(bookingCode="BOOK003"),
+                    comment=dm.CommentPropertiesInput(
+                        comment="Extended by two weeks.",
+                        creator=dm.UserReferenceInput(employeeID="EMP010"),
+                        creationDate=datetime(2026, 9, 1, 9, 0, tzinfo=UTC),
+                        editDate=datetime(2026, 9, 2, 10, 30, tzinfo=UTC),
+                    ),
+                ),
+                dm.BookingCommentInput(
+                    booking=dm.BookingReferenceIdentityInput(bookingCode="BOOK999"),
+                    comment=dm.CommentPropertiesInput(
+                        comment="Please confirm.", creator=dm.UserReferenceInput(userID=10)
+                    ),
+                ),
+            ]
+        )
+
+        async with DecidaloClient(api_key=API_KEY, base_url=BASE_URL) as client:
+            result = await client.import_booking_comments(batch)
+
+        body = json.loads(next(iter(mock_aiohttp.requests.values()))[0].kwargs["data"])
+        assert body == {
+            "bookingComments": [
+                {
+                    "booking": {"bookingCode": "BOOK003"},
+                    "comment": {
+                        "comment": "Extended by two weeks.",
+                        "creator": {"employeeID": "EMP010"},
+                        "editDate": "2026-09-02T10:30:00Z",
+                        "creationDate": "2026-09-01T09:00:00Z",
+                    },
+                },
+                {
+                    "booking": {"bookingCode": "BOOK999"},
+                    "comment": {"comment": "Please confirm.", "creator": {"userID": 10}},
+                },
+            ]
+        }
+        assert len(result) == 2
+        assert isinstance(result[0], dm.BookingCommentImportResult)
+        assert result[0].isSuccessful is True
+        assert result[0].bookingID == 3
+        assert result[0].commentID == 91
+        assert result[1].isSuccessful is False
+        assert result[1].bookingID is None
+        assert result[1].errorMessage == "No booking found with BookingCode BOOK999."
 
 
 # =============================================================================
@@ -1667,6 +1851,49 @@ class TestResourceRequestContactsEndpoint:
         assert len(result) == 1
         assert isinstance(result[0], dm.ResourceRequestContactOutput)
         assert result[0].isPrimary is True
+
+
+class TestGetResourceRequestServiceCategories:
+    """Tests for get_resource_request_service_categories method."""
+
+    async def test_get_resource_request_service_categories(self, mock_aiohttp: aioresponses) -> None:
+        """Test get_resource_request_service_categories parses the service categories with their translations."""
+        mock_aiohttp.get(
+            f"{BASE_URL}/importapi/ResourceRequest/ServiceCategories",
+            payload=[
+                {
+                    "serviceCategoryID": 3,
+                    "serviceCategoryName": "Consultant",
+                    "position": 1,
+                    "translations": [{"languageID": 1, "value": "Berater"}, {"languageID": 2, "value": "Consultant"}],
+                },
+                {
+                    "serviceCategoryID": 4,
+                    "serviceCategoryName": "Senior Consultant",
+                    "position": 2,
+                    "translations": [
+                        {"languageID": 1, "value": "Senior-Berater"},
+                        {"languageID": 2, "value": "Senior Consultant"},
+                    ],
+                },
+            ],
+            status=200,
+        )
+
+        async with DecidaloClient(api_key=API_KEY, base_url=BASE_URL) as client:
+            result = await client.get_resource_request_service_categories()
+
+        assert len(result) == 2
+        assert isinstance(result[0], dm.ServiceCategory)
+        assert result[0].serviceCategoryID == 3
+        assert result[0].serviceCategoryName == "Consultant"
+        assert result[0].position == 1
+        assert result[0].translations == [
+            dm.LocalizedValue(languageID=1, value="Berater"),
+            dm.LocalizedValue(languageID=2, value="Consultant"),
+        ]
+        assert result[1].serviceCategoryID == 4
+        assert result[1].position == 2
 
 
 # =============================================================================

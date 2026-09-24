@@ -18,8 +18,11 @@ from decidalo_client.models import (
     AbsenceOutputResult,
     ActivityTypeImportItem,
     ActivityTypeResult,
+    AuthorizationRoleOutput,
     BatchImportMetadata,
     BookingBatchInput,
+    BookingCommentBatchInput,
+    BookingCommentImportResult,
     BookingExtendOption,
     BookingImportResult,
     BookingItemOutput,
@@ -59,6 +62,8 @@ from decidalo_client.models import (
     OrderPositionWorkPackageImportBatchResult,
     OrderPositionWorkPackageOutput,
     ProjectBatchInput,
+    ProjectCommentBatchInput,
+    ProjectCommentImportResult,
     ProjectContactsExportOutput,
     ProjectRecordingTargetImportBatch,
     ProjectRecordingTargetImportBatchResult,
@@ -79,6 +84,7 @@ from decidalo_client.models import (
     ResourceRequestInput,
     ResourceRequestOutput,
     RoleImportInput,
+    ServiceCategory,
     TeamBatchInput,
     TeamImportAcceptedResponse,
     TeamImportResults,
@@ -512,6 +518,18 @@ class DecidaloClient:
         """
         response_text = await self._get("/importapi/User/EmployeeTypes")
         adapter = TypeAdapter(list[EmployeeTypeOutput])
+        return adapter.validate_json(response_text)
+
+    async def get_authorization_roles(self) -> list[AuthorizationRoleOutput]:
+        """Get all authorization roles.
+
+        Use the IDs or names of the roles to reference them in other API calls.
+
+        Returns:
+            A list of AuthorizationRoleOutput objects.
+        """
+        response_text = await self._get("/importapi/User/AuthorizationRoles")
+        adapter = TypeAdapter(list[AuthorizationRoleOutput])
         return adapter.validate_json(response_text)
 
     # =========================================================================
@@ -1010,6 +1028,26 @@ class DecidaloClient:
         adapter = TypeAdapter(list[ProjectReferenceImportResult])
         return adapter.validate_json(response_text)
 
+    async def import_project_comments(
+        self,
+        batch: ProjectCommentBatchInput,
+    ) -> list[ProjectCommentImportResult]:
+        """Create, update, or delete a batch of project comments.
+
+        The comments of a batch may belong to different projects. They are imported in order
+        and independently: a failure on one comment does not abort the rest.
+
+        Args:
+            batch: The batch of project comments to import.
+
+        Returns:
+            A list of ProjectCommentImportResult objects, one per comment in the order of the batch.
+        """
+        data = batch.model_dump_json(by_alias=True, exclude_none=True)
+        response_text = await self._post("/importapi/Project/Comments/Batch", data)
+        adapter = TypeAdapter(list[ProjectCommentImportResult])
+        return adapter.validate_json(response_text)
+
     # =========================================================================
     # Booking Methods
     # =========================================================================
@@ -1203,6 +1241,26 @@ class DecidaloClient:
         adapter = TypeAdapter(list[BookingImportResult])
         return adapter.validate_json(response_text)
 
+    async def import_booking_comments(
+        self,
+        batch: BookingCommentBatchInput,
+    ) -> list[BookingCommentImportResult]:
+        """Create, update, or delete a batch of booking comments.
+
+        The comments of a batch may belong to different bookings. They are imported in order
+        and independently: a failure on one comment does not abort the rest.
+
+        Args:
+            batch: The batch of booking comments to import.
+
+        Returns:
+            A list of BookingCommentImportResult objects, one per comment in the order of the batch.
+        """
+        data = batch.model_dump_json(by_alias=True, exclude_none=True)
+        response_text = await self._post("/importapi/Booking/Comments/Batch", data)
+        adapter = TypeAdapter(list[BookingCommentImportResult])
+        return adapter.validate_json(response_text)
+
     # =========================================================================
     # Absence Methods
     # =========================================================================
@@ -1338,6 +1396,19 @@ class DecidaloClient:
 
         response_text = await self._get("/importapi/ResourceRequest/Contacts", params)
         adapter = TypeAdapter(list[ResourceRequestContactOutput])
+        return adapter.validate_json(response_text)
+
+    async def get_resource_request_service_categories(self) -> list[ServiceCategory]:
+        """Get all possible service categories (called "Career Level" in the application UI).
+
+        Reference a service category in imports by its ID (stable across renames), its
+        internal name, or any translated name.
+
+        Returns:
+            A list of ServiceCategory objects.
+        """
+        response_text = await self._get("/importapi/ResourceRequest/ServiceCategories")
+        adapter = TypeAdapter(list[ServiceCategory])
         return adapter.validate_json(response_text)
 
     # =========================================================================
