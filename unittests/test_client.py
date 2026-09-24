@@ -482,25 +482,59 @@ class TestGetUserImportStatus:
     """Tests for get_user_import_status method."""
 
     async def test_get_user_import_status(self, mock_aiohttp: aioresponses) -> None:
-        """Test get_user_import_status returns batch status."""
+        """Test get_user_import_status returns the list of matching import batches."""
         batch_id = "550e8400-e29b-41d4-a716-446655440000"
         mock_aiohttp.get(
-            f"{BASE_URL}/importapi/User/ImportStatus?batchId={batch_id}",
-            payload={
-                "batchID": batch_id,
-                "status": {
-                    "status": "Completed",
-                    "errorMessage": None,
-                },
-            },
+            f"{BASE_URL}/importapi/User/ImportStatus?batchid={batch_id}",
+            payload=[
+                {
+                    "batchID": batch_id,
+                    "creationDate": "2026-09-01T08:00:00Z",
+                    "startDate": "2026-09-01T08:00:01Z",
+                    "endDate": "2026-09-01T08:00:05Z",
+                    "status": {"status": "Completed", "errorMessage": None},
+                }
+            ],
             status=200,
         )
 
         async with DecidaloClient(api_key=API_KEY, base_url=BASE_URL) as client:
-            result = await client.get_user_import_status(UUID(batch_id))
+            result = await client.get_user_import_status(batch_id=UUID(batch_id))
 
-        assert result.batchID == UUID(batch_id)
-        assert result.status.status.value == "Completed"
+        assert len(result) == 1
+        assert isinstance(result[0], dm.UserBatchImportMetadata)
+        assert result[0].batchID == UUID(batch_id)
+        assert result[0].status is not None
+        assert result[0].status.status == dm.ImportBatchStatusType.Completed
+
+    async def test_get_user_import_status_with_all_filters(self, mock_aiohttp: aioresponses) -> None:
+        """Test get_user_import_status sends all filters and parses the row results."""
+        batch_id = "550e8400-e29b-41d4-a716-446655440000"
+        mock_aiohttp.get(
+            f"{BASE_URL}/importapi/User/ImportStatus?top=5&batchid={batch_id}&status=Failed&includeRowResults=true",
+            payload=[
+                {
+                    "batchID": batch_id,
+                    "status": {"status": "Failed", "errorMessage": "One or more items have failed."},
+                    "rowResults": [
+                        {"rowIndex": 0, "status": "Failed", "errorMessage": "Invalid email", "email": "broken"},
+                    ],
+                }
+            ],
+            status=200,
+        )
+
+        async with DecidaloClient(api_key=API_KEY, base_url=BASE_URL) as client:
+            result = await client.get_user_import_status(
+                top=5,
+                batch_id=UUID(batch_id),
+                status=dm.ImportBatchStatusType.Failed,
+                include_row_results=True,
+            )
+
+        assert result[0].rowResults is not None
+        assert result[0].rowResults[0].status == dm.ImportItemStatusType.Failed
+        assert result[0].rowResults[0].errorMessage == "Invalid email"
 
 
 class TestEmployeeTypesEndpoint:
@@ -699,23 +733,44 @@ class TestGetTeamImportStatus:
     """Tests for get_team_import_status method."""
 
     async def test_get_team_import_status(self, mock_aiohttp: aioresponses) -> None:
-        """Test get_team_import_status returns batch metadata."""
+        """Test get_team_import_status returns the list of matching import batches."""
         batch_id = "660e8400-e29b-41d4-a716-446655440001"
         mock_aiohttp.get(
-            f"{BASE_URL}/importapi/Team/ImportStatus?batchId={batch_id}",
-            payload={
-                "batchID": batch_id,
-                "status": {
-                    "status": "Processing",
-                },
-            },
+            f"{BASE_URL}/importapi/Team/ImportStatus?batchid={batch_id}",
+            payload=[{"batchID": batch_id, "status": {"status": "Processing"}}],
             status=200,
         )
 
         async with DecidaloClient(api_key=API_KEY, base_url=BASE_URL) as client:
-            result = await client.get_team_import_status(UUID(batch_id))
+            result = await client.get_team_import_status(batch_id=UUID(batch_id))
 
-        assert result.batchID == UUID(batch_id)
+        assert len(result) == 1
+        assert isinstance(result[0], dm.BatchImportMetadata)
+        assert result[0].batchID == UUID(batch_id)
+        assert result[0].status is not None
+        assert result[0].status.status == dm.ImportBatchStatusType.Processing
+
+    async def test_get_team_import_status_with_all_filters(self, mock_aiohttp: aioresponses) -> None:
+        """Test get_team_import_status sends all filters and parses the team row results."""
+        mock_aiohttp.get(
+            f"{BASE_URL}/importapi/Team/ImportStatus?top=3&status=Completed&includeRowResults=false",
+            payload=[
+                {
+                    "batchID": "660e8400-e29b-41d4-a716-446655440001",
+                    "status": {"status": "Completed"},
+                    "rowResults": [{"rowIndex": 0, "status": "Created", "teamID": 3, "teamCode": "TEAM003"}],
+                }
+            ],
+            status=200,
+        )
+
+        async with DecidaloClient(api_key=API_KEY, base_url=BASE_URL) as client:
+            result = await client.get_team_import_status(
+                top=3, status=dm.ImportBatchStatusType.Completed, include_row_results=False
+            )
+
+        assert result[0].rowResults is not None
+        assert result[0].rowResults[0].teamCode == "TEAM003"
 
 
 # =============================================================================

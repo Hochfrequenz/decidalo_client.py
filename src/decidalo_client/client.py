@@ -18,6 +18,7 @@ from decidalo_client.models import (
     AbsenceOutputResult,
     ActivityTypeImportItem,
     ActivityTypeResult,
+    BatchImportMetadata,
     BookingBatchInput,
     BookingExtendOption,
     BookingImportResult,
@@ -30,6 +31,7 @@ from decidalo_client.models import (
     GeneralActivityResult,
     GetImportUserWorkingProfileResult,
     ImportAbsencesCommand,
+    ImportBatchStatusType,
     ImportCompanyCommand,
     ImportCompanyResult,
     ImportResourceRequestCommandResult,
@@ -74,7 +76,6 @@ from decidalo_client.models import (
     UserBatchImportMetadata,
     UserBatchInput,
     UserImportAcceptedResponse,
-    UserImportBatchResult,
     UserImportResults,
     UserIndustryExportOutput,
     UserLanguageExportOutput,
@@ -413,18 +414,37 @@ class DecidaloClient:
 
     async def get_user_import_status(
         self,
-        batch_id: UUID,
-    ) -> UserImportBatchResult:
-        """Get the status of a user import batch.
+        *,
+        top: int | None = None,
+        batch_id: UUID | None = None,
+        status: ImportBatchStatusType | None = None,
+        include_row_results: bool | None = None,
+    ) -> list[UserBatchImportMetadata]:
+        """Get data about past user imports.
 
         Args:
-            batch_id: The ID of the batch to check.
+            top: Return only the most recent imports (ordered by creation date, descending).
+            batch_id: Filter for a specific import batch.
+            status: Filter for imports in a specific status.
+            include_row_results: Whether to include the individual row results. The response
+                can get very big, depending on the number of imported rows. Defaults to False.
 
         Returns:
-            A UserImportBatchResult with the current status.
+            A list of UserBatchImportMetadata objects.
         """
-        response_text = await self._get("/importapi/User/ImportStatus", {"batchId": str(batch_id)})
-        return UserImportBatchResult.model_validate_json(response_text)
+        params: dict[str, str] = {}
+        if top is not None:
+            params["top"] = str(top)
+        if batch_id is not None:
+            params["batchid"] = str(batch_id)
+        if status is not None:
+            params["status"] = status.value
+        if include_row_results is not None:
+            params["includeRowResults"] = str(include_row_results).lower()
+
+        response_text = await self._get("/importapi/User/ImportStatus", params)
+        adapter = TypeAdapter(list[UserBatchImportMetadata])
+        return adapter.validate_json(response_text)
 
     async def get_employee_types(self) -> list[EmployeeTypeOutput]:
         """Get all employee types. Names are returned in English.
@@ -524,18 +544,37 @@ class DecidaloClient:
 
     async def get_team_import_status(
         self,
-        batch_id: UUID,
-    ) -> UserBatchImportMetadata:
-        """Get the status of a team import batch.
+        *,
+        top: int | None = None,
+        batch_id: UUID | None = None,
+        status: ImportBatchStatusType | None = None,
+        include_row_results: bool | None = None,
+    ) -> list[BatchImportMetadata]:
+        """Get data about past team imports.
 
         Args:
-            batch_id: The ID of the batch to check.
+            top: Return only the most recent imports (ordered by creation date, descending).
+            batch_id: Filter for a specific import batch.
+            status: Filter for imports in a specific status.
+            include_row_results: Whether to include the individual row results. The response
+                can get very big, depending on the number of imported rows. Defaults to False.
 
         Returns:
-            A UserBatchImportMetadata with the current status.
+            A list of BatchImportMetadata objects.
         """
-        response_text = await self._get("/importapi/Team/ImportStatus", {"batchId": str(batch_id)})
-        return UserBatchImportMetadata.model_validate_json(response_text)
+        params: dict[str, str] = {}
+        if top is not None:
+            params["top"] = str(top)
+        if batch_id is not None:
+            params["batchid"] = str(batch_id)
+        if status is not None:
+            params["status"] = status.value
+        if include_row_results is not None:
+            params["includeRowResults"] = str(include_row_results).lower()
+
+        response_text = await self._get("/importapi/Team/ImportStatus", params)
+        adapter = TypeAdapter(list[BatchImportMetadata])
+        return adapter.validate_json(response_text)
 
     # =========================================================================
     # Company Methods
