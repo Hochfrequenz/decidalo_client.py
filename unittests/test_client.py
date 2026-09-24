@@ -389,6 +389,44 @@ class TestGetUsers:
         assert len(result) == 1
         assert result[0].email == "john.doe@example.com"
 
+    async def test_get_users_with_all_filters(self, mock_aiohttp: aioresponses) -> None:
+        """Test get_users sends every filter under the query key of the spec."""
+        mock_aiohttp.get(
+            f"{BASE_URL}/importapi/User?userid=1&employeeID=EMP001&email=john.doe%40example.com"
+            "&top=10&skip=20&countryCode=DE",
+            payload=[
+                {
+                    "userID": 1,
+                    "email": "john.doe@example.com",
+                    "displayName": "John Doe",
+                    "employeeID": "EMP001",
+                    "countryCode": "DE",
+                    "employeeTypeID": 1,
+                    "employeeTypeName": "Employee",
+                    "includeInResourceManagement": True,
+                    "hasLogin": True,
+                    "creationDate": "2024-01-01T00:00:00Z",
+                    "lastEditDate": "2024-01-15T00:00:00Z",
+                }
+            ],
+            status=200,
+        )
+
+        async with DecidaloClient(api_key=API_KEY, base_url=BASE_URL) as client:
+            result = await client.get_users(
+                user_id=1,
+                employee_id="EMP001",
+                email="john.doe@example.com",
+                top=10,
+                skip=20,
+                country_code="DE",
+            )
+
+        assert len(result) == 1
+        assert result[0].userID == 1
+        assert result[0].employeeID == "EMP001"
+        assert result[0].countryCode == "DE"
+
 
 class TestImportUsersSync:
     """Tests for import_users_sync method."""
@@ -995,6 +1033,65 @@ class TestGetAllProjects:
         assert result[1].properties.projectStatus is not None
         assert result[1].properties.projectStatus.value == "Active"
 
+    async def test_get_all_projects_with_all_filters(self, mock_aiohttp: aioresponses) -> None:
+        """Test get_all_projects sends every filter under the query key of the spec."""
+        url = (
+            f"{BASE_URL}/importapi/Project/AllProjects?projectID=1&projectCode=PROJ001"
+            "&onlyProjectsWithProjectCode=true&isCentralProject=false&companyID=2&companyCode=CUST-1"
+            "&countryCode=DE&businessUnitID=3&businessUnitName=Consulting&practiceAreaID=4"
+            "&practiceAreaName=Energy&legalEntityID=5&legalEntityName=ACME-GmbH&serviceLineID=6"
+            "&serviceLineName=Development&deliveryModelID=7&deliveryModelName=Onsite"
+            "&startDateBefore=2026-12-31&endDateAfter=2026-01-01&createdOnOrAfter=2025-01-01T00:00:00%2B00:00"
+            "&modifiedSince=2026-09-01T08:30:00%2B00:00&lastImportedOnOrAfter=2026-09-01T00:00:00%2B00:00"
+            "&top=25&skip=50"
+        )
+        mock_aiohttp.get(
+            url,
+            payload=[
+                {
+                    "identifier": {"projectID": 1, "projectCode": "PROJ001"},
+                    "properties": {"name": {"value": "Project One"}},
+                    "keywords": [],
+                    "creator": {"userID": 1},
+                    "lastEditor": {"userID": 1},
+                    "lastImportedDate": "2026-09-02T10:00:00Z",
+                }
+            ],
+            status=200,
+        )
+
+        async with DecidaloClient(api_key=API_KEY, base_url=BASE_URL) as client:
+            result = await client.get_all_projects(
+                project_id=1,
+                project_code="PROJ001",
+                only_projects_with_project_code=True,
+                is_central_project=False,
+                company_id=2,
+                company_code="CUST-1",
+                country_code="DE",
+                business_unit_id=3,
+                business_unit_name="Consulting",
+                practice_area_id=4,
+                practice_area_name="Energy",
+                legal_entity_id=5,
+                legal_entity_name="ACME-GmbH",
+                service_line_id=6,
+                service_line_name="Development",
+                delivery_model_id=7,
+                delivery_model_name="Onsite",
+                start_date_before=date(2026, 12, 31),
+                end_date_after=date(2026, 1, 1),
+                created_on_or_after=datetime(2025, 1, 1, tzinfo=UTC),
+                modified_since=datetime(2026, 9, 1, 8, 30, tzinfo=UTC),
+                last_imported_on_or_after=datetime(2026, 9, 1, tzinfo=UTC),
+                top=25,
+                skip=50,
+            )
+
+        assert len(result) == 1
+        assert result[0].identifier.projectCode == "PROJ001"
+        assert result[0].lastImportedDate == datetime(2026, 9, 2, 10, 0, tzinfo=UTC)
+
 
 class TestImportProject:
     """Tests for import_project method."""
@@ -1253,6 +1350,73 @@ class TestGetBookings:
         assert result[0].subject == "Project Work"
         assert result[0].bookingType == dm.BookingType.Confirmed
 
+    async def test_get_bookings_with_all_filters(self, mock_aiohttp: aioresponses) -> None:
+        """Test get_bookings sends every filter under the query key of the spec."""
+        url = (
+            f"{BASE_URL}/importapi/Booking?BookingID=1&BookingCode=BOOK001&ProjectID=7&ProjectCode=PROJ001"
+            "&RequestID=123&UserID=10&EmployeeID=EMP001&UsersBusinessUnitID=3&UsersBusinessUnitName=Consulting"
+            "&UsersPracticeAreaID=4&UsersPracticeAreaName=Energy&UsersTeamID=5&UsersTeamCode=TEAM-A"
+            "&UsersLegalEntityID=6&UsersLegalEntityName=ACME-GmbH&StartDateBefore=2026-12-31"
+            "&EndDateAfter=2026-01-01&CreatedOnOrAfter=2026-01-01T00:00:00%2B00:00"
+            "&LastUpdatedOnOrAfter=2026-09-01T08:30:00%2B00:00&LastImportedOnOrAfter=2026-09-01T00:00:00%2B00:00"
+            "&PlanningGranularity=Weekly&PlanningStartDate=2026-09-01&PlanningEndDate=2026-09-30"
+            "&ExcludeDailyPlanning=true&Top=50&Skip=100&Email=john.doe%40example.com"
+        )
+        mock_aiohttp.get(
+            url,
+            payload=[
+                {
+                    "bookingID": 1,
+                    "bookingCode": "BOOK001",
+                    "userID": 10,
+                    "subject": "Project Work",
+                    "projectID": 7,
+                    "requestID": 123,
+                    "bookingType": "Confirmed",
+                    "weeklyPlanning": [{"dateInWeek": "2026-09-07", "hoursPerWeek": 20.0}],
+                    "lastImportedDate": "2026-09-02T10:00:00Z",
+                }
+            ],
+            status=200,
+        )
+
+        async with DecidaloClient(api_key=API_KEY, base_url=BASE_URL) as client:
+            result = await client.get_bookings(
+                booking_id=1,
+                booking_code="BOOK001",
+                project_id=7,
+                project_code="PROJ001",
+                request_id=123,
+                user_id=10,
+                employee_id="EMP001",
+                users_business_unit_id=3,
+                users_business_unit_name="Consulting",
+                users_practice_area_id=4,
+                users_practice_area_name="Energy",
+                users_team_id=5,
+                users_team_code="TEAM-A",
+                users_legal_entity_id=6,
+                users_legal_entity_name="ACME-GmbH",
+                start_date_before=date(2026, 12, 31),
+                end_date_after=date(2026, 1, 1),
+                created_on_or_after=datetime(2026, 1, 1, tzinfo=UTC),
+                last_updated_on_or_after=datetime(2026, 9, 1, 8, 30, tzinfo=UTC),
+                last_imported_on_or_after=datetime(2026, 9, 1, tzinfo=UTC),
+                planning_granularity=dm.ImportPlanningGranularity.Weekly,
+                planning_start_date=date(2026, 9, 1),
+                planning_end_date=date(2026, 9, 30),
+                exclude_daily_planning=True,
+                top=50,
+                skip=100,
+                email="john.doe@example.com",
+            )
+
+        assert len(result) == 1
+        assert result[0].bookingID == 1
+        assert result[0].requestID == 123
+        assert result[0].weeklyPlanning == [dm.WeeklyPlanningItem(dateInWeek=date(2026, 9, 7), hoursPerWeek=20.0)]
+        assert result[0].lastImportedDate == datetime(2026, 9, 2, 10, 0, tzinfo=UTC)
+
 
 class TestGetBookingsByProject:
     """Tests for get_bookings_by_project method."""
@@ -1426,6 +1590,35 @@ class TestGetResourceRequest:
         assert result.accountingType.accountingTypeName == "Billable"
         assert result.serviceCategory is not None
         assert result.serviceCategory.serviceCategoryID == 4
+
+    async def test_get_resource_request_with_candidates(self, mock_aiohttp: aioresponses) -> None:
+        """Test get_resource_request sends includeCandidates and parses the candidates."""
+        mock_aiohttp.get(
+            f"{BASE_URL}/importapi/ResourceRequest/123?includeCandidates=true",
+            payload={
+                "identifier": {"requestID": 123},
+                "status": "Open",
+                "properties": {"title": "Senior Developer", "requestedCandidateCount": 1},
+                "metrics": {},
+                "candidates": [
+                    {
+                        "user": {"userID": 10, "employeeID": "EMP001"},
+                        "status": {"statusID": 1, "statusName": "Proposed", "statusCategory": "Idle"},
+                    }
+                ],
+                "creationDate": "2024-01-10T08:00:00Z",
+                "lastEditDate": "2024-01-15T10:00:00Z",
+            },
+            status=200,
+        )
+
+        async with DecidaloClient(api_key=API_KEY, base_url=BASE_URL) as client:
+            result = await client.get_resource_request(123, include_candidates=True)
+
+        assert result.identifier.requestID == 123
+        assert result.candidates is not None
+        assert result.candidates[0].user.userID == 10
+        assert result.candidates[0].status.statusCategory == dm.StatusOptionCategory.Idle
 
 
 class TestImportResourceRequest:
@@ -1625,6 +1818,21 @@ class TestActivitiesEndpoints:
         assert result[0].category == "Consulting"
         assert result[0].targetSystemCode == "SAP-DEV"
 
+    async def test_get_activity_types_with_category(self, mock_aiohttp: aioresponses) -> None:
+        """Test get_activity_types sends the category filter under the query key of the spec."""
+        mock_aiohttp.get(
+            f"{BASE_URL}/importapi/ActivityType?category=Consulting",
+            payload=[{"activityTypeID": 42, "code": "DEV", "category": "Consulting"}],
+            status=200,
+        )
+
+        async with DecidaloClient(api_key=API_KEY, base_url=BASE_URL) as client:
+            result = await client.get_activity_types(category="Consulting")
+
+        assert len(result) == 1
+        assert result[0].activityTypeID == 42
+        assert result[0].category == "Consulting"
+
     async def test_import_activity_type(self, mock_aiohttp: aioresponses) -> None:
         """Test import_activity_type hits the correct endpoint and parses the response."""
         mock_aiohttp.post(
@@ -1717,6 +1925,78 @@ class TestOrderEndpoints:
         assert order.expiryDate.year == 2026
         assert order.positions is not None
         assert order.positions[0].rateCode == "RATE-1"
+
+    async def test_get_orders_with_all_filters(self, mock_aiohttp: aioresponses) -> None:
+        """Test get_orders sends every filter under the query key of the spec."""
+        url = (
+            f"{BASE_URL}/importapi/Order?top=10&skip=0&includePositions=false&projectReferenceId=7"
+            "&projectCode=PROJ001&validFromOnOrAfter=2026-01-01&validFromOnOrBefore=2026-03-31"
+            "&expiryOnOrAfter=2026-12-01&expiryOnOrBefore=2026-12-31&orderDateOnOrAfter=2025-11-01"
+            "&orderDateOnOrBefore=2025-12-31&deliveryDateOnOrAfter=2026-02-01&deliveryDateOnOrBefore=2026-02-28"
+            "&validOn=2026-06-15&lastUpdatedOnOrAfter=2026-09-01T00:00:00%2B00:00"
+        )
+        mock_aiohttp.get(
+            url,
+            payload={
+                "orders": [
+                    {
+                        "orderID": 42,
+                        "code": "ORDER-1",
+                        "projects": [{"projectReferenceID": 7, "projectCode": "PROJ001"}],
+                        "orderDate": "2025-11-15",
+                        "deliveryDate": "2026-02-15",
+                        "validFromDate": "2026-01-01",
+                        "expiryDate": "2026-12-31",
+                        "lastEditDate": "2026-09-02T08:00:00Z",
+                    }
+                ]
+            },
+            status=200,
+        )
+
+        async with DecidaloClient(api_key=API_KEY, base_url=BASE_URL) as client:
+            result = await client.get_orders(
+                top=10,
+                skip=0,
+                include_positions=False,
+                project_reference_id=[7],
+                project_code=["PROJ001"],
+                valid_from_on_or_after=date(2026, 1, 1),
+                valid_from_on_or_before=date(2026, 3, 31),
+                expiry_on_or_after=date(2026, 12, 1),
+                expiry_on_or_before=date(2026, 12, 31),
+                order_date_on_or_after=date(2025, 11, 1),
+                order_date_on_or_before=date(2025, 12, 31),
+                delivery_date_on_or_after=date(2026, 2, 1),
+                delivery_date_on_or_before=date(2026, 2, 28),
+                valid_on=date(2026, 6, 15),
+                last_updated_on_or_after=datetime(2026, 9, 1, tzinfo=UTC),
+            )
+
+        assert result.orders is not None
+        order = result.orders[0]
+        assert order.orderID == 42
+        assert order.deliveryDate == date(2026, 2, 15)
+        assert order.positions is None
+
+    async def test_get_orders_with_several_projects(self, mock_aiohttp: aioresponses) -> None:
+        """Test get_orders sends several values of the array filters as repeated query keys."""
+        mock_aiohttp.get(
+            f"{BASE_URL}/importapi/Order?projectReferenceId=7&projectReferenceId=8"
+            "&projectCode=PROJ001&projectCode=PROJ002",
+            payload={"orders": [{"orderID": 42}, {"orderID": 43}]},
+            status=200,
+        )
+
+        async with DecidaloClient(api_key=API_KEY, base_url=BASE_URL) as client:
+            result = await client.get_orders(project_reference_id=[7, 8], project_code=["PROJ001", "PROJ002"])
+
+        assert result.orders is not None
+        assert [order.orderID for order in result.orders] == [42, 43]
+        assert requested_urls(mock_aiohttp) == [
+            f"{BASE_URL}/importapi/Order?projectCode=PROJ001&projectCode=PROJ002"
+            "&projectReferenceId=7&projectReferenceId=8"
+        ]
 
     async def test_get_order(self, mock_aiohttp: aioresponses) -> None:
         """Test get_order hits the correct endpoint and parses the response."""
@@ -2046,6 +2326,56 @@ class TestTimeRecordingEndpoints:
             dm.RecordingTypeReferenceOutput(recordingTypeID=3, recordingTypeCode="TRAVEL")
         ]
 
+    async def test_get_recording_targets_with_all_filters(self, mock_aiohttp: aioresponses) -> None:
+        """Test get_recording_targets sends every filter under the query key of the spec."""
+        url = (
+            f"{BASE_URL}/importapi/TimeRecording/RecordingTargets?projectReferenceId=7&projectCode=PROJ001"
+            "&workPackageId=11&workPackageCode=WP-1&orderPositionId=21&orderPositionCode=POS-1&orderId=1"
+            "&orderCode=ORDER-1&generalActivityId=31&generalActivityCode=TRAINING&activityTypeId=42"
+            "&activityTypeCode=DEV&activityTypeTargetSystemCode=SAP-DEV&generalActivityTargetSystemCode=SAP-TRN"
+            "&activityTypeCategory=Consulting&isActive=false"
+        )
+        mock_aiohttp.get(
+            url,
+            payload=[
+                {
+                    "recordingTargetID": 42,
+                    "orderID": 1,
+                    "orderCode": "ORDER-1",
+                    "orderPositionID": 21,
+                    "orderPositionCode": "POS-1",
+                    "activityTypeID": 42,
+                    "activityTypeCode": "DEV",
+                    "isActive": False,
+                }
+            ],
+            status=200,
+        )
+
+        async with DecidaloClient(api_key=API_KEY, base_url=BASE_URL) as client:
+            result = await client.get_recording_targets(
+                project_reference_id=7,
+                project_code="PROJ001",
+                work_package_id=11,
+                work_package_code="WP-1",
+                order_position_id=21,
+                order_position_code="POS-1",
+                order_id=1,
+                order_code="ORDER-1",
+                general_activity_id=31,
+                general_activity_code="TRAINING",
+                activity_type_id=42,
+                activity_type_code="DEV",
+                activity_type_target_system_code="SAP-DEV",
+                general_activity_target_system_code="SAP-TRN",
+                activity_type_category="Consulting",
+                is_active=False,
+            )
+
+        assert len(result) == 1
+        assert result[0].orderPositionCode == "POS-1"
+        assert result[0].isActive is False
+
     async def test_get_user_time_sheet(self, mock_aiohttp: aioresponses) -> None:
         """Test get_user_time_sheet hits the correct endpoint and parses the response."""
         mock_aiohttp.get(
@@ -2079,6 +2409,84 @@ class TestTimeRecordingEndpoints:
         assert entry.status == dm.TimeRecordingEntryStatus.Open
         assert entry.recordingTypeValues == [dm.RecordingEntryTypeValueImport(recordingTypeCode="TRAVEL", value=1.5)]
         assert entry.rateCode == "RATE-1"
+
+    async def test_get_user_time_sheet_with_all_filters(self, mock_aiohttp: aioresponses) -> None:
+        """Test get_user_time_sheet sends every filter under the query key of the spec."""
+        url = (
+            f"{BASE_URL}/importapi/TimeRecording/UserTimeSheet?userId=10&employeeId=EMP001"
+            "&email=john.doe%40example.com&startDate=2026-09-01&endDate=2026-09-30"
+            "&workDateOnOrAfter=2026-09-01&workDateOnOrBefore=2026-09-30&orderId=3&orderCode=ORDER-1"
+            "&projectReferenceId=7&projectCode=PROJ001&workPackageId=11&workPackageCode=WP-1"
+            "&orderPositionId=21&orderPositionCode=POS-1&generalActivityId=31&generalActivityCode=TRAINING"
+            "&activityTypeId=42&activityTypeCode=DEV&activityTypeTargetSystemCode=SAP-DEV"
+            "&generalActivityTargetSystemCode=SAP-TRN&activityTypeCategory=Consulting&rateId=5"
+            "&rateCode=RATE-1&rateCategory=Senior&status=Submitted&status=Confirmed"
+            "&modifiedAfter=2026-09-01T00:00:00%2B00:00&createdOnOrAfter=2026-08-01T00:00:00%2B00:00"
+            "&lastUpdatedOnOrAfter=2026-09-02T12:00:00%2B00:00&lastImportedOnOrAfter=2026-09-03T00:00:00%2B00:00"
+        )
+        mock_aiohttp.get(
+            url,
+            payload={
+                "entries": [
+                    {
+                        "recordingEntryID": 1,
+                        "userID": 10,
+                        "workDate": "2026-09-15",
+                        "timeMinutes": 480,
+                        "status": "Submitted",
+                        "orderID": 3,
+                        "rateID": 5,
+                        "rateCode": "RATE-1",
+                        "rateCategory": "Senior",
+                        "activityTypeCategory": "Consulting",
+                        "lastImportedDate": "2026-09-16T08:00:00Z",
+                    }
+                ],
+                "workTimes": [],
+            },
+            status=200,
+        )
+
+        async with DecidaloClient(api_key=API_KEY, base_url=BASE_URL) as client:
+            result = await client.get_user_time_sheet(
+                user_id=10,
+                employee_id="EMP001",
+                email="john.doe@example.com",
+                start_date=date(2026, 9, 1),
+                end_date=date(2026, 9, 30),
+                work_date_on_or_after=date(2026, 9, 1),
+                work_date_on_or_before=date(2026, 9, 30),
+                order_id=3,
+                order_code="ORDER-1",
+                project_reference_id=7,
+                project_code="PROJ001",
+                work_package_id=11,
+                work_package_code="WP-1",
+                order_position_id=21,
+                order_position_code="POS-1",
+                general_activity_id=31,
+                general_activity_code="TRAINING",
+                activity_type_id=42,
+                activity_type_code="DEV",
+                activity_type_target_system_code="SAP-DEV",
+                general_activity_target_system_code="SAP-TRN",
+                activity_type_category="Consulting",
+                rate_id=5,
+                rate_code="RATE-1",
+                rate_category="Senior",
+                status=[dm.TimeRecordingEntryStatus.Submitted, dm.TimeRecordingEntryStatus.Confirmed],
+                modified_after=datetime(2026, 9, 1, tzinfo=UTC),
+                created_on_or_after=datetime(2026, 8, 1, tzinfo=UTC),
+                last_updated_on_or_after=datetime(2026, 9, 2, 12, 0, tzinfo=UTC),
+                last_imported_on_or_after=datetime(2026, 9, 3, tzinfo=UTC),
+            )
+
+        assert result.entries is not None
+        entry = result.entries[0]
+        assert entry.status == dm.TimeRecordingEntryStatus.Submitted
+        assert entry.rateCategory == "Senior"
+        assert entry.activityTypeCategory == "Consulting"
+        assert result.workTimes == []
 
     async def test_import_user_time_sheet(self, mock_aiohttp: aioresponses) -> None:
         """Test import_user_time_sheet hits the correct endpoint and parses the response."""

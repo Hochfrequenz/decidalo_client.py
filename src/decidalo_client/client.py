@@ -33,6 +33,7 @@ from decidalo_client.models import (
     ImportBatchStatusType,
     ImportCompanyCommand,
     ImportCompanyResult,
+    ImportPlanningGranularity,
     ImportResourceRequestCommandResult,
     ImportRoleResult,
     ImportUserWorkingProfileResult,
@@ -68,6 +69,7 @@ from decidalo_client.models import (
     TeamImportAcceptedResponse,
     TeamImportResults,
     TeamOverview,
+    TimeRecordingEntryStatus,
     TimeRecordingImportBatch,
     TimeRecordingImportOutputBatch,
     TimeRecordingImportResult,
@@ -365,16 +367,24 @@ class DecidaloClient:
         user_id: int | None = None,
         employee_id: str | None = None,
         email: str | None = None,
+        top: int | None = None,
+        skip: int | None = None,
+        country_code: str | None = None,
     ) -> list[UserOverview]:
         """Get users from the API.
 
-        Returns all users in the system. The returned list may be empty if no users
-        match the given criteria.
+        Returns all users in the system, ordered by their user ID. The returned list may be
+        empty if no users match the given criteria.
 
         Args:
-            user_id: Filter by internal user ID. If provided, the email filter is ignored.
-            employee_id: Filter by external employee ID.
-            email: Filter by email address. Must be an exact match (case insensitive).
+            user_id: Filter by internal user ID. If provided, employee_id, email, top and skip
+                are ignored.
+            employee_id: Filter by external employee ID. Ignored if user_id is provided.
+            email: Filter by email address. Ignored if user_id or employee_id is provided.
+            top: Maximum number of users to return (paging).
+            skip: Number of users to skip (paging).
+            country_code: Filter by country code (exact match, case-insensitive). Applied
+                independently of user_id, employee_id and email.
 
         Returns:
             A list of UserOverview objects.
@@ -386,6 +396,12 @@ class DecidaloClient:
             params["employeeID"] = employee_id
         if email is not None:
             params["email"] = email
+        if top is not None:
+            params["top"] = str(top)
+        if skip is not None:
+            params["skip"] = str(skip)
+        if country_code is not None:
+            params["countryCode"] = country_code
 
         response_text = await self._get("/importapi/User", params)
         adapter = TypeAdapter(list[UserOverview])
@@ -639,15 +655,133 @@ class DecidaloClient:
         response_text = await self._get("/importapi/Project", params)
         return ProjectReferenceOutput.model_validate_json(response_text)
 
-    async def get_all_projects(self) -> list[ProjectReferenceOutput]:
+    async def get_all_projects(
+        self,
+        *,
+        project_id: int | None = None,
+        project_code: str | None = None,
+        only_projects_with_project_code: bool | None = None,
+        is_central_project: bool | None = None,
+        company_id: int | None = None,
+        company_code: str | None = None,
+        country_code: str | None = None,
+        business_unit_id: int | None = None,
+        business_unit_name: str | None = None,
+        practice_area_id: int | None = None,
+        practice_area_name: str | None = None,
+        legal_entity_id: int | None = None,
+        legal_entity_name: str | None = None,
+        service_line_id: int | None = None,
+        service_line_name: str | None = None,
+        delivery_model_id: int | None = None,
+        delivery_model_name: str | None = None,
+        start_date_before: date | None = None,
+        end_date_after: date | None = None,
+        created_on_or_after: datetime | None = None,
+        modified_since: datetime | None = None,
+        last_imported_on_or_after: datetime | None = None,
+        top: int | None = None,
+        skip: int | None = None,
+    ) -> list[ProjectReferenceOutput]:
         """Get all projects from the API.
 
-        Returns the core project data for all existing projects.
+        Returns the core project data for all existing projects. All filters are optional
+        and AND-combined. Names are matched against the internal or translated name,
+        case-insensitive.
+
+        Args:
+            project_id: Filter on a single project by its internal ID.
+            project_code: Filter on a single project by its external code (an unknown code
+                returns an empty list). Ignored if project_id is provided.
+            only_projects_with_project_code: If True, projects without a project code are
+                filtered out.
+            is_central_project: True returns only central projects, False only non-central ones.
+            company_id: Filter by the internal ID of the project's company.
+            company_code: Filter by the external code of the project's company (every company
+                with this code matches). Ignored if company_id is provided.
+            country_code: Filter by country code (exact match, case-insensitive).
+            business_unit_id: Filter by the internal ID of the project's business unit.
+            business_unit_name: Filter by the name of the project's business unit. Ignored if
+                business_unit_id is provided.
+            practice_area_id: Filter by the internal ID of the project's practice area.
+            practice_area_name: Filter by the name of the project's practice area. Ignored if
+                practice_area_id is provided.
+            legal_entity_id: Filter by the internal ID of the project's legal entity.
+            legal_entity_name: Filter by the name of the project's legal entity. Ignored if
+                legal_entity_id is provided.
+            service_line_id: Filter by the internal ID of the project's service line.
+            service_line_name: Filter by the name of the project's service line. Ignored if
+                service_line_id is provided.
+            delivery_model_id: Filter by the internal ID of the project's delivery model.
+            delivery_model_name: Filter by the name of the project's delivery model. Ignored if
+                delivery_model_id is provided.
+            start_date_before: Only projects starting on or before this date. Projects without
+                a start date are also returned.
+            end_date_after: Only projects ending on or after this date. Projects without an end
+                date are also returned.
+            created_on_or_after: Only projects created on or after this point in time
+                (timezone-aware).
+            modified_since: Only projects last edited on or after this point in time
+                (timezone-aware).
+            last_imported_on_or_after: Only projects last imported on or after this point in
+                time; never-imported projects are excluded (timezone-aware).
+            top: Maximum number of projects to return (paging).
+            skip: Number of projects to skip (paging).
 
         Returns:
             A list of ProjectReferenceOutput objects.
         """
-        response_text = await self._get("/importapi/Project/AllProjects")
+        params: dict[str, str] = {}
+        if project_id is not None:
+            params["projectID"] = str(project_id)
+        if project_code is not None:
+            params["projectCode"] = project_code
+        if only_projects_with_project_code is not None:
+            params["onlyProjectsWithProjectCode"] = str(only_projects_with_project_code).lower()
+        if is_central_project is not None:
+            params["isCentralProject"] = str(is_central_project).lower()
+        if company_id is not None:
+            params["companyID"] = str(company_id)
+        if company_code is not None:
+            params["companyCode"] = company_code
+        if country_code is not None:
+            params["countryCode"] = country_code
+        if business_unit_id is not None:
+            params["businessUnitID"] = str(business_unit_id)
+        if business_unit_name is not None:
+            params["businessUnitName"] = business_unit_name
+        if practice_area_id is not None:
+            params["practiceAreaID"] = str(practice_area_id)
+        if practice_area_name is not None:
+            params["practiceAreaName"] = practice_area_name
+        if legal_entity_id is not None:
+            params["legalEntityID"] = str(legal_entity_id)
+        if legal_entity_name is not None:
+            params["legalEntityName"] = legal_entity_name
+        if service_line_id is not None:
+            params["serviceLineID"] = str(service_line_id)
+        if service_line_name is not None:
+            params["serviceLineName"] = service_line_name
+        if delivery_model_id is not None:
+            params["deliveryModelID"] = str(delivery_model_id)
+        if delivery_model_name is not None:
+            params["deliveryModelName"] = delivery_model_name
+        if start_date_before is not None:
+            params["startDateBefore"] = _format_date(start_date_before)
+        if end_date_after is not None:
+            params["endDateAfter"] = _format_date(end_date_after)
+        if created_on_or_after is not None:
+            params["createdOnOrAfter"] = _format_datetime(created_on_or_after)
+        if modified_since is not None:
+            params["modifiedSince"] = _format_datetime(modified_since)
+        if last_imported_on_or_after is not None:
+            params["lastImportedOnOrAfter"] = _format_datetime(last_imported_on_or_after)
+        if top is not None:
+            params["top"] = str(top)
+        if skip is not None:
+            params["skip"] = str(skip)
+
+        response_text = await self._get("/importapi/Project/AllProjects", params)
         adapter = TypeAdapter(list[ProjectReferenceOutput])
         return adapter.validate_json(response_text)
 
@@ -868,16 +1002,81 @@ class DecidaloClient:
         *,
         booking_id: int | None = None,
         booking_code: str | None = None,
+        project_id: int | None = None,
+        project_code: str | None = None,
+        request_id: int | None = None,
         user_id: int | None = None,
         employee_id: str | None = None,
+        users_business_unit_id: int | None = None,
+        users_business_unit_name: str | None = None,
+        users_practice_area_id: int | None = None,
+        users_practice_area_name: str | None = None,
+        users_team_id: int | None = None,
+        users_team_code: str | None = None,
+        users_legal_entity_id: int | None = None,
+        users_legal_entity_name: str | None = None,
+        start_date_before: date | None = None,
+        end_date_after: date | None = None,
+        created_on_or_after: datetime | None = None,
+        last_updated_on_or_after: datetime | None = None,
+        last_imported_on_or_after: datetime | None = None,
+        planning_granularity: ImportPlanningGranularity | None = None,
+        planning_start_date: date | None = None,
+        planning_end_date: date | None = None,
+        exclude_daily_planning: bool | None = None,
+        top: int | None = None,
+        skip: int | None = None,
+        email: str | None = None,
     ) -> list[BookingItemOutput]:
         """Get bookings from the API.
 
+        The booked user can be filtered by user_id, employee_id, or email, in that precedence
+        order (the first one provided wins).
+
         Args:
-            booking_id: Filter by internal booking ID.
-            booking_code: Filter by external booking code.
-            user_id: Filter by internal user ID.
-            employee_id: Filter by external employee ID.
+            booking_id: Filter by internal booking ID. Only the booking with this ID is returned.
+            booking_code: Filter by external booking code. Ignored if booking_id is provided.
+            project_id: Filter by the internal ID of the project linked to the booking.
+            project_code: Filter by the code of the project linked to the booking. Ignored if
+                project_id is provided.
+            request_id: Filter by the internal ID of the resource request linked to the booking.
+            user_id: Filter by the internal ID of the booked user.
+            employee_id: Filter by the external employee ID of the booked user. Ignored if
+                user_id is provided.
+            users_business_unit_id: Filter by the business unit of the booked user.
+            users_business_unit_name: Filter by the business unit name of the booked user.
+                Ignored if users_business_unit_id is provided.
+            users_practice_area_id: Filter by the practice area of the booked user.
+            users_practice_area_name: Filter by the practice area name of the booked user.
+                Ignored if users_practice_area_id is provided.
+            users_team_id: Filter by the team of the booked user.
+            users_team_code: Filter by the team code of the booked user. Ignored if
+                users_team_id is provided.
+            users_legal_entity_id: Filter by the legal entity of the booked user.
+            users_legal_entity_name: Filter by the legal entity name of the booked user
+                (case-insensitive). Ignored if users_legal_entity_id is provided.
+            start_date_before: Filter on the start date of the booking. Bookings without a start
+                date are also returned.
+            end_date_after: Filter on the end date of the booking. Bookings without an end date
+                are also returned.
+            created_on_or_after: Only bookings created on or after this point in time
+                (timezone-aware).
+            last_updated_on_or_after: Incremental-sync filter: only bookings last edited on or
+                after this point in time (timezone-aware).
+            last_imported_on_or_after: Incremental-sync filter: only bookings last imported on or
+                after this point in time; never-imported bookings are excluded (timezone-aware).
+            planning_granularity: The planning granularity to include in the response (only one
+                at a time). Defaults to daily, or none if exclude_daily_planning is True.
+            planning_start_date: Inclusive lower bound for the planning data. Has no effect if no
+                planning is included.
+            planning_end_date: Inclusive upper bound for the planning data. Has no effect if no
+                planning is included.
+            exclude_daily_planning: Deprecated, use planning_granularity instead. If True, daily
+                planning is not included. Ignored if planning_granularity is provided.
+            top: Maximum number of bookings to return (paging).
+            skip: Number of bookings to skip (paging).
+            email: Filter by the email address of the booked user (case-insensitive). Ignored if
+                user_id or employee_id is provided. An unknown or ambiguous email yields HTTP 400.
 
         Returns:
             A list of BookingItemOutput objects.
@@ -887,10 +1086,56 @@ class DecidaloClient:
             params["BookingID"] = str(booking_id)
         if booking_code is not None:
             params["BookingCode"] = booking_code
+        if project_id is not None:
+            params["ProjectID"] = str(project_id)
+        if project_code is not None:
+            params["ProjectCode"] = project_code
+        if request_id is not None:
+            params["RequestID"] = str(request_id)
         if user_id is not None:
             params["UserID"] = str(user_id)
         if employee_id is not None:
             params["EmployeeID"] = employee_id
+        if users_business_unit_id is not None:
+            params["UsersBusinessUnitID"] = str(users_business_unit_id)
+        if users_business_unit_name is not None:
+            params["UsersBusinessUnitName"] = users_business_unit_name
+        if users_practice_area_id is not None:
+            params["UsersPracticeAreaID"] = str(users_practice_area_id)
+        if users_practice_area_name is not None:
+            params["UsersPracticeAreaName"] = users_practice_area_name
+        if users_team_id is not None:
+            params["UsersTeamID"] = str(users_team_id)
+        if users_team_code is not None:
+            params["UsersTeamCode"] = users_team_code
+        if users_legal_entity_id is not None:
+            params["UsersLegalEntityID"] = str(users_legal_entity_id)
+        if users_legal_entity_name is not None:
+            params["UsersLegalEntityName"] = users_legal_entity_name
+        if start_date_before is not None:
+            params["StartDateBefore"] = _format_date(start_date_before)
+        if end_date_after is not None:
+            params["EndDateAfter"] = _format_date(end_date_after)
+        if created_on_or_after is not None:
+            params["CreatedOnOrAfter"] = _format_datetime(created_on_or_after)
+        if last_updated_on_or_after is not None:
+            params["LastUpdatedOnOrAfter"] = _format_datetime(last_updated_on_or_after)
+        if last_imported_on_or_after is not None:
+            params["LastImportedOnOrAfter"] = _format_datetime(last_imported_on_or_after)
+        if planning_granularity is not None:
+            params["PlanningGranularity"] = planning_granularity.value
+        if planning_start_date is not None:
+            params["PlanningStartDate"] = _format_date(planning_start_date)
+        if planning_end_date is not None:
+            params["PlanningEndDate"] = _format_date(planning_end_date)
+        if exclude_daily_planning is not None:
+            params["ExcludeDailyPlanning"] = str(exclude_daily_planning).lower()
+        if top is not None:
+            params["Top"] = str(top)
+        if skip is not None:
+            params["Skip"] = str(skip)
+        if email is not None:
+            params["Email"] = email
 
         response_text = await self._get("/importapi/Booking", params)
         adapter = TypeAdapter(list[BookingItemOutput])
@@ -1001,16 +1246,24 @@ class DecidaloClient:
     async def get_resource_request(
         self,
         request_id: int,
+        *,
+        include_candidates: bool | None = None,
     ) -> ResourceRequestOutput:
         """Get a resource request by ID.
 
         Args:
             request_id: The internal resource request ID.
+            include_candidates: Whether to load the candidates and include them in the resource
+                request. Defaults to False.
 
         Returns:
             A ResourceRequestOutput object.
         """
-        response_text = await self._get(f"/importapi/ResourceRequest/{request_id}")
+        params: dict[str, str] = {}
+        if include_candidates is not None:
+            params["includeCandidates"] = str(include_candidates).lower()
+
+        response_text = await self._get(f"/importapi/ResourceRequest/{request_id}", params)
         return ResourceRequestOutput.model_validate_json(response_text)
 
     async def import_resource_request(
@@ -1143,13 +1396,25 @@ class DecidaloClient:
     # Activity Type Methods
     # =========================================================================
 
-    async def get_activity_types(self) -> list[ActivityTypeResult]:
+    async def get_activity_types(
+        self,
+        *,
+        category: str | None = None,
+    ) -> list[ActivityTypeResult]:
         """Get all activity types in the system.
+
+        Args:
+            category: Only activity types carrying this aggregation category (exact match,
+                case-insensitive). Omitted or blank returns every type.
 
         Returns:
             A list of ActivityTypeResult objects.
         """
-        response_text = await self._get("/importapi/ActivityType")
+        params: dict[str, str] = {}
+        if category is not None:
+            params["category"] = category
+
+        response_text = await self._get("/importapi/ActivityType", params)
         adapter = TypeAdapter(list[ActivityTypeResult])
         return adapter.validate_json(response_text)
 
@@ -1210,23 +1475,84 @@ class DecidaloClient:
     async def get_orders(
         self,
         *,
-        project_reference_id: int | None = None,
-        project_code: str | None = None,
+        top: int | None = None,
+        skip: int | None = None,
+        include_positions: bool | None = None,
+        project_reference_id: list[int] | None = None,
+        project_code: list[str] | None = None,
+        valid_from_on_or_after: date | None = None,
+        valid_from_on_or_before: date | None = None,
+        expiry_on_or_after: date | None = None,
+        expiry_on_or_before: date | None = None,
+        order_date_on_or_after: date | None = None,
+        order_date_on_or_before: date | None = None,
+        delivery_date_on_or_after: date | None = None,
+        delivery_date_on_or_before: date | None = None,
+        valid_on: date | None = None,
+        last_updated_on_or_after: datetime | None = None,
     ) -> OrderImportOutputBatch:
         """Get orders with their positions.
 
+        All filters are optional and AND-combined. The date filters compare the order's own
+        dates, so an order without the respective date is not returned (except for valid_on,
+        which treats a missing valid-from or expiry date as an open bound).
+
         Args:
-            project_reference_id: Filter by the internal project reference ID.
-            project_code: Filter by the external project code.
+            top: Maximum number of orders to return (paging). Without it, every matching order
+                is returned.
+            skip: Number of orders to skip (paging).
+            include_positions: Whether each order carries its positions. Defaults to True; False
+                is a cheaper read when only the order headers are wanted.
+            project_reference_id: Only orders linked to any of these internal project IDs.
+            project_code: Only orders linked to any of these project codes. Ignored if
+                project_reference_id is provided.
+            valid_from_on_or_after: Only orders whose valid-from date is on or after this day.
+            valid_from_on_or_before: Only orders whose valid-from date is on or before this day.
+            expiry_on_or_after: Only orders whose expiry date is on or after this day (e.g. not
+                yet expired).
+            expiry_on_or_before: Only orders whose expiry date is on or before this day.
+            order_date_on_or_after: Only orders whose order date is on or after this day.
+            order_date_on_or_before: Only orders whose order date is on or before this day.
+            delivery_date_on_or_after: Only orders whose delivery date is on or after this day.
+            delivery_date_on_or_before: Only orders whose delivery date is on or before this day.
+            valid_on: Only orders that are valid on this day (valid-from <= day <= expiry).
+            last_updated_on_or_after: Incremental-sync filter: only orders changed, including their
+                positions and rate entries, on or after this point in time (timezone-aware).
 
         Returns:
             An OrderImportOutputBatch containing the matching orders.
         """
-        params: dict[str, str] = {}
+        params: dict[str, str | list[str]] = {}
+        if top is not None:
+            params["top"] = str(top)
+        if skip is not None:
+            params["skip"] = str(skip)
+        if include_positions is not None:
+            params["includePositions"] = str(include_positions).lower()
         if project_reference_id is not None:
-            params["projectReferenceId"] = str(project_reference_id)
+            params["projectReferenceId"] = [str(v) for v in project_reference_id]
         if project_code is not None:
-            params["projectCode"] = project_code
+            params["projectCode"] = [str(v) for v in project_code]
+        if valid_from_on_or_after is not None:
+            params["validFromOnOrAfter"] = _format_date(valid_from_on_or_after)
+        if valid_from_on_or_before is not None:
+            params["validFromOnOrBefore"] = _format_date(valid_from_on_or_before)
+        if expiry_on_or_after is not None:
+            params["expiryOnOrAfter"] = _format_date(expiry_on_or_after)
+        if expiry_on_or_before is not None:
+            params["expiryOnOrBefore"] = _format_date(expiry_on_or_before)
+        if order_date_on_or_after is not None:
+            params["orderDateOnOrAfter"] = _format_date(order_date_on_or_after)
+        if order_date_on_or_before is not None:
+            params["orderDateOnOrBefore"] = _format_date(order_date_on_or_before)
+        if delivery_date_on_or_after is not None:
+            params["deliveryDateOnOrAfter"] = _format_date(delivery_date_on_or_after)
+        if delivery_date_on_or_before is not None:
+            params["deliveryDateOnOrBefore"] = _format_date(delivery_date_on_or_before)
+        if valid_on is not None:
+            params["validOn"] = _format_date(valid_on)
+        if last_updated_on_or_after is not None:
+            params["lastUpdatedOnOrAfter"] = _format_datetime(last_updated_on_or_after)
 
         response_text = await self._get("/importapi/Order", params)
         return OrderImportOutputBatch.model_validate_json(response_text)
@@ -1684,17 +2010,24 @@ class DecidaloClient:
         work_package_id: int | None = None,
         work_package_code: str | None = None,
         order_position_id: int | None = None,
+        order_position_code: str | None = None,
+        order_id: int | None = None,
+        order_code: str | None = None,
         general_activity_id: int | None = None,
         general_activity_code: str | None = None,
         activity_type_id: int | None = None,
         activity_type_code: str | None = None,
+        activity_type_target_system_code: str | None = None,
+        general_activity_target_system_code: str | None = None,
+        activity_type_category: str | None = None,
         is_active: bool | None = None,
     ) -> list[RecordingTargetOutput]:
         """Get the tenant's recording targets across all subject kinds.
 
         Covers project, work package, general activity, and order position targets.
-        All filters are optional and AND-combined. Only active targets are returned
-        unless is_active is set (True = active only, False = inactive only).
+        All filters are optional and AND-combined; subject filters accept an ID or a code
+        (the ID wins). Only active targets are returned unless is_active is set
+        (True = active only, False = inactive only).
 
         Args:
             project_reference_id: Filter by internal project reference ID.
@@ -1702,10 +2035,19 @@ class DecidaloClient:
             work_package_id: Filter by internal work package ID.
             work_package_code: Filter by work package code.
             order_position_id: Filter by internal order position ID.
+            order_position_code: Filter by order position code.
+            order_id: Filter by internal order ID (targets on a position of this order).
+            order_code: Filter by order code (targets on a position of the order with this code).
             general_activity_id: Filter by internal general activity ID.
             general_activity_code: Filter by general activity code.
             activity_type_id: Filter by internal activity type ID.
             activity_type_code: Filter by activity type code.
+            activity_type_target_system_code: Filter by the target system code of the activity type
+                (exact, case-insensitive).
+            general_activity_target_system_code: Filter by the target system code of the general
+                activity (exact, case-insensitive). Setting both codes matches nothing.
+            activity_type_category: Filter by the aggregation category of the activity type (exact,
+                case-insensitive).
             is_active: True returns active targets only, False inactive only.
 
         Returns:
@@ -1722,6 +2064,12 @@ class DecidaloClient:
             params["workPackageCode"] = work_package_code
         if order_position_id is not None:
             params["orderPositionId"] = str(order_position_id)
+        if order_position_code is not None:
+            params["orderPositionCode"] = order_position_code
+        if order_id is not None:
+            params["orderId"] = str(order_id)
+        if order_code is not None:
+            params["orderCode"] = order_code
         if general_activity_id is not None:
             params["generalActivityId"] = str(general_activity_id)
         if general_activity_code is not None:
@@ -1730,6 +2078,12 @@ class DecidaloClient:
             params["activityTypeId"] = str(activity_type_id)
         if activity_type_code is not None:
             params["activityTypeCode"] = activity_type_code
+        if activity_type_target_system_code is not None:
+            params["activityTypeTargetSystemCode"] = activity_type_target_system_code
+        if general_activity_target_system_code is not None:
+            params["generalActivityTargetSystemCode"] = general_activity_target_system_code
+        if activity_type_category is not None:
+            params["activityTypeCategory"] = activity_type_category
         if is_active is not None:
             params["isActive"] = str(is_active).lower()
 
@@ -1745,20 +2099,89 @@ class DecidaloClient:
         email: str | None = None,
         start_date: date | None = None,
         end_date: date | None = None,
+        work_date_on_or_after: date | None = None,
+        work_date_on_or_before: date | None = None,
+        order_id: int | None = None,
+        order_code: str | None = None,
+        project_reference_id: int | None = None,
+        project_code: str | None = None,
+        work_package_id: int | None = None,
+        work_package_code: str | None = None,
+        order_position_id: int | None = None,
+        order_position_code: str | None = None,
+        general_activity_id: int | None = None,
+        general_activity_code: str | None = None,
+        activity_type_id: int | None = None,
+        activity_type_code: str | None = None,
+        activity_type_target_system_code: str | None = None,
+        general_activity_target_system_code: str | None = None,
+        activity_type_category: str | None = None,
+        rate_id: int | None = None,
+        rate_code: str | None = None,
+        rate_category: str | None = None,
+        status: list[TimeRecordingEntryStatus] | None = None,
+        modified_after: datetime | None = None,
+        created_on_or_after: datetime | None = None,
+        last_updated_on_or_after: datetime | None = None,
+        last_imported_on_or_after: datetime | None = None,
     ) -> TimeRecordingImportOutputBatch:
         """Get a user's timesheet.
 
+        Every filter besides the owner (user_id, employee_id, or email) is optional and
+        AND-combined. The entry filters narrow the recording entries only; the working times
+        always follow the date range alone. Where a filter can be given by ID or by code, the ID
+        wins. work_date_on_or_after and work_date_on_or_before win over start_date and end_date,
+        and last_updated_on_or_after wins over modified_after.
+
         Args:
-            user_id: The internal user ID.
-            employee_id: The external employee ID.
-            email: The user's email address.
-            start_date: Only entries on or after this date.
-            end_date: Only entries on or before this date.
+            user_id: The internal user ID of the owner.
+            employee_id: The external employee ID of the owner.
+            email: The email address of the owner.
+            start_date: Inclusive lower bound on the work date. Ignored if work_date_on_or_after
+                is provided.
+            end_date: Inclusive upper bound on the work date. Ignored if work_date_on_or_before
+                is provided.
+            work_date_on_or_after: Inclusive lower bound on the work date. Wins over start_date.
+            work_date_on_or_before: Inclusive upper bound on the work date. Wins over end_date.
+            order_id: Only entries recorded against a position of this order.
+            order_code: Only entries recorded against a position of the order with this code.
+            project_reference_id: Only entries whose subject belongs to this project, directly,
+                through its work package, or through its order position.
+            project_code: Same as project_reference_id, addressed by the project code.
+            work_package_id: Only entries recorded against this work package.
+            work_package_code: Only entries recorded against the work package with this code.
+            order_position_id: Only entries recorded against this order position.
+            order_position_code: Only entries recorded against the order position with this code.
+            general_activity_id: Only entries recorded against this general activity.
+            general_activity_code: Only entries recorded against the general activity with this
+                code.
+            activity_type_id: Only entries whose target uses this activity type.
+            activity_type_code: Only entries whose target uses the activity type with this code.
+            activity_type_target_system_code: Only entries whose activity type carries this target
+                system code (exact, case-insensitive).
+            general_activity_target_system_code: Only entries whose general activity carries this
+                target system code (exact, case-insensitive). Setting both codes matches nothing.
+            activity_type_category: Only entries whose activity type carries this aggregation
+                category (exact, case-insensitive).
+            rate_id: Only entries priced from this catalog rate, i.e. the rate their order position
+                prices the default (work-time) recording type from.
+            rate_code: Same as rate_id, addressed by the rate's unique code.
+            rate_category: Only entries whose rate carries this aggregation category (exact,
+                case-insensitive).
+            status: Only entries in these states. Omitted returns every state.
+            modified_after: Only entries last edited strictly after this point in time. Ignored if
+                last_updated_on_or_after is provided (timezone-aware).
+            created_on_or_after: Only entries created on or after this point in time
+                (timezone-aware).
+            last_updated_on_or_after: Only entries last edited on or after this point in time.
+                Wins over modified_after (timezone-aware).
+            last_imported_on_or_after: Only entries last written by the Import API on or after this
+                point in time; never-imported entries are excluded (timezone-aware).
 
         Returns:
             A TimeRecordingImportOutputBatch with the user's entries and work times.
         """
-        params: dict[str, str] = {}
+        params: dict[str, str | list[str]] = {}
         if user_id is not None:
             params["userId"] = str(user_id)
         if employee_id is not None:
@@ -1769,6 +2192,56 @@ class DecidaloClient:
             params["startDate"] = _format_date(start_date)
         if end_date is not None:
             params["endDate"] = _format_date(end_date)
+        if work_date_on_or_after is not None:
+            params["workDateOnOrAfter"] = _format_date(work_date_on_or_after)
+        if work_date_on_or_before is not None:
+            params["workDateOnOrBefore"] = _format_date(work_date_on_or_before)
+        if order_id is not None:
+            params["orderId"] = str(order_id)
+        if order_code is not None:
+            params["orderCode"] = order_code
+        if project_reference_id is not None:
+            params["projectReferenceId"] = str(project_reference_id)
+        if project_code is not None:
+            params["projectCode"] = project_code
+        if work_package_id is not None:
+            params["workPackageId"] = str(work_package_id)
+        if work_package_code is not None:
+            params["workPackageCode"] = work_package_code
+        if order_position_id is not None:
+            params["orderPositionId"] = str(order_position_id)
+        if order_position_code is not None:
+            params["orderPositionCode"] = order_position_code
+        if general_activity_id is not None:
+            params["generalActivityId"] = str(general_activity_id)
+        if general_activity_code is not None:
+            params["generalActivityCode"] = general_activity_code
+        if activity_type_id is not None:
+            params["activityTypeId"] = str(activity_type_id)
+        if activity_type_code is not None:
+            params["activityTypeCode"] = activity_type_code
+        if activity_type_target_system_code is not None:
+            params["activityTypeTargetSystemCode"] = activity_type_target_system_code
+        if general_activity_target_system_code is not None:
+            params["generalActivityTargetSystemCode"] = general_activity_target_system_code
+        if activity_type_category is not None:
+            params["activityTypeCategory"] = activity_type_category
+        if rate_id is not None:
+            params["rateId"] = str(rate_id)
+        if rate_code is not None:
+            params["rateCode"] = rate_code
+        if rate_category is not None:
+            params["rateCategory"] = rate_category
+        if status is not None:
+            params["status"] = [v.value for v in status]
+        if modified_after is not None:
+            params["modifiedAfter"] = _format_datetime(modified_after)
+        if created_on_or_after is not None:
+            params["createdOnOrAfter"] = _format_datetime(created_on_or_after)
+        if last_updated_on_or_after is not None:
+            params["lastUpdatedOnOrAfter"] = _format_datetime(last_updated_on_or_after)
+        if last_imported_on_or_after is not None:
+            params["lastImportedOnOrAfter"] = _format_datetime(last_imported_on_or_after)
 
         response_text = await self._get("/importapi/TimeRecording/UserTimeSheet", params)
         return TimeRecordingImportOutputBatch.model_validate_json(response_text)
