@@ -29,13 +29,17 @@ from decidalo_client.models import (
     GeneralActivityImportItem,
     GeneralActivityResult,
     GetImportUserWorkingProfileResult,
+    HolidayCalendarImportResult,
+    HolidayCalendarOutput,
     ImportAbsencesCommand,
     ImportBatchStatusType,
     ImportCompanyCommand,
     ImportCompanyResult,
+    ImportHolidayCalendarsCommand,
     ImportPlanningGranularity,
     ImportResourceRequestCommandResult,
     ImportRoleResult,
+    ImportUserHolidayCalendarsCommand,
     ImportUserWorkingProfileResult,
     ImportWorkPackageCommandResult,
     OrderImportBatch,
@@ -48,6 +52,9 @@ from decidalo_client.models import (
     OrderPositionRecordingTargetImportBatch,
     OrderPositionRecordingTargetImportBatchResult,
     OrderPositionRecordingTargetOutput,
+    OrderPositionRecordingTypeRateImportBatch,
+    OrderPositionRecordingTypeRateImportBatchResult,
+    OrderPositionRecordingTypeRateOutput,
     OrderPositionWorkPackageImportBatch,
     OrderPositionWorkPackageImportBatchResult,
     OrderPositionWorkPackageOutput,
@@ -60,7 +67,11 @@ from decidalo_client.models import (
     ProjectReferenceInput,
     ProjectReferenceOutput,
     ProjectTeamMembersExportOutput,
+    RateImportItem,
+    RateResult,
     RecordingTargetOutput,
+    RecordingTypeImportItem,
+    RecordingTypeResult,
     ResourceRequestContactOutput,
     ResourceRequestInput,
     ResourceRequestOutput,
@@ -75,6 +86,8 @@ from decidalo_client.models import (
     TimeRecordingImportResult,
     UserBatchImportMetadata,
     UserBatchInput,
+    UserHolidayCalendarImportResult,
+    UserHolidayCalendarOutputItem,
     UserImportAcceptedResponse,
     UserImportResults,
     UserIndustryExportOutput,
@@ -1393,6 +1406,117 @@ class DecidaloClient:
         return result_adapter.validate_json(response_text)
 
     # =========================================================================
+    # Holiday Calendar Methods
+    # =========================================================================
+
+    async def get_holiday_calendars(
+        self,
+        *,
+        holiday_list_id: int | None = None,
+        holiday_list_code: str | None = None,
+        custom: bool | None = None,
+        top: int | None = None,
+        skip: int | None = None,
+    ) -> list[HolidayCalendarOutput]:
+        """Get the holiday calendars with their holidays.
+
+        Returns both custom calendars and standard calendars sourced from the external
+        holiday API. A standard calendar appears once it has been assigned to a user.
+        Only custom calendars can be modified via import_holiday_calendars().
+
+        Args:
+            holiday_list_id: Filter by the internal holiday calendar ID.
+            holiday_list_code: Filter by the holiday calendar code.
+            custom: True returns only custom calendars, False only standard ones.
+            top: Maximum number of results to return (paging).
+            skip: Number of results to skip (paging).
+
+        Returns:
+            A list of HolidayCalendarOutput objects.
+        """
+        params: dict[str, str] = {}
+        if holiday_list_id is not None:
+            params["holidayListID"] = str(holiday_list_id)
+        if holiday_list_code is not None:
+            params["holidayListCode"] = holiday_list_code
+        if custom is not None:
+            params["custom"] = str(custom).lower()
+        if top is not None:
+            params["top"] = str(top)
+        if skip is not None:
+            params["skip"] = str(skip)
+
+        response_text = await self._get("/importapi/HolidayCalendar", params)
+        adapter = TypeAdapter(list[HolidayCalendarOutput])
+        return adapter.validate_json(response_text)
+
+    async def import_holiday_calendars(
+        self,
+        holiday_calendars: ImportHolidayCalendarsCommand,
+    ) -> list[HolidayCalendarImportResult]:
+        """Import custom holiday calendars.
+
+        Can be used to create, update, or delete calendars. A calendar is matched by its
+        internal ID or, if no ID is given, by its code. The given holidays replace the
+        calendar's complete holiday set. Standard calendars provided by the external holiday
+        API (e.g. "DE", "DE-NW") cannot be changed. Deleting a calendar fails while it is
+        still assigned to users.
+
+        Args:
+            holiday_calendars: The holiday calendars to import.
+
+        Returns:
+            A list of HolidayCalendarImportResult objects with the import status.
+        """
+        data = holiday_calendars.model_dump_json(by_alias=True, exclude_none=True)
+        response_text = await self._post("/importapi/HolidayCalendar/Import", data)
+        adapter = TypeAdapter(list[HolidayCalendarImportResult])
+        return adapter.validate_json(response_text)
+
+    async def get_user_holiday_calendars(
+        self,
+        *,
+        user_id: int | None = None,
+    ) -> list[UserHolidayCalendarOutputItem]:
+        """Get the holiday calendar periods of all users, or of one user.
+
+        Args:
+            user_id: Filter by internal user ID.
+
+        Returns:
+            A list of UserHolidayCalendarOutputItem objects.
+        """
+        params: dict[str, str] = {}
+        if user_id is not None:
+            params["userID"] = str(user_id)
+
+        response_text = await self._get("/importapi/UserHolidayCalendar", params)
+        adapter = TypeAdapter(list[UserHolidayCalendarOutputItem])
+        return adapter.validate_json(response_text)
+
+    async def import_user_holiday_calendars(
+        self,
+        user_holiday_calendars: ImportUserHolidayCalendarsCommand,
+    ) -> list[UserHolidayCalendarImportResult]:
+        """Import the holiday calendar periods of users.
+
+        Can be used to create, update, or delete single periods. A period is matched by its
+        ID or code; without either, a new one is created. The periods of one user must not
+        overlap; an overlapping item fails without affecting the rest of the batch. Gaps are
+        allowed and mean that the user has no public holidays on those days.
+
+        Args:
+            user_holiday_calendars: The holiday calendar periods to import.
+
+        Returns:
+            A list of UserHolidayCalendarImportResult objects with the import status.
+        """
+        data = user_holiday_calendars.model_dump_json(by_alias=True, exclude_none=True)
+        response_text = await self._post("/importapi/UserHolidayCalendar/Import", data)
+        adapter = TypeAdapter(list[UserHolidayCalendarImportResult])
+        return adapter.validate_json(response_text)
+
+    # =========================================================================
     # Activity Type Methods
     # =========================================================================
 
@@ -1467,6 +1591,84 @@ class DecidaloClient:
         data = general_activity.model_dump_json(by_alias=True, exclude_none=True)
         response_text = await self._post("/importapi/GeneralActivity", data)
         return GeneralActivityResult.model_validate_json(response_text)
+
+    # =========================================================================
+    # Recording Type Methods
+    # =========================================================================
+
+    async def get_recording_types(self) -> list[RecordingTypeResult]:
+        """Get the whole recording type catalog, active and inactive.
+
+        Returns:
+            A list of RecordingTypeResult objects.
+        """
+        response_text = await self._get("/importapi/RecordingType")
+        adapter = TypeAdapter(list[RecordingTypeResult])
+        return adapter.validate_json(response_text)
+
+    async def import_recording_type(
+        self,
+        recording_type: RecordingTypeImportItem,
+    ) -> RecordingTypeResult:
+        """Create, update, or delete a recording type.
+
+        Set the 'deleted' flag on the item to delete it.
+
+        Args:
+            recording_type: The recording type data to import.
+
+        Returns:
+            A RecordingTypeResult with the resulting recording type.
+        """
+        data = recording_type.model_dump_json(by_alias=True, exclude_none=True)
+        response_text = await self._post("/importapi/RecordingType", data)
+        return RecordingTypeResult.model_validate_json(response_text)
+
+    # =========================================================================
+    # Rate Methods
+    # =========================================================================
+
+    async def get_rates(
+        self,
+        *,
+        category: str | None = None,
+    ) -> list[RateResult]:
+        """Get the whole rate catalog, active and inactive.
+
+        To find the rate a recording entry is priced from, look up the entry's order
+        position with get_order_position_recording_type_rates().
+
+        Args:
+            category: Only rates carrying this aggregation category (exact, case-insensitive).
+
+        Returns:
+            A list of RateResult objects.
+        """
+        params: dict[str, str] = {}
+        if category is not None:
+            params["category"] = category
+
+        response_text = await self._get("/importapi/Rate", params)
+        adapter = TypeAdapter(list[RateResult])
+        return adapter.validate_json(response_text)
+
+    async def import_rate(
+        self,
+        rate: RateImportItem,
+    ) -> RateResult:
+        """Create, update, or delete a rate.
+
+        Set the 'deleted' flag on the item to delete it.
+
+        Args:
+            rate: The rate data to import.
+
+        Returns:
+            A RateResult with the resulting rate.
+        """
+        data = rate.model_dump_json(by_alias=True, exclude_none=True)
+        response_text = await self._post("/importapi/Rate", data)
+        return RateResult.model_validate_json(response_text)
 
     # =========================================================================
     # Order Methods
@@ -1758,6 +1960,57 @@ class DecidaloClient:
         data = batch.model_dump_json(by_alias=True, exclude_none=True)
         response_text = await self._post("/importapi/Order/Position/WorkPackages", data)
         return OrderPositionWorkPackageImportBatchResult.model_validate_json(response_text)
+
+    async def get_order_position_recording_type_rates(
+        self,
+        *,
+        order_position_id: int | None = None,
+        order_id: int | None = None,
+        order_code: str | None = None,
+        order_position_code: str | None = None,
+    ) -> list[OrderPositionRecordingTypeRateOutput]:
+        """Get what each recording type costs on an order position.
+
+        Args:
+            order_position_id: The internal order position ID.
+            order_id: The internal ID of the parent order.
+            order_code: The code of the parent order.
+            order_position_code: The per-tenant order position code.
+
+        Returns:
+            A list of OrderPositionRecordingTypeRateOutput objects.
+        """
+        params: dict[str, str] = {}
+        if order_position_id is not None:
+            params["orderPositionId"] = str(order_position_id)
+        if order_id is not None:
+            params["orderId"] = str(order_id)
+        if order_code is not None:
+            params["orderCode"] = order_code
+        if order_position_code is not None:
+            params["orderPositionCode"] = order_position_code
+
+        response_text = await self._get("/importapi/Order/Position/RecordingTypeRates", params)
+        adapter = TypeAdapter(list[OrderPositionRecordingTypeRateOutput])
+        return adapter.validate_json(response_text)
+
+    async def import_order_position_recording_type_rates(
+        self,
+        batch: OrderPositionRecordingTypeRateImportBatch,
+    ) -> OrderPositionRecordingTypeRateImportBatchResult:
+        """Set or remove what each recording type costs on an order position.
+
+        One row per (position, recording type).
+
+        Args:
+            batch: The prices to import.
+
+        Returns:
+            An OrderPositionRecordingTypeRateImportBatchResult with the per-row import status.
+        """
+        data = batch.model_dump_json(by_alias=True, exclude_none=True)
+        response_text = await self._post("/importapi/Order/Position/RecordingTypeRates", data)
+        return OrderPositionRecordingTypeRateImportBatchResult.model_validate_json(response_text)
 
     # =========================================================================
     # Work Package Methods

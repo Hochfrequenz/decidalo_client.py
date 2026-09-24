@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from datetime import UTC, date, datetime, timedelta, timezone
 from uuid import UUID
 
@@ -1794,6 +1795,235 @@ class TestImportWorkingTimePatterns:
 
 
 # =============================================================================
+# Holiday Calendar Method Tests
+# =============================================================================
+
+
+class TestHolidayCalendarEndpoints:
+    """Tests for the holiday calendar and user holiday calendar methods."""
+
+    async def test_get_holiday_calendars(self, mock_aiohttp: aioresponses) -> None:
+        """Test get_holiday_calendars parses custom and standard calendars with their holidays."""
+        mock_aiohttp.get(
+            f"{BASE_URL}/importapi/HolidayCalendar",
+            payload=[
+                {
+                    "holidayListID": 7,
+                    "holidayListCode": "HF-LEIPZIG",
+                    "calendarName": "Leipzig office",
+                    "custom": True,
+                    "countryCode": "DE",
+                    "holidays": [
+                        {"date": "2026-10-31", "name": "Reformation Day"},
+                        {"date": "2026-11-18", "name": "Day of Repentance and Prayer"},
+                    ],
+                },
+                {
+                    "holidayListID": 1,
+                    "holidayListCode": "DE-SN",
+                    "calendarName": "Saxony",
+                    "custom": False,
+                    "countryCode": "DE",
+                    "holidays": [{"date": "2026-12-25", "name": "Christmas Day"}],
+                },
+            ],
+            status=200,
+        )
+
+        async with DecidaloClient(api_key=API_KEY, base_url=BASE_URL) as client:
+            result = await client.get_holiday_calendars()
+
+        assert len(result) == 2
+        assert isinstance(result[0], dm.HolidayCalendarOutput)
+        assert result[0].holidayListID == 7
+        assert result[0].holidayListCode == "HF-LEIPZIG"
+        assert result[0].calendarName == "Leipzig office"
+        assert result[0].custom is True
+        assert result[0].countryCode == "DE"
+        assert result[0].holidays == [
+            dm.HolidayOutput(date=date(2026, 10, 31), name="Reformation Day"),
+            dm.HolidayOutput(date=date(2026, 11, 18), name="Day of Repentance and Prayer"),
+        ]
+        assert result[1].holidayListCode == "DE-SN"
+        assert result[1].custom is False
+
+    async def test_get_holiday_calendars_with_all_filters(self, mock_aiohttp: aioresponses) -> None:
+        """Test get_holiday_calendars sends all filters with the query keys of the spec."""
+        mock_aiohttp.get(
+            f"{BASE_URL}/importapi/HolidayCalendar?holidayListID=7&holidayListCode=HF-LEIPZIG&custom=true&top=10&skip=20",
+            payload=[],
+            status=200,
+        )
+
+        async with DecidaloClient(api_key=API_KEY, base_url=BASE_URL) as client:
+            result = await client.get_holiday_calendars(
+                holiday_list_id=7, holiday_list_code="HF-LEIPZIG", custom=True, top=10, skip=20
+            )
+
+        assert result == []
+
+    async def test_import_holiday_calendars(self, mock_aiohttp: aioresponses) -> None:
+        """Test import_holiday_calendars sends the calendars and parses the per-calendar results."""
+        mock_aiohttp.post(
+            f"{BASE_URL}/importapi/HolidayCalendar/Import",
+            payload=[
+                {"holidayListID": 7, "holidayListCode": "HF-LEIPZIG", "importStatus": {"status": "Created"}},
+                {
+                    "holidayListID": 8,
+                    "holidayListCode": "HF-DRESDEN",
+                    "importStatus": {
+                        "status": "Failed",
+                        "errorMessage": "The calendar is still assigned to the users 10, 11.",
+                    },
+                },
+            ],
+            status=200,
+        )
+        holiday_calendars = dm.ImportHolidayCalendarsCommand(
+            holidayCalendars=[
+                dm.HolidayCalendarImportItem(
+                    holidayListCode="HF-LEIPZIG",
+                    calendarName="Leipzig office",
+                    countryCode="DE",
+                    holidays=[dm.HolidayInput(date=date(2026, 10, 31), name="Reformation Day")],
+                ),
+                dm.HolidayCalendarImportItem(holidayListID=8, delete=True),
+            ]
+        )
+
+        async with DecidaloClient(api_key=API_KEY, base_url=BASE_URL) as client:
+            result = await client.import_holiday_calendars(holiday_calendars)
+
+        body = json.loads(next(iter(mock_aiohttp.requests.values()))[0].kwargs["data"])
+        assert body == {
+            "holidayCalendars": [
+                {
+                    "holidayListCode": "HF-LEIPZIG",
+                    "calendarName": "Leipzig office",
+                    "countryCode": "DE",
+                    "holidays": [{"date": "2026-10-31", "name": "Reformation Day"}],
+                    "delete": False,
+                },
+                {"holidayListID": 8, "delete": True},
+            ]
+        }
+        assert len(result) == 2
+        assert isinstance(result[0], dm.HolidayCalendarImportResult)
+        assert result[0].holidayListID == 7
+        assert result[0].importStatus == dm.ImportItemStatus(status=dm.ImportItemStatusType.Created)
+        assert result[1].holidayListCode == "HF-DRESDEN"
+        assert result[1].importStatus is not None
+        assert result[1].importStatus.status == dm.ImportItemStatusType.Failed
+        assert result[1].importStatus.errorMessage == "The calendar is still assigned to the users 10, 11."
+
+    async def test_get_user_holiday_calendars(self, mock_aiohttp: aioresponses) -> None:
+        """Test get_user_holiday_calendars parses the holiday calendar periods of the users."""
+        mock_aiohttp.get(
+            f"{BASE_URL}/importapi/UserHolidayCalendar",
+            payload=[
+                {
+                    "userHolidayCalendarID": 3,
+                    "userHolidayCalendarCode": "UHC-10-2025",
+                    "userID": 10,
+                    "employeeID": "EMP010",
+                    "holidayListID": 2,
+                    "holidayListCode": "DE-BY",
+                    "startDate": "2025-01-01",
+                    "endDate": "2025-12-31",
+                },
+                {
+                    "userHolidayCalendarID": 4,
+                    "userHolidayCalendarCode": "UHC-10-2026",
+                    "userID": 10,
+                    "employeeID": "EMP010",
+                    "holidayListID": 1,
+                    "holidayListCode": "DE-SN",
+                    "startDate": "2026-01-01",
+                    "endDate": None,
+                },
+            ],
+            status=200,
+        )
+
+        async with DecidaloClient(api_key=API_KEY, base_url=BASE_URL) as client:
+            result = await client.get_user_holiday_calendars()
+
+        assert len(result) == 2
+        assert isinstance(result[0], dm.UserHolidayCalendarOutputItem)
+        assert result[0].userHolidayCalendarCode == "UHC-10-2025"
+        assert result[0].holidayListCode == "DE-BY"
+        assert result[0].endDate == date(2025, 12, 31)
+        assert result[1].userID == 10
+        assert result[1].employeeID == "EMP010"
+        assert result[1].startDate == date(2026, 1, 1)
+        assert result[1].endDate is None
+
+    async def test_get_user_holiday_calendars_with_all_filters(self, mock_aiohttp: aioresponses) -> None:
+        """Test get_user_holiday_calendars sends the user filter with the query key of the spec."""
+        mock_aiohttp.get(f"{BASE_URL}/importapi/UserHolidayCalendar?userID=10", payload=[], status=200)
+
+        async with DecidaloClient(api_key=API_KEY, base_url=BASE_URL) as client:
+            result = await client.get_user_holiday_calendars(user_id=10)
+
+        assert result == []
+
+    async def test_import_user_holiday_calendars(self, mock_aiohttp: aioresponses) -> None:
+        """Test import_user_holiday_calendars sends the periods and parses the per-period results."""
+        mock_aiohttp.post(
+            f"{BASE_URL}/importapi/UserHolidayCalendar/Import",
+            payload=[
+                {
+                    "userHolidayCalendarID": 4,
+                    "userHolidayCalendarCode": "UHC-10-2026",
+                    "userID": 10,
+                    "employeeID": "EMP010",
+                    "holidayListID": 1,
+                    "holidayListCode": "DE-SN",
+                    "startDate": "2026-01-01",
+                    "endDate": "2026-12-31",
+                    "importStatus": {"status": "Created"},
+                }
+            ],
+            status=200,
+        )
+        user_holiday_calendars = dm.ImportUserHolidayCalendarsCommand(
+            userHolidayCalendars=[
+                dm.UserHolidayCalendarImportItem(
+                    userHolidayCalendarCode="UHC-10-2026",
+                    employeeID="EMP010",
+                    holidayListCode="DE-SN",
+                    startDate=date(2026, 1, 1),
+                    endDate=date(2026, 12, 31),
+                )
+            ]
+        )
+
+        async with DecidaloClient(api_key=API_KEY, base_url=BASE_URL) as client:
+            result = await client.import_user_holiday_calendars(user_holiday_calendars)
+
+        body = json.loads(next(iter(mock_aiohttp.requests.values()))[0].kwargs["data"])
+        assert body == {
+            "userHolidayCalendars": [
+                {
+                    "userHolidayCalendarCode": "UHC-10-2026",
+                    "employeeID": "EMP010",
+                    "holidayListCode": "DE-SN",
+                    "startDate": "2026-01-01",
+                    "endDate": "2026-12-31",
+                    "delete": False,
+                }
+            ]
+        }
+        assert len(result) == 1
+        assert isinstance(result[0], dm.UserHolidayCalendarImportResult)
+        assert result[0].userHolidayCalendarID == 4
+        assert result[0].userID == 10
+        assert result[0].holidayListID == 1
+        assert result[0].endDate == date(2026, 12, 31)
+        assert result[0].importStatus == dm.ImportItemStatus(status=dm.ImportItemStatusType.Created)
+
+
+# =============================================================================
 # Activity Type and General Activity Method Tests
 # =============================================================================
 
@@ -1885,6 +2115,217 @@ class TestActivitiesEndpoints:
 
         assert isinstance(result, dm.GeneralActivityResult)
         assert result.generalActivityID == 42
+
+
+# =============================================================================
+# Recording Type Method Tests
+# =============================================================================
+
+
+class TestRecordingTypeEndpoints:
+    """Tests for the recording type methods."""
+
+    async def test_get_recording_types(self, mock_aiohttp: aioresponses) -> None:
+        """Test get_recording_types parses active and inactive recording types."""
+        mock_aiohttp.get(
+            f"{BASE_URL}/importapi/RecordingType",
+            payload=[
+                {
+                    "recordingTypeID": 1,
+                    "code": "WORK",
+                    "name": "Work time",
+                    "recordingColumnType": "WorkTime",
+                    "unitLabel": "h",
+                    "isDefault": True,
+                    "isActive": True,
+                    "isDeletable": False,
+                    "translations": [{"languageID": 1, "name": "Arbeitszeit"}, {"languageID": 2, "name": "Work time"}],
+                },
+                {
+                    "recordingTypeID": 3,
+                    "code": "TRAVEL",
+                    "name": "Travel distance",
+                    "recordingColumnType": "TravelDistance",
+                    "unitLabel": "km",
+                    "isDefault": False,
+                    "isActive": False,
+                    "isDeletable": True,
+                    "translations": [],
+                },
+            ],
+            status=200,
+        )
+
+        async with DecidaloClient(api_key=API_KEY, base_url=BASE_URL) as client:
+            result = await client.get_recording_types()
+
+        assert len(result) == 2
+        assert isinstance(result[0], dm.RecordingTypeResult)
+        assert result[0].code == "WORK"
+        assert result[0].recordingColumnType == dm.RecordingColumnType.WorkTime
+        assert result[0].isDefault is True
+        assert result[0].translations == [
+            dm.RecordingTypeTranslationDto(languageID=1, name="Arbeitszeit"),
+            dm.RecordingTypeTranslationDto(languageID=2, name="Work time"),
+        ]
+        assert result[1].recordingColumnType == dm.RecordingColumnType.TravelDistance
+        assert result[1].unitLabel == "km"
+        assert result[1].isActive is False
+        assert result[1].isDeletable is True
+
+    async def test_import_recording_type(self, mock_aiohttp: aioresponses) -> None:
+        """Test import_recording_type sends the recording type and parses the resulting one."""
+        mock_aiohttp.post(
+            f"{BASE_URL}/importapi/RecordingType",
+            payload={
+                "recordingTypeID": 3,
+                "code": "TRAVEL",
+                "name": "Travel distance",
+                "recordingColumnType": "TravelDistance",
+                "unitLabel": "km",
+                "isDefault": False,
+                "isActive": True,
+                "isDeletable": True,
+                "translations": [{"languageID": 2, "name": "Travel distance"}],
+            },
+            status=200,
+        )
+        recording_type = dm.RecordingTypeImportItem(
+            code="TRAVEL",
+            recordingColumnType=dm.RecordingColumnType.TravelDistance,
+            unitLabel="km",
+            isActive=True,
+            translations=[dm.RecordingTypeTranslationDto(languageID=2, name="Travel distance")],
+        )
+
+        async with DecidaloClient(api_key=API_KEY, base_url=BASE_URL) as client:
+            result = await client.import_recording_type(recording_type)
+
+        body = json.loads(next(iter(mock_aiohttp.requests.values()))[0].kwargs["data"])
+        assert body == {
+            "code": "TRAVEL",
+            "recordingColumnType": "TravelDistance",
+            "unitLabel": "km",
+            "isActive": True,
+            "translations": [{"languageID": 2, "name": "Travel distance"}],
+        }
+        assert isinstance(result, dm.RecordingTypeResult)
+        assert result.recordingTypeID == 3
+        assert result.name == "Travel distance"
+        assert result.recordingColumnType == dm.RecordingColumnType.TravelDistance
+        assert result.isDeletable is True
+
+
+# =============================================================================
+# Rate Method Tests
+# =============================================================================
+
+
+class TestRateEndpoints:
+    """Tests for the rate methods."""
+
+    async def test_get_rates(self, mock_aiohttp: aioresponses) -> None:
+        """Test get_rates parses the rate catalog."""
+        mock_aiohttp.get(
+            f"{BASE_URL}/importapi/Rate",
+            payload=[
+                {
+                    "rateID": 5,
+                    "code": "RATE-SENIOR",
+                    "category": "Consulting",
+                    "label": "Senior Consultant",
+                    "amount": 1250.0,
+                    "currencyCode": "EUR",
+                    "unit": "PersonDay",
+                    "isActive": True,
+                    "rateCardCount": 2,
+                    "orderPositionCount": 14,
+                },
+                {
+                    "rateID": 6,
+                    "code": "RATE-TRAVEL",
+                    "category": "Travel",
+                    "label": "Travel time",
+                    "amount": 80.5,
+                    "currencyCode": "EUR",
+                    "unit": "Hour",
+                    "isActive": False,
+                    "rateCardCount": 0,
+                    "orderPositionCount": 0,
+                },
+            ],
+            status=200,
+        )
+
+        async with DecidaloClient(api_key=API_KEY, base_url=BASE_URL) as client:
+            result = await client.get_rates()
+
+        assert len(result) == 2
+        assert isinstance(result[0], dm.RateResult)
+        assert result[0].code == "RATE-SENIOR"
+        assert result[0].category == "Consulting"
+        assert result[0].amount == 1250.0
+        assert result[0].currencyCode == "EUR"
+        assert result[0].unit == dm.RateUnit.PersonDay
+        assert result[0].rateCardCount == 2
+        assert result[0].orderPositionCount == 14
+        assert result[1].unit == dm.RateUnit.Hour
+        assert result[1].isActive is False
+
+    async def test_get_rates_with_all_filters(self, mock_aiohttp: aioresponses) -> None:
+        """Test get_rates sends the category filter with the query key of the spec."""
+        mock_aiohttp.get(f"{BASE_URL}/importapi/Rate?category=Consulting", payload=[], status=200)
+
+        async with DecidaloClient(api_key=API_KEY, base_url=BASE_URL) as client:
+            result = await client.get_rates(category="Consulting")
+
+        assert result == []
+
+    async def test_import_rate(self, mock_aiohttp: aioresponses) -> None:
+        """Test import_rate sends the rate and parses the resulting one."""
+        mock_aiohttp.post(
+            f"{BASE_URL}/importapi/Rate",
+            payload={
+                "rateID": 5,
+                "code": "RATE-SENIOR",
+                "category": "Consulting",
+                "label": "Senior Consultant",
+                "amount": 1250.0,
+                "currencyCode": "EUR",
+                "unit": "PersonDay",
+                "isActive": True,
+                "rateCardCount": 0,
+                "orderPositionCount": 0,
+            },
+            status=200,
+        )
+        rate = dm.RateImportItem(
+            code="RATE-SENIOR",
+            category="Consulting",
+            label="Senior Consultant",
+            amount=1250.0,
+            currencyCode="EUR",
+            unit=dm.RateUnit.PersonDay,
+            isActive=True,
+        )
+
+        async with DecidaloClient(api_key=API_KEY, base_url=BASE_URL) as client:
+            result = await client.import_rate(rate)
+
+        body = json.loads(next(iter(mock_aiohttp.requests.values()))[0].kwargs["data"])
+        assert body == {
+            "code": "RATE-SENIOR",
+            "category": "Consulting",
+            "label": "Senior Consultant",
+            "amount": 1250.0,
+            "currencyCode": "EUR",
+            "unit": "PersonDay",
+            "isActive": True,
+        }
+        assert isinstance(result, dm.RateResult)
+        assert result.rateID == 5
+        assert result.unit == dm.RateUnit.PersonDay
+        assert result.orderPositionCount == 0
 
 
 # =============================================================================
@@ -2137,6 +2578,157 @@ class TestOrderEndpoints:
             result = await client.import_order_position_work_packages(dm.OrderPositionWorkPackageImportBatch())
 
         assert isinstance(result, dm.OrderPositionWorkPackageImportBatchResult)
+
+
+class TestGetOrderPositionRecordingTypeRates:
+    """Tests for get_order_position_recording_type_rates method."""
+
+    async def test_get_order_position_recording_type_rates(self, mock_aiohttp: aioresponses) -> None:
+        """Test get_order_position_recording_type_rates parses own rates and factors of another recording type."""
+        mock_aiohttp.get(
+            f"{BASE_URL}/importapi/Order/Position/RecordingTypeRates",
+            payload=[
+                {
+                    "orderPositionID": 42,
+                    "recordingTypeID": 1,
+                    "recordingTypeCode": "WORK",
+                    "mode": "OwnRate",
+                    "amount": 150.0,
+                    "unit": "Hour",
+                    "rateID": 5,
+                    "rateCode": "RATE-SENIOR",
+                },
+                {
+                    "orderPositionID": 42,
+                    "recordingTypeID": 2,
+                    "recordingTypeCode": "TRAVELTIME",
+                    "mode": "FactorOfRate",
+                    "factor": 0.5,
+                    "baseRecordingTypeID": 1,
+                    "baseRecordingTypeCode": "WORK",
+                },
+            ],
+            status=200,
+        )
+
+        async with DecidaloClient(api_key=API_KEY, base_url=BASE_URL) as client:
+            result = await client.get_order_position_recording_type_rates()
+
+        assert len(result) == 2
+        assert isinstance(result[0], dm.OrderPositionRecordingTypeRateOutput)
+        assert result[0].orderPositionID == 42
+        assert result[0].mode == dm.RecordingTypePricingMode.OwnRate
+        assert result[0].amount == 150.0
+        assert result[0].unit == dm.RateUnit.Hour
+        assert result[0].rateID == 5
+        assert result[0].rateCode == "RATE-SENIOR"
+        assert result[1].mode == dm.RecordingTypePricingMode.FactorOfRate
+        assert result[1].factor == 0.5
+        assert result[1].baseRecordingTypeID == 1
+        assert result[1].baseRecordingTypeCode == "WORK"
+        assert result[1].amount is None
+
+    async def test_get_order_position_recording_type_rates_with_all_filters(self, mock_aiohttp: aioresponses) -> None:
+        """Test get_order_position_recording_type_rates sends all filters with the query keys of the spec."""
+        mock_aiohttp.get(
+            f"{BASE_URL}/importapi/Order/Position/RecordingTypeRates"
+            "?orderPositionId=42&orderId=1&orderCode=ORDER-1&orderPositionCode=POS-1",
+            payload=[],
+            status=200,
+        )
+
+        async with DecidaloClient(api_key=API_KEY, base_url=BASE_URL) as client:
+            result = await client.get_order_position_recording_type_rates(
+                order_position_id=42, order_id=1, order_code="ORDER-1", order_position_code="POS-1"
+            )
+
+        assert result == []
+
+
+class TestImportOrderPositionRecordingTypeRates:
+    """Tests for import_order_position_recording_type_rates method."""
+
+    async def test_import_order_position_recording_type_rates(self, mock_aiohttp: aioresponses) -> None:
+        """Test import_order_position_recording_type_rates sends the prices and parses the per-row results."""
+        mock_aiohttp.post(
+            f"{BASE_URL}/importapi/Order/Position/RecordingTypeRates",
+            payload={
+                "rates": [
+                    {
+                        "orderPositionID": 42,
+                        "recordingTypeID": 1,
+                        "recordingTypeCode": "WORK",
+                        "status": {"status": "Created"},
+                    },
+                    {
+                        "orderPositionID": 42,
+                        "recordingTypeID": 2,
+                        "recordingTypeCode": "TRAVELTIME",
+                        "status": {"status": "Updated"},
+                    },
+                    {
+                        "orderPositionID": 42,
+                        "recordingTypeID": 3,
+                        "recordingTypeCode": "TRAVEL",
+                        "status": {"status": "Deleted"},
+                    },
+                ]
+            },
+            status=200,
+        )
+        batch = dm.OrderPositionRecordingTypeRateImportBatch(
+            rates=[
+                dm.OrderPositionRecordingTypeRateImportItem(
+                    orderCode="ORDER-1",
+                    orderPositionCode="POS-1",
+                    recordingTypeCode="WORK",
+                    mode=dm.RecordingTypePricingMode.OwnRate,
+                    amount=150.0,
+                    unit=dm.RateUnit.Hour,
+                ),
+                dm.OrderPositionRecordingTypeRateImportItem(
+                    orderPositionID=42,
+                    recordingTypeCode="TRAVELTIME",
+                    mode=dm.RecordingTypePricingMode.FactorOfRate,
+                    factor=0.5,
+                    baseRecordingTypeCode="WORK",
+                ),
+                dm.OrderPositionRecordingTypeRateImportItem(
+                    orderPositionID=42, recordingTypeCode="TRAVEL", deleted=True
+                ),
+            ]
+        )
+
+        async with DecidaloClient(api_key=API_KEY, base_url=BASE_URL) as client:
+            result = await client.import_order_position_recording_type_rates(batch)
+
+        body = json.loads(next(iter(mock_aiohttp.requests.values()))[0].kwargs["data"])
+        assert body == {
+            "rates": [
+                {
+                    "orderCode": "ORDER-1",
+                    "orderPositionCode": "POS-1",
+                    "recordingTypeCode": "WORK",
+                    "mode": "OwnRate",
+                    "amount": 150.0,
+                    "unit": "Hour",
+                },
+                {
+                    "orderPositionID": 42,
+                    "recordingTypeCode": "TRAVELTIME",
+                    "mode": "FactorOfRate",
+                    "factor": 0.5,
+                    "baseRecordingTypeCode": "WORK",
+                },
+                {"orderPositionID": 42, "recordingTypeCode": "TRAVEL", "deleted": True},
+            ]
+        }
+        assert isinstance(result, dm.OrderPositionRecordingTypeRateImportBatchResult)
+        assert result.rates is not None
+        assert [rate.recordingTypeCode for rate in result.rates] == ["WORK", "TRAVELTIME", "TRAVEL"]
+        assert result.rates[0].status == dm.ImportItemStatus(status=dm.ImportItemStatusType.Created)
+        assert result.rates[1].status == dm.ImportItemStatus(status=dm.ImportItemStatusType.Updated)
+        assert result.rates[2].status == dm.ImportItemStatus(status=dm.ImportItemStatusType.Deleted)
 
 
 # =============================================================================
