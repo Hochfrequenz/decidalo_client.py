@@ -668,7 +668,7 @@ class TestImportTeamsSync:
         ]
 
         async with DecidaloClient(api_key=API_KEY, base_url=BASE_URL) as client:
-            result = await client.import_teams_sync(teams)
+            result = await client.import_teams_sync(dm.TeamBatchInput(teams=teams))
 
         assert result.batchID == UUID(batch_id)
         assert result.status == "Completed"
@@ -718,7 +718,7 @@ class TestImportTeamsSync:
         ]
 
         async with DecidaloClient(api_key=API_KEY, base_url=BASE_URL) as client:
-            result = await client.import_teams_sync(teams)
+            result = await client.import_teams_sync(dm.TeamBatchInput(teams=teams))
 
         assert result.batchID == UUID(batch_id)
         assert result.status == "Failed"
@@ -879,7 +879,7 @@ class TestGetProject:
             "lastEditor": {"userID": 1},
         }
         mock_aiohttp.get(
-            f"{BASE_URL}/importapi/Project?projectId=1",
+            f"{BASE_URL}/importapi/Project?projectid=1",
             payload=project_data,
             status=200,
         )
@@ -1137,6 +1137,22 @@ class TestProjectEndpoints:
         assert isinstance(result[0], dm.ProjectReferenceImportResult)
         assert result[0].projectID == 42
 
+    async def test_import_projects_with_booking_extend_option(self, mock_aiohttp: aioresponses) -> None:
+        """Test import_projects sends the booking extend option as query parameter."""
+        mock_aiohttp.post(
+            f"{BASE_URL}/importapi/Project/ImportBatch?bookingExtendOption=UpdateBookingsAndPlanning",
+            payload=[{"projectID": 42}],
+            status=200,
+        )
+
+        async with DecidaloClient(api_key=API_KEY, base_url=BASE_URL) as client:
+            result = await client.import_projects(
+                dm.ProjectBatchInput(projects=[]),
+                booking_extend_option=dm.BookingExtendOption.UpdateBookingsAndPlanning,
+            )
+
+        assert result[0].projectID == 42
+
 
 # =============================================================================
 # Booking Method Tests
@@ -1242,7 +1258,7 @@ class TestImportBookingsAsync:
         ]
 
         async with DecidaloClient(api_key=API_KEY, base_url=BASE_URL) as client:
-            result = await client.import_bookings_async(bookings)
+            result = await client.import_bookings_async(dm.BookingBatchInput(elements=bookings))
 
         assert len(result) == 1
         assert result[0].bookingID == 3
@@ -1492,11 +1508,11 @@ class TestGetWorkingTimePatterns:
         assert result[0].userIdentity.userID == 10
 
 
-class TestImportWorkingTimePattern:
-    """Tests for import_working_time_pattern method."""
+class TestImportWorkingTimePatterns:
+    """Tests for import_working_time_patterns method."""
 
-    async def test_import_working_time_pattern(self, mock_aiohttp: aioresponses) -> None:
-        """Test import_working_time_pattern returns import result."""
+    async def test_import_working_time_patterns(self, mock_aiohttp: aioresponses) -> None:
+        """Test import_working_time_patterns sends the list of patterns and returns the per-user results."""
         mock_aiohttp.post(
             f"{BASE_URL}/importapi/WorkingTimePattern/Import",
             payload=[
@@ -1526,11 +1542,12 @@ class TestImportWorkingTimePattern:
         )
 
         async with DecidaloClient(api_key=API_KEY, base_url=BASE_URL) as client:
-            result = await client.import_working_time_pattern(pattern)
+            result = await client.import_working_time_patterns([pattern])
 
-        assert result.userID == 10
-        assert result.userWorkingTimePatternResults is not None
-        assert len(result.userWorkingTimePatternResults) == 1
+        assert len(result) == 1
+        assert result[0].userID == 10
+        assert result[0].userWorkingTimePatternResults is not None
+        assert len(result[0].userWorkingTimePatternResults) == 1
 
 
 # =============================================================================

@@ -11,7 +11,6 @@ from pydantic import TypeAdapter
 from decidalo_client.exceptions import (
     DecidaloAPIError,
     DecidaloAuthenticationError,
-    DecidaloClientError,
 )
 from decidalo_client.models import (
     AbsenceImportResult,
@@ -22,7 +21,6 @@ from decidalo_client.models import (
     BookingBatchInput,
     BookingExtendOption,
     BookingImportResult,
-    BookingInput,
     BookingItemOutput,
     CompanyCompleteOutput,
     CustomProperty,
@@ -68,7 +66,6 @@ from decidalo_client.models import (
     TeamBatchInput,
     TeamImportAcceptedResponse,
     TeamImportResults,
-    TeamInput,
     TeamOverview,
     TimeRecordingImportBatch,
     TimeRecordingImportOutputBatch,
@@ -329,8 +326,8 @@ class DecidaloClient:
     async def get_users(
         self,
         *,
-        employee_id: str | None = None,
         user_id: int | None = None,
+        employee_id: str | None = None,
         email: str | None = None,
     ) -> list[UserOverview]:
         """Get users from the API.
@@ -339,22 +336,22 @@ class DecidaloClient:
         match the given criteria.
 
         Args:
-            employee_id: Filter by external employee ID.
             user_id: Filter by internal user ID. If provided, the email filter is ignored.
+            employee_id: Filter by external employee ID.
             email: Filter by email address. Must be an exact match (case insensitive).
 
         Returns:
             A list of UserOverview objects.
         """
         params: dict[str, str] = {}
-        if employee_id is not None:
-            params["employeeId"] = employee_id
         if user_id is not None:
-            params["userId"] = str(user_id)
+            params["userid"] = str(user_id)
+        if employee_id is not None:
+            params["employeeID"] = employee_id
         if email is not None:
             params["email"] = email
 
-        response_text = await self._get("/importapi/User", params or None)
+        response_text = await self._get("/importapi/User", params)
         adapter = TypeAdapter(list[UserOverview])
         return adapter.validate_json(response_text)
 
@@ -484,7 +481,7 @@ class DecidaloClient:
 
     async def import_teams_sync(
         self,
-        teams: list[TeamInput],
+        batch: TeamBatchInput,
     ) -> TeamImportResults:
         """Import teams synchronously.
 
@@ -492,7 +489,7 @@ class DecidaloClient:
         for each team in the batch, including any errors.
 
         Args:
-            teams: The list of teams to import.
+            batch: The batch of teams to import.
 
         Returns:
             A TeamImportResults with the batch status and per-item results.
@@ -504,7 +501,6 @@ class DecidaloClient:
             so callers can inspect the per-item results instead of getting a
             generic DecidaloAPIError.
         """
-        batch = TeamBatchInput(teams=teams)
         data = batch.model_dump_json(by_alias=True, exclude_none=True)
         response_text = await self._post("/importapi/Team/ImportSync", data, allowed_error_statuses={500})
         return TeamImportResults.model_validate_json(response_text)
@@ -600,11 +596,11 @@ class DecidaloClient:
         """
         params: dict[str, str] = {}
         if project_id is not None:
-            params["projectId"] = str(project_id)
+            params["projectid"] = str(project_id)
         if project_code is not None:
-            params["projectCode"] = project_code
+            params["projectcode"] = project_code
 
-        response_text = await self._get("/importapi/Project", params or None)
+        response_text = await self._get("/importapi/Project", params)
         return ProjectReferenceOutput.model_validate_json(response_text)
 
     async def get_all_projects(self) -> list[ProjectReferenceOutput]:
@@ -715,7 +711,7 @@ class DecidaloClient:
         if skip is not None:
             params["skip"] = str(skip)
 
-        response_text = await self._get("/importapi/Project/Contacts", params or None)
+        response_text = await self._get("/importapi/Project/Contacts", params)
         adapter = TypeAdapter(list[ProjectContactsExportOutput])
         return adapter.validate_json(response_text)
 
@@ -756,7 +752,7 @@ class DecidaloClient:
         if skip is not None:
             params["skip"] = str(skip)
 
-        response_text = await self._get("/importapi/Project/TeamMembers", params or None)
+        response_text = await self._get("/importapi/Project/TeamMembers", params)
         adapter = TypeAdapter(list[ProjectTeamMembersExportOutput])
         return adapter.validate_json(response_text)
 
@@ -781,7 +777,7 @@ class DecidaloClient:
         if project_code is not None:
             params["projectCode"] = project_code
 
-        response_text = await self._get("/importapi/Project/RecordingTargets", params or None)
+        response_text = await self._get("/importapi/Project/RecordingTargets", params)
         adapter = TypeAdapter(list[ProjectRecordingTargetOutput])
         return adapter.validate_json(response_text)
 
@@ -818,11 +814,12 @@ class DecidaloClient:
         Returns:
             A list of ProjectReferenceImportResult objects with the per-project import status.
         """
-        path = "/importapi/Project/ImportBatch"
+        params: dict[str, str] = {}
         if booking_extend_option is not None:
-            path = f"{path}?bookingExtendOption={booking_extend_option.value}"
+            params["bookingExtendOption"] = booking_extend_option.value
+
         data = batch.model_dump_json(by_alias=True, exclude_none=True)
-        response_text = await self._post(path, data)
+        response_text = await self._post("/importapi/Project/ImportBatch", data, params=params)
         adapter = TypeAdapter(list[ProjectReferenceImportResult])
         return adapter.validate_json(response_text)
 
@@ -833,33 +830,33 @@ class DecidaloClient:
     async def get_bookings(
         self,
         *,
-        employee_id: str | None = None,
-        user_id: int | None = None,
         booking_id: int | None = None,
         booking_code: str | None = None,
+        user_id: int | None = None,
+        employee_id: str | None = None,
     ) -> list[BookingItemOutput]:
         """Get bookings from the API.
 
         Args:
-            employee_id: Filter by external employee ID.
-            user_id: Filter by internal user ID.
             booking_id: Filter by internal booking ID.
             booking_code: Filter by external booking code.
+            user_id: Filter by internal user ID.
+            employee_id: Filter by external employee ID.
 
         Returns:
             A list of BookingItemOutput objects.
         """
         params: dict[str, str] = {}
-        if employee_id is not None:
-            params["employeeId"] = employee_id
-        if user_id is not None:
-            params["userId"] = str(user_id)
         if booking_id is not None:
-            params["bookingId"] = str(booking_id)
+            params["BookingID"] = str(booking_id)
         if booking_code is not None:
-            params["bookingCode"] = booking_code
+            params["BookingCode"] = booking_code
+        if user_id is not None:
+            params["UserID"] = str(user_id)
+        if employee_id is not None:
+            params["EmployeeID"] = employee_id
 
-        response_text = await self._get("/importapi/Booking", params or None)
+        response_text = await self._get("/importapi/Booking", params)
         adapter = TypeAdapter(list[BookingItemOutput])
         return adapter.validate_json(response_text)
 
@@ -884,13 +881,13 @@ class DecidaloClient:
         if project_code is not None:
             params["projectCode"] = project_code
 
-        response_text = await self._get("/importapi/Booking/ByProject", params or None)
+        response_text = await self._get("/importapi/Booking/ByProject", params)
         adapter = TypeAdapter(list[BookingItemOutput])
         return adapter.validate_json(response_text)
 
     async def import_bookings_async(
         self,
-        bookings: list[BookingInput],
+        batch: BookingBatchInput,
     ) -> list[BookingImportResult]:
         """Import a batch of bookings.
 
@@ -898,12 +895,11 @@ class DecidaloClient:
         The default value on creation is 'Reservation'.
 
         Args:
-            bookings: The list of bookings to import.
+            batch: The batch of bookings to import.
 
         Returns:
             A list of BookingImportResult objects with the import status.
         """
-        batch = BookingBatchInput(elements=bookings)
         data = batch.model_dump_json(by_alias=True, exclude_none=True)
         response_text = await self._post("/importapi/Booking/ImportAsync", data)
         adapter = TypeAdapter(list[BookingImportResult])
@@ -937,7 +933,7 @@ class DecidaloClient:
         if end_date:
             params["endDate"] = end_date
 
-        response_text = await self._get("/importapi/Absence", params or None)
+        response_text = await self._get("/importapi/Absence", params)
         return AbsenceOutputResult.model_validate_json(response_text)
 
     async def import_absences(
@@ -1032,7 +1028,7 @@ class DecidaloClient:
         if top is not None:
             params["top"] = str(top)
 
-        response_text = await self._get("/importapi/ResourceRequest/Contacts", params or None)
+        response_text = await self._get("/importapi/ResourceRequest/Contacts", params)
         adapter = TypeAdapter(list[ResourceRequestContactOutput])
         return adapter.validate_json(response_text)
 
@@ -1079,34 +1075,31 @@ class DecidaloClient:
         if user_id is not None:
             params["UserId"] = str(user_id)
 
-        response_text = await self._get("/importapi/WorkingTimePattern", params or None)
+        response_text = await self._get("/importapi/WorkingTimePattern", params)
         adapter = TypeAdapter(list[GetImportUserWorkingProfileResult])
         return adapter.validate_json(response_text)
 
-    async def import_working_time_pattern(
+    async def import_working_time_patterns(
         self,
-        pattern: UserWorkingProfileInput,
-    ) -> ImportUserWorkingProfileResult:
-        """Create or update a working time pattern.
+        patterns: list[UserWorkingProfileInput],
+    ) -> list[ImportUserWorkingProfileResult]:
+        """Create or update the working time patterns of a batch of users.
 
         The input allows only for start dates and no end dates. All working time patterns
         will be created/updated with the given start dates, and then the corresponding
         end dates will be calculated automatically to one day before the next start date.
 
         Args:
-            pattern: The working time pattern data to import.
+            patterns: The per-user working time patterns to import.
 
         Returns:
-            An ImportUserWorkingProfileResult with the import status.
+            A list of ImportUserWorkingProfileResult objects with the per-user import status.
         """
         adapter = TypeAdapter(list[UserWorkingProfileInput])
-        data = adapter.dump_json([pattern], by_alias=True, exclude_none=True).decode()
+        data = adapter.dump_json(patterns, by_alias=True, exclude_none=True).decode()
         response_text = await self._post("/importapi/WorkingTimePattern/Import", data)
         result_adapter = TypeAdapter(list[ImportUserWorkingProfileResult])
-        results = result_adapter.validate_json(response_text)
-        if not results:
-            raise DecidaloClientError("API returned empty result for import_working_time_pattern")
-        return results[0]
+        return result_adapter.validate_json(response_text)
 
     # =========================================================================
     # Activity Type Methods
@@ -1197,7 +1190,7 @@ class DecidaloClient:
         if project_code is not None:
             params["projectCode"] = project_code
 
-        response_text = await self._get("/importapi/Order", params or None)
+        response_text = await self._get("/importapi/Order", params)
         return OrderImportOutputBatch.model_validate_json(response_text)
 
     async def get_order(
@@ -1221,7 +1214,7 @@ class DecidaloClient:
         if code is not None:
             params["code"] = code
 
-        response_text = await self._get("/importapi/Order/Single", params or None)
+        response_text = await self._get("/importapi/Order/Single", params)
         return OrderImportOutput.model_validate_json(response_text)
 
     async def import_orders(
@@ -1279,7 +1272,7 @@ class DecidaloClient:
         if order_code is not None:
             params["orderCode"] = order_code
 
-        response_text = await self._get("/importapi/Order/Position/Single", params or None)
+        response_text = await self._get("/importapi/Order/Position/Single", params)
         return OrderPositionImportOutput.model_validate_json(response_text)
 
     async def import_order_positions(
@@ -1329,7 +1322,7 @@ class DecidaloClient:
         if order_position_code is not None:
             params["orderPositionCode"] = order_position_code
 
-        response_text = await self._get("/importapi/Order/Position/RecordingTargets", params or None)
+        response_text = await self._get("/importapi/Order/Position/RecordingTargets", params)
         adapter = TypeAdapter(list[OrderPositionRecordingTargetOutput])
         return adapter.validate_json(response_text)
 
@@ -1380,7 +1373,7 @@ class DecidaloClient:
         if order_position_code is not None:
             params["orderPositionCode"] = order_position_code
 
-        response_text = await self._get("/importapi/Order/Position/WorkPackages", params or None)
+        response_text = await self._get("/importapi/Order/Position/WorkPackages", params)
         adapter = TypeAdapter(list[OrderPositionWorkPackageOutput])
         return adapter.validate_json(response_text)
 
@@ -1473,23 +1466,23 @@ class DecidaloClient:
         if skip is not None:
             params["Skip"] = str(skip)
 
-        response_text = await self._get("/importapi/WorkPackage", params or None)
+        response_text = await self._get("/importapi/WorkPackage", params)
         adapter = TypeAdapter(list[WorkPackageOutput])
         return adapter.validate_json(response_text)
 
     async def get_work_package(
         self,
-        workpackage_id: int,
+        work_package_id: int,
     ) -> WorkPackageOutput:
         """Get a specific work package by ID.
 
         Args:
-            workpackage_id: The internal work package ID.
+            work_package_id: The internal work package ID.
 
         Returns:
             A WorkPackageOutput object.
         """
-        response_text = await self._get(f"/importapi/WorkPackage/{workpackage_id}")
+        response_text = await self._get(f"/importapi/WorkPackage/{work_package_id}")
         return WorkPackageOutput.model_validate_json(response_text)
 
     async def import_work_package(
@@ -1534,7 +1527,7 @@ class DecidaloClient:
         if work_package_id is not None:
             params["workPackageID"] = str(work_package_id)
 
-        response_text = await self._get("/importapi/WorkPackage/Candidates", params or None)
+        response_text = await self._get("/importapi/WorkPackage/Candidates", params)
         return WorkPackageCandidateBatchInput.model_validate_json(response_text)
 
     async def import_work_package_candidates(
@@ -1576,7 +1569,7 @@ class DecidaloClient:
         if work_package_code is not None:
             params["workPackageCode"] = work_package_code
 
-        response_text = await self._get("/importapi/WorkPackage/OrderPositions", params or None)
+        response_text = await self._get("/importapi/WorkPackage/OrderPositions", params)
         adapter = TypeAdapter(list[WorkPackageOrderPositionOutput])
         return adapter.validate_json(response_text)
 
@@ -1619,7 +1612,7 @@ class DecidaloClient:
         if work_package_code is not None:
             params["workPackageCode"] = work_package_code
 
-        response_text = await self._get("/importapi/WorkPackage/RecordingTargets", params or None)
+        response_text = await self._get("/importapi/WorkPackage/RecordingTargets", params)
         adapter = TypeAdapter(list[WorkPackageRecordingTargetOutput])
         return adapter.validate_json(response_text)
 
@@ -1702,7 +1695,7 @@ class DecidaloClient:
         if is_active is not None:
             params["isActive"] = str(is_active).lower()
 
-        response_text = await self._get("/importapi/TimeRecording/RecordingTargets", params or None)
+        response_text = await self._get("/importapi/TimeRecording/RecordingTargets", params)
         adapter = TypeAdapter(list[RecordingTargetOutput])
         return adapter.validate_json(response_text)
 
@@ -1739,7 +1732,7 @@ class DecidaloClient:
         if end_date is not None:
             params["endDate"] = end_date
 
-        response_text = await self._get("/importapi/TimeRecording/UserTimeSheet", params or None)
+        response_text = await self._get("/importapi/TimeRecording/UserTimeSheet", params)
         return TimeRecordingImportOutputBatch.model_validate_json(response_text)
 
     async def import_user_time_sheet(
@@ -1799,7 +1792,7 @@ class DecidaloClient:
         if skip is not None:
             params["skip"] = str(skip)
 
-        response_text = await self._get("/importapi/Profile/Industries", params or None)
+        response_text = await self._get("/importapi/Profile/Industries", params)
         adapter = TypeAdapter(list[UserIndustryExportOutput])
         return adapter.validate_json(response_text)
 
@@ -1836,7 +1829,7 @@ class DecidaloClient:
         if skip is not None:
             params["skip"] = str(skip)
 
-        response_text = await self._get("/importapi/Profile/Languages", params or None)
+        response_text = await self._get("/importapi/Profile/Languages", params)
         adapter = TypeAdapter(list[UserLanguageExportOutput])
         return adapter.validate_json(response_text)
 
@@ -1869,7 +1862,7 @@ class DecidaloClient:
         if skip is not None:
             params["skip"] = str(skip)
 
-        response_text = await self._get("/importapi/Profile/ProfessionalExperience", params or None)
+        response_text = await self._get("/importapi/Profile/ProfessionalExperience", params)
         adapter = TypeAdapter(list[UserProfessionalExperienceExportOutput])
         return adapter.validate_json(response_text)
 
@@ -1902,7 +1895,7 @@ class DecidaloClient:
         if skip is not None:
             params["skip"] = str(skip)
 
-        response_text = await self._get("/importapi/Profile/Publications", params or None)
+        response_text = await self._get("/importapi/Profile/Publications", params)
         adapter = TypeAdapter(list[UserPublicationExportOutput])
         return adapter.validate_json(response_text)
 
@@ -1935,7 +1928,7 @@ class DecidaloClient:
         if skip is not None:
             params["skip"] = str(skip)
 
-        response_text = await self._get("/importapi/Profile/Testimonials", params or None)
+        response_text = await self._get("/importapi/Profile/Testimonials", params)
         adapter = TypeAdapter(list[UserTestimonialExportOutput])
         return adapter.validate_json(response_text)
 
@@ -1972,7 +1965,7 @@ class DecidaloClient:
         if skip is not None:
             params["skip"] = str(skip)
 
-        response_text = await self._get("/importapi/Profile/Trainings", params or None)
+        response_text = await self._get("/importapi/Profile/Trainings", params)
         adapter = TypeAdapter(list[UserTrainingExportOutput])
         return adapter.validate_json(response_text)
 
@@ -2055,7 +2048,7 @@ class DecidaloClient:
         if modified_since is not None:
             params["modifiedSince"] = modified_since
 
-        response_text = await self._get("/importapi/Profile/UserSkills", params or None)
+        response_text = await self._get("/importapi/Profile/UserSkills", params)
         adapter = TypeAdapter(list[UserSkillsOutput])
         return adapter.validate_json(response_text)
 
