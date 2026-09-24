@@ -1619,7 +1619,7 @@ class DecidaloClient:
     async def import_activity_type(
         self,
         activity_type: ActivityTypeImportItem,
-    ) -> ActivityTypeResult:
+    ) -> ActivityTypeResult | None:
         """Create, update, or delete an activity type.
 
         Set the 'deleted' flag on the item to delete it.
@@ -1628,10 +1628,13 @@ class DecidaloClient:
             activity_type: The activity type data to import.
 
         Returns:
-            An ActivityTypeResult with the resulting activity type.
+            An ActivityTypeResult with the resulting activity type, or None if the activity type was deleted
+            (the API answers a deletion with an empty body).
         """
         data = activity_type.model_dump_json(by_alias=True, exclude_none=True)
         response_text = await self._post("/importapi/ActivityType", data)
+        if response_text.strip() in ("", "null"):
+            return None
         return ActivityTypeResult.model_validate_json(response_text)
 
     # =========================================================================
@@ -1651,7 +1654,7 @@ class DecidaloClient:
     async def import_general_activity(
         self,
         general_activity: GeneralActivityImportItem,
-    ) -> GeneralActivityResult:
+    ) -> GeneralActivityResult | None:
         """Create, update, or delete a general activity.
 
         Set the 'deleted' flag on the item to delete it.
@@ -1660,10 +1663,13 @@ class DecidaloClient:
             general_activity: The general activity data to import.
 
         Returns:
-            A GeneralActivityResult with the resulting general activity.
+            A GeneralActivityResult with the resulting general activity, or None if the general activity was deleted
+            (the API answers a deletion with an empty body).
         """
         data = general_activity.model_dump_json(by_alias=True, exclude_none=True)
         response_text = await self._post("/importapi/GeneralActivity", data)
+        if response_text.strip() in ("", "null"):
+            return None
         return GeneralActivityResult.model_validate_json(response_text)
 
     # =========================================================================
@@ -1683,7 +1689,7 @@ class DecidaloClient:
     async def import_recording_type(
         self,
         recording_type: RecordingTypeImportItem,
-    ) -> RecordingTypeResult:
+    ) -> RecordingTypeResult | None:
         """Create, update, or delete a recording type.
 
         Set the 'deleted' flag on the item to delete it.
@@ -1692,10 +1698,13 @@ class DecidaloClient:
             recording_type: The recording type data to import.
 
         Returns:
-            A RecordingTypeResult with the resulting recording type.
+            A RecordingTypeResult with the resulting recording type, or None if the recording type was deleted
+            (the API answers a deletion with an empty body).
         """
         data = recording_type.model_dump_json(by_alias=True, exclude_none=True)
         response_text = await self._post("/importapi/RecordingType", data)
+        if response_text.strip() in ("", "null"):
+            return None
         return RecordingTypeResult.model_validate_json(response_text)
 
     # =========================================================================
@@ -1729,7 +1738,7 @@ class DecidaloClient:
     async def import_rate(
         self,
         rate: RateImportItem,
-    ) -> RateResult:
+    ) -> RateResult | None:
         """Create, update, or delete a rate.
 
         Set the 'deleted' flag on the item to delete it.
@@ -1738,10 +1747,13 @@ class DecidaloClient:
             rate: The rate data to import.
 
         Returns:
-            A RateResult with the resulting rate.
+            A RateResult with the resulting rate, or None if the rate was deleted
+            (the API answers a deletion with an empty body).
         """
         data = rate.model_dump_json(by_alias=True, exclude_none=True)
         response_text = await self._post("/importapi/Rate", data)
+        if response_text.strip() in ("", "null"):
+            return None
         return RateResult.model_validate_json(response_text)
 
     # =========================================================================

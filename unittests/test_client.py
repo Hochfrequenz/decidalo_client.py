@@ -2304,6 +2304,15 @@ class TestActivitiesEndpoints:
         assert isinstance(result, dm.ActivityTypeResult)
         assert result.activityTypeID == 42
 
+    async def test_import_activity_type_returns_none_on_delete(self, mock_aiohttp: aioresponses) -> None:
+        """Test import_activity_type returns None when the API answers a deletion with null."""
+        mock_aiohttp.post(f"{BASE_URL}/importapi/ActivityType", body="null", status=200)
+
+        async with DecidaloClient(api_key=API_KEY, base_url=BASE_URL) as client:
+            result = await client.import_activity_type(dm.ActivityTypeImportItem(code="DEV", deleted=True))
+
+        assert result is None
+
     async def test_get_general_activities(self, mock_aiohttp: aioresponses) -> None:
         """Test get_general_activities hits the correct endpoint and parses the response."""
         mock_aiohttp.get(
@@ -2342,6 +2351,15 @@ class TestActivitiesEndpoints:
 
         assert isinstance(result, dm.GeneralActivityResult)
         assert result.generalActivityID == 42
+
+    async def test_import_general_activity_returns_none_on_delete(self, mock_aiohttp: aioresponses) -> None:
+        """Test import_general_activity returns None when the API answers a deletion with an empty body."""
+        mock_aiohttp.post(f"{BASE_URL}/importapi/GeneralActivity", body="", status=200)
+
+        async with DecidaloClient(api_key=API_KEY, base_url=BASE_URL) as client:
+            result = await client.import_general_activity(dm.GeneralActivityImportItem(code="TRAINING", deleted=True))
+
+        assert result is None
 
 
 # =============================================================================
@@ -2441,6 +2459,15 @@ class TestRecordingTypeEndpoints:
         assert result.name == "Travel distance"
         assert result.recordingColumnType == dm.RecordingColumnType.TravelDistance
         assert result.isDeletable is True
+
+    async def test_import_recording_type_returns_none_on_delete(self, mock_aiohttp: aioresponses) -> None:
+        """Test import_recording_type returns None when the API answers a deletion with an empty body."""
+        mock_aiohttp.post(f"{BASE_URL}/importapi/RecordingType", body="", status=200)
+
+        async with DecidaloClient(api_key=API_KEY, base_url=BASE_URL) as client:
+            result = await client.import_recording_type(dm.RecordingTypeImportItem(code="TRAVEL", deleted=True))
+
+        assert result is None
 
 
 # =============================================================================
@@ -2553,6 +2580,15 @@ class TestRateEndpoints:
         assert result.rateID == 5
         assert result.unit == dm.RateUnit.PersonDay
         assert result.orderPositionCount == 0
+
+    async def test_import_rate_returns_none_on_delete(self, mock_aiohttp: aioresponses) -> None:
+        """Test import_rate returns None when the API answers a deletion with an empty body."""
+        mock_aiohttp.post(f"{BASE_URL}/importapi/Rate", body="", status=200)
+
+        async with DecidaloClient(api_key=API_KEY, base_url=BASE_URL) as client:
+            result = await client.import_rate(dm.RateImportItem(code="RATE-SENIOR", deleted=True))
+
+        assert result is None
 
 
 # =============================================================================
