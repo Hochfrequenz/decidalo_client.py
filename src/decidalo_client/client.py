@@ -101,9 +101,27 @@ from decidalo_client.models import (
 )
 
 if TYPE_CHECKING:
+    from collections.abc import Mapping
     from types import TracebackType
 
 DEFAULT_BASE_URL = "https://import.decidalo.dev"
+
+
+def _flatten_query(params: Mapping[str, str | list[str]] | None) -> list[tuple[str, str]] | None:
+    """Flatten query parameters into key-value pairs for aiohttp.
+
+    List values are sent as repeated keys (e.g. ?projectCode=A&projectCode=B),
+    which is how the API expects array parameters.
+
+    Args:
+        params: The query parameters.
+
+    Returns:
+        The flattened key-value pairs, or None if there are no parameters.
+    """
+    if not params:
+        return None
+    return [(key, item) for key, value in params.items() for item in ([value] if isinstance(value, str) else value)]
 
 
 class DecidaloClient:
@@ -225,12 +243,12 @@ class DecidaloClient:
 
         return text
 
-    async def _get(self, path: str, params: dict[str, str] | None = None) -> str:
+    async def _get(self, path: str, params: Mapping[str, str | list[str]] | None = None) -> str:
         """Make a GET request to the API.
 
         Args:
             path: The API path (will be appended to base_url).
-            params: Optional query parameters.
+            params: Optional query parameters. List values are sent as repeated keys.
 
         Returns:
             The response text.
@@ -242,13 +260,14 @@ class DecidaloClient:
             raise RuntimeError("Client must be used within an async context manager (async with)")
 
         url = f"{self._base_url}{path}"
-        async with self._session.get(url, headers=self._get_headers(), params=params) as response:
+        async with self._session.get(url, headers=self._get_headers(), params=_flatten_query(params)) as response:
             return await self._handle_response(response)
 
     async def _post(
         self,
         path: str,
         data: str | None = None,
+        params: Mapping[str, str | list[str]] | None = None,
         allowed_error_statuses: set[int] | None = None,
     ) -> str:
         """Make a POST request to the API.
@@ -256,6 +275,7 @@ class DecidaloClient:
         Args:
             path: The API path (will be appended to base_url).
             data: Optional JSON string to send as the request body.
+            params: Optional query parameters. List values are sent as repeated keys.
             allowed_error_statuses: HTTP status codes >= 400 that should be
                 returned to the caller instead of raising (see _handle_response).
 
@@ -269,14 +289,17 @@ class DecidaloClient:
             raise RuntimeError("Client must be used within an async context manager (async with)")
 
         url = f"{self._base_url}{path}"
-        async with self._session.post(url, headers=self._get_headers(), data=data) as response:
+        async with self._session.post(
+            url, headers=self._get_headers(), data=data, params=_flatten_query(params)
+        ) as response:
             return await self._handle_response(response, allowed_error_statuses)
 
-    async def _head(self, path: str) -> int:
+    async def _head(self, path: str, params: Mapping[str, str | list[str]] | None = None) -> int:
         """Make a HEAD request to the API.
 
         Args:
             path: The API path (will be appended to base_url).
+            params: Optional query parameters. List values are sent as repeated keys.
 
         Returns:
             The response status code.
@@ -288,7 +311,7 @@ class DecidaloClient:
             raise RuntimeError("Client must be used within an async context manager (async with)")
 
         url = f"{self._base_url}{path}"
-        async with self._session.head(url, headers=self._get_headers()) as response:
+        async with self._session.head(url, headers=self._get_headers(), params=_flatten_query(params)) as response:
             # For HEAD requests, we don't raise on 404 - it means the resource doesn't exist
             if response.status in (401, 403):
                 text = await response.text()

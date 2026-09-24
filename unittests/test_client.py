@@ -186,6 +186,61 @@ class TestCustomBaseUrl:
 
 
 # =============================================================================
+# Request Helper Tests
+# =============================================================================
+
+
+def requested_urls(mock: aioresponses) -> list[str]:
+    """Return the URLs of all requests recorded by the aioresponses mock, in request order."""
+    return [str(url) for _, url in mock.requests]
+
+
+class TestRequestHelpers:
+    """Tests for the internal request helpers."""
+
+    async def test_get_sends_list_values_as_repeated_keys(self, mock_aiohttp: aioresponses) -> None:
+        """Test that list values are sent as repeated query keys, as the API expects for arrays."""
+        mock_aiohttp.get(f"{BASE_URL}/importapi/Order?projectCode=A&projectCode=B&top=5", payload={}, status=200)
+
+        async with DecidaloClient(api_key=API_KEY, base_url=BASE_URL) as client:
+            await client._get("/importapi/Order", {"projectCode": ["A", "B"], "top": "5"})
+
+        assert requested_urls(mock_aiohttp) == [f"{BASE_URL}/importapi/Order?projectCode=A&projectCode=B&top=5"]
+
+    async def test_get_without_params_sends_no_query(self, mock_aiohttp: aioresponses) -> None:
+        """Test that empty query parameters do not produce a query string."""
+        mock_aiohttp.get(f"{BASE_URL}/importapi/Team", payload=[], status=200)
+
+        async with DecidaloClient(api_key=API_KEY, base_url=BASE_URL) as client:
+            await client._get("/importapi/Team", {})
+
+        assert requested_urls(mock_aiohttp) == [f"{BASE_URL}/importapi/Team"]
+
+    async def test_post_sends_query_params(self, mock_aiohttp: aioresponses) -> None:
+        """Test that _post sends query parameters alongside the body."""
+        mock_aiohttp.post(f"{BASE_URL}/importapi/Project/Import?bookingExtendOption=UpdateBookingDatesOnly", payload={})
+
+        async with DecidaloClient(api_key=API_KEY, base_url=BASE_URL) as client:
+            await client._post(
+                "/importapi/Project/Import", "{}", params={"bookingExtendOption": "UpdateBookingDatesOnly"}
+            )
+
+        assert requested_urls(mock_aiohttp) == [
+            f"{BASE_URL}/importapi/Project/Import?bookingExtendOption=UpdateBookingDatesOnly"
+        ]
+
+    async def test_head_url_encodes_query_params(self, mock_aiohttp: aioresponses) -> None:
+        """Test that _head URL-encodes query parameter values."""
+        mock_aiohttp.head(f"{BASE_URL}/importapi/Project?projectcode=A%26B%23C", status=204)
+
+        async with DecidaloClient(api_key=API_KEY, base_url=BASE_URL) as client:
+            status = await client._head("/importapi/Project", {"projectcode": "A&B#C"})
+
+        assert status == 204
+        assert requested_urls(mock_aiohttp) == [f"{BASE_URL}/importapi/Project?projectcode=A%26B%23C"]
+
+
+# =============================================================================
 # User Method Tests
 # =============================================================================
 
