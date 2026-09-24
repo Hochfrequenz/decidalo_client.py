@@ -4,8 +4,10 @@ from __future__ import annotations
 
 import inspect
 import json
+import warnings
+from enum import Enum
 from pathlib import Path
-from typing import Any
+from typing import Any, get_args
 
 from pydantic import BaseModel
 
@@ -68,6 +70,33 @@ class TestExtraFields:
 
         assert user.userID == 1
         assert "fieldFromTheFuture" not in user.model_dump()
+
+
+class TestEnumDefaults:
+    """Tests for the defaults of enum-typed fields."""
+
+    def test_no_enum_field_defaults_to_a_plain_string(self) -> None:
+        """Test that enum defaults are enum members (models must be generated with --set-default-enum-member)."""
+        offenders = [
+            f"{model.__name__}.{name}"
+            for model in GENERATED_MODELS
+            for name, field in model.model_fields.items()
+            if isinstance(field.default, str)
+            and not isinstance(field.default, Enum)
+            and any(isinstance(arg, type) and issubclass(arg, Enum) for arg in get_args(field.annotation))
+        ]
+
+        assert offenders == []
+
+    def test_serializing_an_enum_default_emits_no_warning(self) -> None:
+        """Test that a model relying on an enum default serializes without a pydantic serializer warning."""
+        entry = dm.RecordingEntryImportItem(userID=1)
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            dumped = entry.model_dump_json(exclude_none=True)
+
+        assert dumped == '{"userID":1,"status":"Open"}'
 
 
 class TestApiBreakingChanges:
