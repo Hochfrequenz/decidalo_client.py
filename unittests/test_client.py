@@ -2884,6 +2884,153 @@ class TestWorkPackageEndpoints:
         assert isinstance(result, dm.WorkPackageRecordingTargetImportBatchResult)
 
 
+class TestGetWorkPackageCustomProperties:
+    """Tests for get_work_package_custom_properties method."""
+
+    async def test_get_work_package_custom_properties(self, mock_aiohttp: aioresponses) -> None:
+        """Test get_work_package_custom_properties parses a text property and a value list property."""
+        mock_aiohttp.get(
+            f"{BASE_URL}/importapi/WorkPackage/CustomProperties",
+            payload=[
+                {
+                    "propertyName": "costCenter",
+                    "dataType": "String",
+                    "dataFormat": "String",
+                    "isRequired": True,
+                    "maxLength": 20,
+                    "options": None,
+                    "defaultOptionValue": None,
+                },
+                {
+                    "propertyName": "billingType",
+                    "dataType": "ValueList",
+                    "dataFormat": "Number",
+                    "isRequired": False,
+                    "maxLength": None,
+                    "options": [{"value": 1, "label": "Time and material"}, {"value": 2, "label": "Fixed price"}],
+                    "defaultOptionValue": 1,
+                },
+            ],
+            status=200,
+        )
+
+        async with DecidaloClient(api_key=API_KEY, base_url=BASE_URL) as client:
+            result = await client.get_work_package_custom_properties()
+
+        assert len(result) == 2
+        assert isinstance(result[0], dm.CustomProperty)
+        assert result[0].propertyName == "costCenter"
+        assert result[0].dataType == dm.CustomPropertyDataType.String
+        assert result[0].isRequired is True
+        assert result[0].maxLength == 20
+        assert result[0].options is None
+        assert result[1].propertyName == "billingType"
+        assert result[1].dataType == dm.CustomPropertyDataType.ValueList
+        assert result[1].dataFormat == dm.CustomPropertyDataFormat.Number
+        assert result[1].options == [
+            dm.CustomPropertyOption(value=1, label="Time and material"),
+            dm.CustomPropertyOption(value=2, label="Fixed price"),
+        ]
+        assert result[1].defaultOptionValue == 1
+
+
+class TestGetWorkPackageOrderPositionRecordingTargets:
+    """Tests for get_work_package_order_position_recording_targets method."""
+
+    async def test_get_work_package_order_position_recording_targets(self, mock_aiohttp: aioresponses) -> None:
+        """Test get_work_package_order_position_recording_targets parses the recording targets of the links."""
+        mock_aiohttp.get(
+            f"{BASE_URL}/importapi/WorkPackage/OrderPositions/RecordingTargets",
+            payload=[
+                {
+                    "recordingTargetID": 99,
+                    "workPackageID": 11,
+                    "workPackageCode": "WP-11",
+                    "workPackageLastEditDate": "2026-09-01T08:00:00Z",
+                    "projectID": 7,
+                    "projectCode": "PROJ001",
+                    "orderPositionID": 42,
+                    "orderPositionCode": "POS-1",
+                    "orderPositionLastEditDate": "2026-09-02T09:30:00Z",
+                    "orderID": 1,
+                    "orderCode": "ORDER-1",
+                    "activityTypeID": 4,
+                    "activityTypeCode": "DEV",
+                    "recordingTypes": [
+                        {"recordingTypeID": 1, "recordingTypeCode": "WORK"},
+                        {"recordingTypeID": 3, "recordingTypeCode": "TRAVEL"},
+                    ],
+                    "isBillable": True,
+                    "isActive": True,
+                }
+            ],
+            status=200,
+        )
+
+        async with DecidaloClient(api_key=API_KEY, base_url=BASE_URL) as client:
+            result = await client.get_work_package_order_position_recording_targets()
+
+        assert len(result) == 1
+        target = result[0]
+        assert isinstance(target, dm.WorkPackageOrderPositionRecordingTargetOutput)
+        assert target.recordingTargetID == 99
+        assert target.workPackageCode == "WP-11"
+        assert target.workPackageLastEditDate == datetime(2026, 9, 1, 8, 0, tzinfo=UTC)
+        assert target.projectCode == "PROJ001"
+        assert target.orderPositionCode == "POS-1"
+        assert target.orderPositionLastEditDate == datetime(2026, 9, 2, 9, 30, tzinfo=UTC)
+        assert target.orderCode == "ORDER-1"
+        assert target.activityTypeCode == "DEV"
+        assert target.recordingTypes == [
+            dm.RecordingTypeReferenceOutput(recordingTypeID=1, recordingTypeCode="WORK"),
+            dm.RecordingTypeReferenceOutput(recordingTypeID=3, recordingTypeCode="TRAVEL"),
+        ]
+        assert target.isBillable is True
+        assert target.isActive is True
+
+    async def test_get_work_package_order_position_recording_targets_with_all_filters(
+        self, mock_aiohttp: aioresponses
+    ) -> None:
+        """Test get_work_package_order_position_recording_targets sends all filters with the query keys of the spec."""
+        url = (
+            f"{BASE_URL}/importapi/WorkPackage/OrderPositions/RecordingTargets"
+            "?WorkPackageLastUpdatedOnOrAfter=2026-09-01T00:00:00%2B00:00"
+            "&OrderPositionActivityTypeID=4&OrderPositionActivityTypeCode=DEV"
+            "&OrderPositionActivityTypeTargetSystemCode=SAP-DEV&OrderPositionActivityTypeCategory=Consulting"
+            "&WorkPackageID=11&WorkPackageCode=WP-11&OrderPositionID=42&OrderPositionCode=POS-1"
+            "&OrderID=1&OrderCode=ORDER-1&ProjectID=7&ProjectCode=PROJ001"
+            "&RecordingTypeID=1&RecordingTypeCode=WORK&IsActive=true&IsBillable=false"
+            "&OrderPositionLastUpdatedOnOrAfter=2026-09-02T00:00:00%2B00:00&Top=50&Skip=100"
+        )
+        mock_aiohttp.get(url, payload=[], status=200)
+
+        async with DecidaloClient(api_key=API_KEY, base_url=BASE_URL) as client:
+            result = await client.get_work_package_order_position_recording_targets(
+                work_package_last_updated_on_or_after=datetime(2026, 9, 1, tzinfo=UTC),
+                order_position_activity_type_id=4,
+                order_position_activity_type_code="DEV",
+                order_position_activity_type_target_system_code="SAP-DEV",
+                order_position_activity_type_category="Consulting",
+                work_package_id=11,
+                work_package_code="WP-11",
+                order_position_id=42,
+                order_position_code="POS-1",
+                order_id=1,
+                order_code="ORDER-1",
+                project_id=7,
+                project_code="PROJ001",
+                recording_type_id=1,
+                recording_type_code="WORK",
+                is_active=True,
+                is_billable=False,
+                order_position_last_updated_on_or_after=datetime(2026, 9, 2, tzinfo=UTC),
+                top=50,
+                skip=100,
+            )
+
+        assert result == []
+
+
 # =============================================================================
 # Time Recording Method Tests
 # =============================================================================
@@ -3092,6 +3239,237 @@ class TestTimeRecordingEndpoints:
             result = await client.import_user_time_sheet(dm.TimeRecordingImportBatch())
 
         assert isinstance(result, dm.TimeRecordingImportResult)
+
+
+class TestGetRecordingEntries:
+    """Tests for get_recording_entries method."""
+
+    async def test_get_recording_entries(self, mock_aiohttp: aioresponses) -> None:
+        """Test get_recording_entries parses the entries of different users and recording targets."""
+        mock_aiohttp.get(
+            f"{BASE_URL}/importapi/TimeRecording/RecordingEntries",
+            payload=[
+                {
+                    "recordingEntryID": 1001,
+                    "recordingEntryCode": "EXT-1001",
+                    "userID": 10,
+                    "employeeID": "EMP010",
+                    "email": "jane.doe@example.com",
+                    "recordingTargetID": 99,
+                    "activityTypeID": 4,
+                    "activityTypeCode": "DEV",
+                    "projectReferenceID": 7,
+                    "projectCode": "PROJ001",
+                    "workPackageID": 11,
+                    "workPackageCode": "WP-11",
+                    "orderPositionID": 42,
+                    "orderPositionCode": "POS-1",
+                    "workDate": "2026-09-01",
+                    "startTime": "09:00:00",
+                    "endTime": "17:30:00",
+                    "timeMinutes": 480,
+                    "pauseMinutes": 30,
+                    "description": "Implemented the holiday calendar import",
+                    "status": "Submitted",
+                    "sourceDescription": "Import API",
+                    "recordingTypeValues": [{"recordingTypeID": 3, "recordingTypeCode": "TRAVEL", "value": 42.5}],
+                    "isImported": True,
+                    "orderID": 1,
+                    "orderCode": "ORDER-1",
+                    "lastEditDate": "2026-09-02T08:00:00Z",
+                    "activityTypeCategory": "Consulting",
+                    "rateID": 5,
+                    "rateCode": "RATE-SENIOR",
+                    "rateCategory": "Consulting",
+                    "creationDate": "2026-09-01T17:30:00Z",
+                    "lastImportedDate": "2026-09-02T08:00:00Z",
+                },
+                {
+                    "recordingEntryID": 1002,
+                    "userID": 11,
+                    "employeeID": "EMP011",
+                    "email": "john.doe@example.com",
+                    "recordingTargetID": 12,
+                    "generalActivityID": 8,
+                    "generalActivityCode": "TRAINING",
+                    "workDate": "2026-09-02",
+                    "timeMinutes": 240,
+                    "status": "Confirmed",
+                    "recordingTypeValues": [],
+                    "isImported": False,
+                    "lastEditDate": "2026-09-03T10:15:00Z",
+                    "creationDate": "2026-09-02T16:00:00Z",
+                    "lastImportedDate": None,
+                },
+            ],
+            status=200,
+        )
+
+        async with DecidaloClient(api_key=API_KEY, base_url=BASE_URL) as client:
+            result = await client.get_recording_entries()
+
+        assert len(result) == 2
+        entry = result[0]
+        assert isinstance(entry, dm.RecordingEntryImportReadItem)
+        assert entry.recordingEntryCode == "EXT-1001"
+        assert entry.email == "jane.doe@example.com"
+        assert entry.workPackageCode == "WP-11"
+        assert entry.orderPositionCode == "POS-1"
+        assert entry.workDate == date(2026, 9, 1)
+        assert entry.startTime == "09:00:00"
+        assert entry.timeMinutes == 480
+        assert entry.pauseMinutes == 30
+        assert entry.status == dm.TimeRecordingEntryStatus.Submitted
+        assert entry.recordingTypeValues == [
+            dm.RecordingEntryTypeValueImport(recordingTypeID=3, recordingTypeCode="TRAVEL", value=42.5)
+        ]
+        assert entry.rateCode == "RATE-SENIOR"
+        assert entry.lastEditDate == datetime(2026, 9, 2, 8, 0, tzinfo=UTC)
+        assert entry.lastImportedDate == datetime(2026, 9, 2, 8, 0, tzinfo=UTC)
+        assert result[1].generalActivityCode == "TRAINING"
+        assert result[1].status == dm.TimeRecordingEntryStatus.Confirmed
+        assert result[1].isImported is False
+        assert result[1].lastImportedDate is None
+
+    async def test_get_recording_entries_with_all_filters(self, mock_aiohttp: aioresponses) -> None:
+        """Test get_recording_entries sends all filters with the query keys of the spec, arrays as repeated keys."""
+        url = (
+            f"{BASE_URL}/importapi/TimeRecording/RecordingEntries?top=100&skip=200"
+            "&userId=10&userId=11&employeeId=EMP010&employeeId=EMP011"
+            "&email=jane.doe%40example.com&email=john.doe%40example.com"
+            "&workDateOnOrAfter=2026-09-01&workDateOnOrBefore=2026-09-30"
+            "&createdOnOrAfter=2026-09-01T00:00:00%2B00:00&lastUpdatedOnOrAfter=2026-09-02T00:00:00%2B00:00"
+            "&lastImportedOnOrAfter=2026-09-03T00:00:00%2B00:00"
+            "&usersBusinessUnitId=2&usersBusinessUnitName=Consulting"
+            "&usersPracticeAreaId=3&usersPracticeAreaName=Energy&usersTeamId=4&usersTeamCode=TEAM001"
+            "&usersLegalEntityId=5&usersLegalEntityName=ACME&usersCountryCode=DE"
+            "&orderId=1&orderCode=ORDER-1&projectReferenceId=7&projectCode=PROJ001"
+            "&workPackageId=11&workPackageCode=WP-11&orderPositionId=42&orderPositionCode=POS-1"
+            "&generalActivityId=8&generalActivityCode=TRAINING&activityTypeId=9&activityTypeCode=DEV"
+            "&activityTypeTargetSystemCode=SAP-DEV&generalActivityTargetSystemCode=SAP-TRN"
+            "&activityTypeCategory=Consulting&rateId=6&rateCode=RATE-SENIOR&rateCategory=Senior"
+            "&status=Submitted&status=Confirmed&recordingEntryId=1001&recordingEntryCode=EXT-1001"
+        )
+        mock_aiohttp.get(url, payload=[], status=200)
+
+        async with DecidaloClient(api_key=API_KEY, base_url=BASE_URL) as client:
+            result = await client.get_recording_entries(
+                top=100,
+                skip=200,
+                user_id=[10, 11],
+                employee_id=["EMP010", "EMP011"],
+                email=["jane.doe@example.com", "john.doe@example.com"],
+                work_date_on_or_after=date(2026, 9, 1),
+                work_date_on_or_before=date(2026, 9, 30),
+                created_on_or_after=datetime(2026, 9, 1, tzinfo=UTC),
+                last_updated_on_or_after=datetime(2026, 9, 2, tzinfo=UTC),
+                last_imported_on_or_after=datetime(2026, 9, 3, tzinfo=UTC),
+                users_business_unit_id=2,
+                users_business_unit_name="Consulting",
+                users_practice_area_id=3,
+                users_practice_area_name="Energy",
+                users_team_id=4,
+                users_team_code="TEAM001",
+                users_legal_entity_id=5,
+                users_legal_entity_name="ACME",
+                users_country_code="DE",
+                order_id=1,
+                order_code="ORDER-1",
+                project_reference_id=7,
+                project_code="PROJ001",
+                work_package_id=11,
+                work_package_code="WP-11",
+                order_position_id=42,
+                order_position_code="POS-1",
+                general_activity_id=8,
+                general_activity_code="TRAINING",
+                activity_type_id=9,
+                activity_type_code="DEV",
+                activity_type_target_system_code="SAP-DEV",
+                general_activity_target_system_code="SAP-TRN",
+                activity_type_category="Consulting",
+                rate_id=6,
+                rate_code="RATE-SENIOR",
+                rate_category="Senior",
+                status=[dm.TimeRecordingEntryStatus.Submitted, dm.TimeRecordingEntryStatus.Confirmed],
+                recording_entry_id=1001,
+                recording_entry_code="EXT-1001",
+            )
+
+        assert result == []
+
+
+class TestImportRecordingEntries:
+    """Tests for import_recording_entries method."""
+
+    async def test_import_recording_entries(self, mock_aiohttp: aioresponses) -> None:
+        """Test import_recording_entries sends the entries as a JSON array and parses the per-entry results."""
+        mock_aiohttp.post(
+            f"{BASE_URL}/importapi/TimeRecording/RecordingEntries",
+            payload=[
+                {"recordingEntryID": 1001, "recordingEntryCode": "EXT-1001", "status": {"status": "Created"}},
+                {
+                    "recordingEntryID": 999,
+                    "recordingEntryCode": None,
+                    "status": {"status": "Failed", "errorMessage": "Recording entry 999 does not exist."},
+                },
+            ],
+            status=200,
+        )
+        entries = [
+            dm.RecordingEntryImportItem(
+                recordingEntryCode="EXT-1001",
+                employeeID="EMP010",
+                activityTypeCode="DEV",
+                workPackageCode="WP-11",
+                orderPositionCode="POS-1",
+                workDate=date(2026, 9, 1),
+                startTime="09:00:00",
+                endTime="17:30:00",
+                timeMinutes=480,
+                pauseMinutes=30,
+                description="Implemented the holiday calendar import",
+                status=dm.TimeRecordingEntryStatus.Submitted,
+                recordingTypeValues=[dm.RecordingEntryTypeValueImport(recordingTypeCode="TRAVEL", value=42.5)],
+            ),
+            dm.RecordingEntryImportItem(
+                recordingEntryID=999,
+                userID=10,
+                description="Code review",
+                status=dm.TimeRecordingEntryStatus.Confirmed,
+            ),
+        ]
+
+        async with DecidaloClient(api_key=API_KEY, base_url=BASE_URL) as client:
+            result = await client.import_recording_entries(entries)
+
+        body = json.loads(next(iter(mock_aiohttp.requests.values()))[0].kwargs["data"])
+        assert body == [
+            {
+                "recordingEntryCode": "EXT-1001",
+                "employeeID": "EMP010",
+                "activityTypeCode": "DEV",
+                "workPackageCode": "WP-11",
+                "orderPositionCode": "POS-1",
+                "workDate": "2026-09-01",
+                "startTime": "09:00:00",
+                "endTime": "17:30:00",
+                "timeMinutes": 480,
+                "pauseMinutes": 30,
+                "description": "Implemented the holiday calendar import",
+                "status": "Submitted",
+                "recordingTypeValues": [{"recordingTypeCode": "TRAVEL", "value": 42.5}],
+            },
+            {"recordingEntryID": 999, "userID": 10, "description": "Code review", "status": "Confirmed"},
+        ]
+        assert len(result) == 2
+        assert isinstance(result[0], dm.RecordingEntryImportResult)
+        assert result[0].recordingEntryID == 1001
+        assert result[0].recordingEntryCode == "EXT-1001"
+        assert result[0].status == dm.ImportItemStatus(status=dm.ImportItemStatusType.Created)
+        assert result[1].status is not None
+        assert result[1].status.status == dm.ImportItemStatusType.Failed
+        assert result[1].status.errorMessage == "Recording entry 999 does not exist."
 
 
 # =============================================================================

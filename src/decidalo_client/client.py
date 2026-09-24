@@ -69,6 +69,9 @@ from decidalo_client.models import (
     ProjectTeamMembersExportOutput,
     RateImportItem,
     RateResult,
+    RecordingEntryImportItem,
+    RecordingEntryImportReadItem,
+    RecordingEntryImportResult,
     RecordingTargetOutput,
     RecordingTypeImportItem,
     RecordingTypeResult,
@@ -107,6 +110,7 @@ from decidalo_client.models import (
     WorkPackageOrderPositionImportBatch,
     WorkPackageOrderPositionImportBatchResult,
     WorkPackageOrderPositionOutput,
+    WorkPackageOrderPositionRecordingTargetOutput,
     WorkPackageOutput,
     WorkPackageRecordingTargetImportBatch,
     WorkPackageRecordingTargetImportBatchResult,
@@ -2251,6 +2255,124 @@ class DecidaloClient:
         response_text = await self._post("/importapi/WorkPackage/RecordingTargets", data)
         return WorkPackageRecordingTargetImportBatchResult.model_validate_json(response_text)
 
+    async def get_work_package_custom_properties(self) -> list[CustomProperty]:
+        """Get a description of all possible custom properties for work packages.
+
+        Returns:
+            A list of CustomProperty objects.
+        """
+        response_text = await self._get("/importapi/WorkPackage/CustomProperties")
+        adapter = TypeAdapter(list[CustomProperty])
+        return adapter.validate_json(response_text)
+
+    async def get_work_package_order_position_recording_targets(
+        self,
+        *,
+        work_package_last_updated_on_or_after: datetime | None = None,
+        order_position_activity_type_id: int | None = None,
+        order_position_activity_type_code: str | None = None,
+        order_position_activity_type_target_system_code: str | None = None,
+        order_position_activity_type_category: str | None = None,
+        work_package_id: int | None = None,
+        work_package_code: str | None = None,
+        order_position_id: int | None = None,
+        order_position_code: str | None = None,
+        order_id: int | None = None,
+        order_code: str | None = None,
+        project_id: int | None = None,
+        project_code: str | None = None,
+        recording_type_id: int | None = None,
+        recording_type_code: str | None = None,
+        is_active: bool | None = None,
+        is_billable: bool | None = None,
+        order_position_last_updated_on_or_after: datetime | None = None,
+        top: int | None = None,
+        skip: int | None = None,
+    ) -> list[WorkPackageOrderPositionRecordingTargetOutput]:
+        """Get the recording targets of the links between work packages and order positions.
+
+        Time booked on such a pair is attributed to these targets. They are read-only and
+        follow from the links (see import_work_package_order_positions() and
+        import_order_position_work_packages()) and from the activity types of the order
+        position (see import_order_position_recording_targets()). All filters are optional
+        and AND-combined. Where an ID and a code are offered for the same entity, the ID wins,
+        and an unknown code matches nothing.
+
+        Args:
+            work_package_last_updated_on_or_after: Only targets whose work package was last updated
+                on or after this point in time (timezone-aware).
+            order_position_activity_type_id: Filter by the internal ID of the order position's activity type.
+            order_position_activity_type_code: Filter by the code of the order position's activity type.
+            order_position_activity_type_target_system_code: Filter by the target system code of the
+                order position's activity type.
+            order_position_activity_type_category: Filter by the aggregation category of the order
+                position's activity type.
+            work_package_id: Filter by the internal work package ID.
+            work_package_code: Filter by the work package code.
+            order_position_id: Filter by the internal order position ID.
+            order_position_code: Filter by the per-tenant order position code.
+            order_id: Filter by the internal ID of the parent order.
+            order_code: Filter by the code of the parent order.
+            project_id: Filter by the internal project ID.
+            project_code: Filter by the external project code.
+            recording_type_id: Filter by the internal recording type ID.
+            recording_type_code: Filter by the recording type code.
+            is_active: Filter by whether the target is active.
+            is_billable: Filter by whether the target is billable.
+            order_position_last_updated_on_or_after: Only targets whose order position was last updated
+                on or after this point in time (timezone-aware).
+            top: Maximum number of results to return (paging).
+            skip: Number of results to skip (paging).
+
+        Returns:
+            A list of WorkPackageOrderPositionRecordingTargetOutput objects.
+        """
+        params: dict[str, str] = {}
+        if work_package_last_updated_on_or_after is not None:
+            params["WorkPackageLastUpdatedOnOrAfter"] = _format_datetime(work_package_last_updated_on_or_after)
+        if order_position_activity_type_id is not None:
+            params["OrderPositionActivityTypeID"] = str(order_position_activity_type_id)
+        if order_position_activity_type_code is not None:
+            params["OrderPositionActivityTypeCode"] = order_position_activity_type_code
+        if order_position_activity_type_target_system_code is not None:
+            params["OrderPositionActivityTypeTargetSystemCode"] = order_position_activity_type_target_system_code
+        if order_position_activity_type_category is not None:
+            params["OrderPositionActivityTypeCategory"] = order_position_activity_type_category
+        if work_package_id is not None:
+            params["WorkPackageID"] = str(work_package_id)
+        if work_package_code is not None:
+            params["WorkPackageCode"] = work_package_code
+        if order_position_id is not None:
+            params["OrderPositionID"] = str(order_position_id)
+        if order_position_code is not None:
+            params["OrderPositionCode"] = order_position_code
+        if order_id is not None:
+            params["OrderID"] = str(order_id)
+        if order_code is not None:
+            params["OrderCode"] = order_code
+        if project_id is not None:
+            params["ProjectID"] = str(project_id)
+        if project_code is not None:
+            params["ProjectCode"] = project_code
+        if recording_type_id is not None:
+            params["RecordingTypeID"] = str(recording_type_id)
+        if recording_type_code is not None:
+            params["RecordingTypeCode"] = recording_type_code
+        if is_active is not None:
+            params["IsActive"] = str(is_active).lower()
+        if is_billable is not None:
+            params["IsBillable"] = str(is_billable).lower()
+        if order_position_last_updated_on_or_after is not None:
+            params["OrderPositionLastUpdatedOnOrAfter"] = _format_datetime(order_position_last_updated_on_or_after)
+        if top is not None:
+            params["Top"] = str(top)
+        if skip is not None:
+            params["Skip"] = str(skip)
+
+        response_text = await self._get("/importapi/WorkPackage/OrderPositions/RecordingTargets", params)
+        adapter = TypeAdapter(list[WorkPackageOrderPositionRecordingTargetOutput])
+        return adapter.validate_json(response_text)
+
     # =========================================================================
     # Time Recording Methods
     # =========================================================================
@@ -2514,6 +2636,222 @@ class DecidaloClient:
         data = batch.model_dump_json(by_alias=True, exclude_none=True)
         response_text = await self._post("/importapi/TimeRecording/UserTimeSheet", data)
         return TimeRecordingImportResult.model_validate_json(response_text)
+
+    async def get_recording_entries(
+        self,
+        *,
+        top: int | None = None,
+        skip: int | None = None,
+        user_id: list[int] | None = None,
+        employee_id: list[str] | None = None,
+        email: list[str] | None = None,
+        work_date_on_or_after: date | None = None,
+        work_date_on_or_before: date | None = None,
+        created_on_or_after: datetime | None = None,
+        last_updated_on_or_after: datetime | None = None,
+        last_imported_on_or_after: datetime | None = None,
+        users_business_unit_id: int | None = None,
+        users_business_unit_name: str | None = None,
+        users_practice_area_id: int | None = None,
+        users_practice_area_name: str | None = None,
+        users_team_id: int | None = None,
+        users_team_code: str | None = None,
+        users_legal_entity_id: int | None = None,
+        users_legal_entity_name: str | None = None,
+        users_country_code: str | None = None,
+        order_id: int | None = None,
+        order_code: str | None = None,
+        project_reference_id: int | None = None,
+        project_code: str | None = None,
+        work_package_id: int | None = None,
+        work_package_code: str | None = None,
+        order_position_id: int | None = None,
+        order_position_code: str | None = None,
+        general_activity_id: int | None = None,
+        general_activity_code: str | None = None,
+        activity_type_id: int | None = None,
+        activity_type_code: str | None = None,
+        activity_type_target_system_code: str | None = None,
+        general_activity_target_system_code: str | None = None,
+        activity_type_category: str | None = None,
+        rate_id: int | None = None,
+        rate_code: str | None = None,
+        rate_category: str | None = None,
+        status: list[TimeRecordingEntryStatus] | None = None,
+        recording_entry_id: int | None = None,
+        recording_entry_code: str | None = None,
+    ) -> list[RecordingEntryImportReadItem]:
+        """Get recording entries across users, in the shape import_recording_entries() accepts.
+
+        A flat list in which every entry names its own owner; working times are only returned
+        by get_user_time_sheet(). All filters are optional and AND-combined, except for the
+        owner filters user_id, employee_id and email, which are OR-combined with each other.
+        Where an ID and a code or name are offered for the same entity, the ID wins, and a code
+        or name matching nothing yields no entries. Without filters, the tenant's whole history
+        is returned, so page it with top and skip.
+
+        Args:
+            top: Maximum number of results to return (paging).
+            skip: Number of results to skip (paging).
+            user_id: Only entries of the users with these internal IDs.
+            employee_id: Only entries of the users with these external employee IDs.
+            email: Only entries of the users with these email addresses.
+            work_date_on_or_after: Inclusive lower bound on the work date.
+            work_date_on_or_before: Inclusive upper bound on the work date.
+            created_on_or_after: Only entries created on or after this point in time (timezone-aware).
+            last_updated_on_or_after: Incremental-sync filter: only entries last edited on or after
+                this point in time (timezone-aware).
+            last_imported_on_or_after: Incremental-sync filter: only entries the Import API last wrote
+                on or after this point in time, excluding never-imported entries (timezone-aware).
+            users_business_unit_id: Only entries whose owner is in this business unit.
+            users_business_unit_name: Only entries whose owner is in the business unit with this name.
+            users_practice_area_id: Only entries whose owner is in this practice area.
+            users_practice_area_name: Only entries whose owner is in the practice area with this name.
+            users_team_id: Only entries whose owner is in this team.
+            users_team_code: Only entries whose owner is in the team with this code.
+            users_legal_entity_id: Only entries whose owner belongs to this legal entity.
+            users_legal_entity_name: Only entries whose owner belongs to the legal entity with this name.
+            users_country_code: Only entries whose owner carries this country code (exact, case-insensitive).
+            order_id: Only entries recorded against a position of this order.
+            order_code: Only entries recorded against a position of the order with this code.
+            project_reference_id: Only entries whose subject belongs to this project, directly,
+                through its work package, or through its order position.
+            project_code: Only entries whose subject belongs to the project with this code.
+            work_package_id: Only entries recorded against this work package.
+            work_package_code: Only entries recorded against the work package with this code.
+            order_position_id: Only entries recorded against this order position.
+            order_position_code: Only entries recorded against the order position with this code.
+            general_activity_id: Only entries recorded against this general activity.
+            general_activity_code: Only entries recorded against the general activity with this code.
+            activity_type_id: Only entries whose target uses this activity type.
+            activity_type_code: Only entries whose target uses the activity type with this code.
+            activity_type_target_system_code: Only entries whose activity type carries this target
+                system code (exact, case-insensitive). An alternative to
+                general_activity_target_system_code; setting both matches nothing.
+            general_activity_target_system_code: Only entries whose general activity carries this
+                target system code (exact, case-insensitive).
+            activity_type_category: Only entries whose activity type carries this aggregation category
+                (exact, case-insensitive).
+            rate_id: Only entries whose recording target prices its work time from this catalog rate.
+            rate_code: Only entries whose recording target prices its work time from the rate with this code.
+            rate_category: Only entries whose work-time rate carries this aggregation category
+                (exact, case-insensitive).
+            status: Only entries in these states. If omitted, entries in every state are returned.
+            recording_entry_id: Only the entry with this internal ID.
+            recording_entry_code: Only entries with this external key (unique per user, so several
+                owners may match).
+
+        Returns:
+            A list of RecordingEntryImportReadItem objects.
+        """
+        params: dict[str, str | list[str]] = {}
+        if top is not None:
+            params["top"] = str(top)
+        if skip is not None:
+            params["skip"] = str(skip)
+        if user_id is not None:
+            params["userId"] = [str(v) for v in user_id]
+        if employee_id is not None:
+            params["employeeId"] = employee_id
+        if email is not None:
+            params["email"] = email
+        if work_date_on_or_after is not None:
+            params["workDateOnOrAfter"] = _format_date(work_date_on_or_after)
+        if work_date_on_or_before is not None:
+            params["workDateOnOrBefore"] = _format_date(work_date_on_or_before)
+        if created_on_or_after is not None:
+            params["createdOnOrAfter"] = _format_datetime(created_on_or_after)
+        if last_updated_on_or_after is not None:
+            params["lastUpdatedOnOrAfter"] = _format_datetime(last_updated_on_or_after)
+        if last_imported_on_or_after is not None:
+            params["lastImportedOnOrAfter"] = _format_datetime(last_imported_on_or_after)
+        if users_business_unit_id is not None:
+            params["usersBusinessUnitId"] = str(users_business_unit_id)
+        if users_business_unit_name is not None:
+            params["usersBusinessUnitName"] = users_business_unit_name
+        if users_practice_area_id is not None:
+            params["usersPracticeAreaId"] = str(users_practice_area_id)
+        if users_practice_area_name is not None:
+            params["usersPracticeAreaName"] = users_practice_area_name
+        if users_team_id is not None:
+            params["usersTeamId"] = str(users_team_id)
+        if users_team_code is not None:
+            params["usersTeamCode"] = users_team_code
+        if users_legal_entity_id is not None:
+            params["usersLegalEntityId"] = str(users_legal_entity_id)
+        if users_legal_entity_name is not None:
+            params["usersLegalEntityName"] = users_legal_entity_name
+        if users_country_code is not None:
+            params["usersCountryCode"] = users_country_code
+        if order_id is not None:
+            params["orderId"] = str(order_id)
+        if order_code is not None:
+            params["orderCode"] = order_code
+        if project_reference_id is not None:
+            params["projectReferenceId"] = str(project_reference_id)
+        if project_code is not None:
+            params["projectCode"] = project_code
+        if work_package_id is not None:
+            params["workPackageId"] = str(work_package_id)
+        if work_package_code is not None:
+            params["workPackageCode"] = work_package_code
+        if order_position_id is not None:
+            params["orderPositionId"] = str(order_position_id)
+        if order_position_code is not None:
+            params["orderPositionCode"] = order_position_code
+        if general_activity_id is not None:
+            params["generalActivityId"] = str(general_activity_id)
+        if general_activity_code is not None:
+            params["generalActivityCode"] = general_activity_code
+        if activity_type_id is not None:
+            params["activityTypeId"] = str(activity_type_id)
+        if activity_type_code is not None:
+            params["activityTypeCode"] = activity_type_code
+        if activity_type_target_system_code is not None:
+            params["activityTypeTargetSystemCode"] = activity_type_target_system_code
+        if general_activity_target_system_code is not None:
+            params["generalActivityTargetSystemCode"] = general_activity_target_system_code
+        if activity_type_category is not None:
+            params["activityTypeCategory"] = activity_type_category
+        if rate_id is not None:
+            params["rateId"] = str(rate_id)
+        if rate_code is not None:
+            params["rateCode"] = rate_code
+        if rate_category is not None:
+            params["rateCategory"] = rate_category
+        if status is not None:
+            params["status"] = [v.value for v in status]
+        if recording_entry_id is not None:
+            params["recordingEntryId"] = str(recording_entry_id)
+        if recording_entry_code is not None:
+            params["recordingEntryCode"] = recording_entry_code
+
+        response_text = await self._get("/importapi/TimeRecording/RecordingEntries", params)
+        adapter = TypeAdapter(list[RecordingEntryImportReadItem])
+        return adapter.validate_json(response_text)
+
+    async def import_recording_entries(
+        self,
+        entries: list[RecordingEntryImportItem],
+    ) -> list[RecordingEntryImportResult]:
+        """Import recording entries across users, in the shape get_recording_entries() returns.
+
+        Every entry names its own owner. It is created, updated, or deleted depending on its
+        identifier (the recording entry ID, else the per-user recording entry code) and its
+        'deleted' flag. The entries are processed independently: a failure is reported in the
+        entry's own result and the other entries are still imported.
+
+        Args:
+            entries: The recording entries to import.
+
+        Returns:
+            A list of RecordingEntryImportResult objects with the per-entry import status.
+        """
+        adapter = TypeAdapter(list[RecordingEntryImportItem])
+        data = adapter.dump_json(entries, by_alias=True, exclude_none=True).decode()
+        response_text = await self._post("/importapi/TimeRecording/RecordingEntries", data)
+        result_adapter = TypeAdapter(list[RecordingEntryImportResult])
+        return result_adapter.validate_json(response_text)
 
     # =========================================================================
     # Profile Export Methods
