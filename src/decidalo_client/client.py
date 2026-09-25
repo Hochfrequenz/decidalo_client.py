@@ -749,10 +749,10 @@ class DecidaloClient:
             delivery_model_id: Filter by the internal ID of the project's delivery model.
             delivery_model_name: Filter by the name of the project's delivery model. Ignored if
                 delivery_model_id is provided.
-            start_date_before: Only projects starting on or before this date. Projects without
-                a start date are also returned.
-            end_date_after: Only projects ending on or after this date. Projects without an end
-                date are also returned.
+            start_date_before: Only projects starting on or before this date (inclusive). Projects
+                without a start date are also returned.
+            end_date_after: Only projects whose last day is on or after this date (inclusive).
+                Projects without an end date are also returned.
             created_on_or_after: Only projects created on or after this point in time
                 (timezone-aware).
             modified_since: Only projects last edited on or after this point in time
@@ -1109,10 +1109,10 @@ class DecidaloClient:
             users_legal_entity_id: Filter by the legal entity of the booked user.
             users_legal_entity_name: Filter by the legal entity name of the booked user
                 (case-insensitive). Ignored if users_legal_entity_id is provided.
-            start_date_before: Filter on the start date of the booking. Bookings without a start
-                date are also returned.
-            end_date_after: Filter on the end date of the booking. Bookings without an end date
-                are also returned.
+            start_date_before: Only bookings starting before this date. The API does not document
+                whether the date itself is included. Bookings without a start date are also returned.
+            end_date_after: Only bookings ending after this date. The API does not document whether
+                the date itself is included. Bookings without an end date are also returned.
             created_on_or_after: Only bookings created on or after this point in time
                 (timezone-aware).
             last_updated_on_or_after: Incremental-sync filter: only bookings last edited on or
@@ -1276,10 +1276,10 @@ class DecidaloClient:
         If no timeframe is provided, all absences are returned.
 
         Args:
-            start_date: If provided, only absences occurring after this point in time
-                will be returned (timezone-aware).
-            end_date: If provided, only absences occurring before this point in time
-                will be returned (timezone-aware).
+            start_date: Only absences occurring after this point in time (timezone-aware). The API
+                does not document whether the bound is inclusive.
+            end_date: Only absences occurring before this point in time (timezone-aware). The API
+                does not document whether the bound is inclusive.
 
         Returns:
             An AbsenceOutputResult object containing the list of absences.
@@ -2131,10 +2131,14 @@ class DecidaloClient:
             status: Filter by work package status.
             parent_work_package_id: Filter by the parent work package ID.
             time_recording_allowed: Filter by whether time recording is allowed.
-            start_date_before: Only work packages starting before this date.
-            end_date_after: Only work packages ending after this date.
-            created_on_or_after: Incremental-sync filter on the creation timestamp (timezone-aware).
-            last_updated_on_or_after: Incremental-sync filter on the update timestamp (timezone-aware).
+            start_date_before: Only work packages starting before this date. The API does not
+                document whether the date itself is included.
+            end_date_after: Only work packages ending after this date. The API does not document
+                whether the date itself is included.
+            created_on_or_after: Only work packages created on or after this point in time
+                (timezone-aware).
+            last_updated_on_or_after: Incremental-sync filter: only work packages last updated on or
+                after this point in time (timezone-aware).
             top: Maximum number of results to return (paging).
             skip: Number of results to skip (paging).
 
@@ -3193,7 +3197,8 @@ class DecidaloClient:
             service_line_name: Filter by service line name.
             top: Maximum number of results to return (paging).
             skip: Number of results to skip (paging).
-            modified_since: Only skills modified since this point in time (timezone-aware).
+            modified_since: Only users with at least one skill edited on or after this point in time
+                (timezone-aware).
 
         Returns:
             A list of UserSkillsOutput objects.

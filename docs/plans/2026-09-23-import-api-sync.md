@@ -76,6 +76,10 @@ spec had never been wrapped.
     (`import_activity_type`, `import_general_activity`, `import_rate`, `import_recording_type`) return `X | None`.
 13. **Plans are kept** as a record, even when they no longer describe the current state (review feedback); the initial
     setup plan got a note that it is historical.
+14. **Date bounds are documented** (review feedback): the docstring of every date filter states whether it includes
+    its bound, as the spec documents it. The spec leaves this open for `get_absences(start_date, end_date)`,
+    `get_bookings(start_date_before, end_date_after)` and `get_work_packages(start_date_before, end_date_after)`; their
+    docstrings say so instead of guessing.
 
 ## The 1:1 Mapping Rule
 
@@ -118,6 +122,7 @@ Commits, in order (each green on its own):
 - `docs: mark the initial setup plan as historical`
 - `docs: add the plan of the Import API sync` (this document)
 - `refactor: annotate date-time parameters as AwareDatetime`
+- `docs: state whether the date filters include their bounds`
 
 The parameter parity and the 18 new endpoints were implemented in parallel in separate worktrees and cherry-picked.
 
@@ -144,6 +149,8 @@ Migration"), which also serves as release notes for v0.3.0.
 - `CommentPropertiesInput` requires `comment` and `creator` even for deletes, although the spec describes them as
   optional in that case.
 - Run a read-only smoke test against the live API.
+- Verify the undocumented date bounds of `get_absences`, `get_bookings` and `get_work_packages` against the live API
+  (decision 14).
 
 ## How to Sync Next Time
 
