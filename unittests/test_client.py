@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import inspect
 import json
+import re
 from datetime import UTC, date, datetime, timedelta, timezone
 from uuid import UUID
 
@@ -289,6 +291,18 @@ class TestDateQueryParameters:
         async with DecidaloClient(api_key=API_KEY, base_url=BASE_URL) as client:
             with pytest.raises(TypeError, match="expected a date, got a datetime"):
                 await client.get_user_time_sheet(start_date=datetime(2026, 1, 1, tzinfo=UTC))
+
+    def test_no_parameter_is_annotated_as_plain_datetime(self) -> None:
+        """Test that date-time parameters are annotated as AwareDatetime to show that they need a timezone."""
+        plain_datetime_parameters = [
+            f"{name}({parameter.name})"
+            for name, method in inspect.getmembers(DecidaloClient, inspect.isfunction)
+            if not name.startswith("_")
+            for parameter in inspect.signature(method).parameters.values()
+            if re.search(r"\bdatetime\b", str(parameter.annotation))
+        ]
+
+        assert plain_datetime_parameters == []
 
 
 # =============================================================================

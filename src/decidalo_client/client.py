@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 from uuid import UUID
 
 import aiohttp
-from pydantic import TypeAdapter
+from pydantic import AwareDatetime, TypeAdapter
 
 from decidalo_client.exceptions import (
     DecidaloAPIError,
@@ -165,7 +165,7 @@ def _format_date(value: date) -> str:
     return value.isoformat()
 
 
-def _format_datetime(value: datetime) -> str:
+def _format_datetime(value: AwareDatetime) -> str:
     """Format a value for a query parameter of format "date-time" (ISO 8601 with UTC offset).
 
     Args:
@@ -711,9 +711,9 @@ class DecidaloClient:
         delivery_model_name: str | None = None,
         start_date_before: date | None = None,
         end_date_after: date | None = None,
-        created_on_or_after: datetime | None = None,
-        modified_since: datetime | None = None,
-        last_imported_on_or_after: datetime | None = None,
+        created_on_or_after: AwareDatetime | None = None,
+        modified_since: AwareDatetime | None = None,
+        last_imported_on_or_after: AwareDatetime | None = None,
         top: int | None = None,
         skip: int | None = None,
     ) -> list[ProjectReferenceOutput]:
@@ -1071,9 +1071,9 @@ class DecidaloClient:
         users_legal_entity_name: str | None = None,
         start_date_before: date | None = None,
         end_date_after: date | None = None,
-        created_on_or_after: datetime | None = None,
-        last_updated_on_or_after: datetime | None = None,
-        last_imported_on_or_after: datetime | None = None,
+        created_on_or_after: AwareDatetime | None = None,
+        last_updated_on_or_after: AwareDatetime | None = None,
+        last_imported_on_or_after: AwareDatetime | None = None,
         planning_granularity: ImportPlanningGranularity | None = None,
         planning_start_date: date | None = None,
         planning_end_date: date | None = None,
@@ -1267,8 +1267,8 @@ class DecidaloClient:
     async def get_absences(
         self,
         *,
-        start_date: datetime | None = None,
-        end_date: datetime | None = None,
+        start_date: AwareDatetime | None = None,
+        end_date: AwareDatetime | None = None,
     ) -> AbsenceOutputResult:
         """Get absences from the API.
 
@@ -1777,7 +1777,7 @@ class DecidaloClient:
         delivery_date_on_or_after: date | None = None,
         delivery_date_on_or_before: date | None = None,
         valid_on: date | None = None,
-        last_updated_on_or_after: datetime | None = None,
+        last_updated_on_or_after: AwareDatetime | None = None,
     ) -> OrderImportOutputBatch:
         """Get orders with their positions.
 
@@ -2114,8 +2114,8 @@ class DecidaloClient:
         time_recording_allowed: bool | None = None,
         start_date_before: date | None = None,
         end_date_after: date | None = None,
-        created_on_or_after: datetime | None = None,
-        last_updated_on_or_after: datetime | None = None,
+        created_on_or_after: AwareDatetime | None = None,
+        last_updated_on_or_after: AwareDatetime | None = None,
         top: int | None = None,
         skip: int | None = None,
     ) -> list[WorkPackageOutput]:
@@ -2350,7 +2350,7 @@ class DecidaloClient:
     async def get_work_package_order_position_recording_targets(
         self,
         *,
-        work_package_last_updated_on_or_after: datetime | None = None,
+        work_package_last_updated_on_or_after: AwareDatetime | None = None,
         order_position_activity_type_id: int | None = None,
         order_position_activity_type_code: str | None = None,
         order_position_activity_type_target_system_code: str | None = None,
@@ -2367,7 +2367,7 @@ class DecidaloClient:
         recording_type_code: str | None = None,
         is_active: bool | None = None,
         is_billable: bool | None = None,
-        order_position_last_updated_on_or_after: datetime | None = None,
+        order_position_last_updated_on_or_after: AwareDatetime | None = None,
         top: int | None = None,
         skip: int | None = None,
     ) -> list[WorkPackageOrderPositionRecordingTargetOutput]:
@@ -2577,10 +2577,10 @@ class DecidaloClient:
         rate_code: str | None = None,
         rate_category: str | None = None,
         status: list[TimeRecordingEntryStatus] | None = None,
-        modified_after: datetime | None = None,
-        created_on_or_after: datetime | None = None,
-        last_updated_on_or_after: datetime | None = None,
-        last_imported_on_or_after: datetime | None = None,
+        modified_after: AwareDatetime | None = None,
+        created_on_or_after: AwareDatetime | None = None,
+        last_updated_on_or_after: AwareDatetime | None = None,
+        last_imported_on_or_after: AwareDatetime | None = None,
     ) -> TimeRecordingImportOutputBatch:
         """Get a user's timesheet.
 
@@ -2729,9 +2729,9 @@ class DecidaloClient:
         email: list[str] | None = None,
         work_date_on_or_after: date | None = None,
         work_date_on_or_before: date | None = None,
-        created_on_or_after: datetime | None = None,
-        last_updated_on_or_after: datetime | None = None,
-        last_imported_on_or_after: datetime | None = None,
+        created_on_or_after: AwareDatetime | None = None,
+        last_updated_on_or_after: AwareDatetime | None = None,
+        last_imported_on_or_after: AwareDatetime | None = None,
         users_business_unit_id: int | None = None,
         users_business_unit_name: str | None = None,
         users_practice_area_id: int | None = None,
@@ -3171,7 +3171,7 @@ class DecidaloClient:
         service_line_name: str | None = None,
         top: int | None = None,
         skip: int | None = None,
-        modified_since: datetime | None = None,
+        modified_since: AwareDatetime | None = None,
     ) -> list[UserSkillsOutput]:
         """Get users with their assessed skills.
 

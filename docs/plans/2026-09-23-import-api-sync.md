@@ -61,7 +61,10 @@ spec had never been wrapped.
    sent as repeated query keys (`?projectCode=A&projectCode=B`).
 8. **Dates:** parameters of format `date` take a `datetime.date`, those of format `date-time` a timezone-aware
    `datetime.datetime` (sent as ISO 8601). A naive datetime raises `ValueError`, because the API would assume the local
-   time of the server; a datetime passed to a date parameter raises `TypeError`.
+   time of the server; a datetime passed to a date parameter raises `TypeError`. The `date-time` parameters are
+   annotated as pydantic's `AwareDatetime` (review feedback): the signature shows the timezone requirement, as in the
+   models. For mypy it is a plain `datetime`, and annotations are not validated at runtime, so `_format_datetime` keeps
+   the check.
 9. **Remaining legacy is removed:** exact spelling of the query keys, `work_package_id` like everywhere else,
    `is not None` checks, query parameters via the request helpers (URL encoding), request arguments that are the
    request body models of the spec (`import_teams_sync(batch)`, `import_bookings_async(batch)`,
@@ -83,7 +86,7 @@ spec had never been wrapped.
   key is sent in the exact spelling of the spec; the arguments follow the order of the spec.
 - Filters are keyword-only, path parameters are positional.
 - Types follow the spec: `int`, `bool` (sent as `true`/`false`), `str`, the generated enums (sent as their value),
-  `UUID`, `list[X]` (repeated keys), `date` and timezone-aware `datetime` (ISO 8601).
+  `UUID`, `list[X]` (repeated keys), `date` and `AwareDatetime` (ISO 8601).
 - The request argument is the request body model of the spec, named `batch` for batch models and after the domain
   otherwise.
 
@@ -114,6 +117,7 @@ Commits, in order (each green on its own):
 - `revert: keep the initial setup plan`
 - `docs: mark the initial setup plan as historical`
 - `docs: add the plan of the Import API sync` (this document)
+- `refactor: annotate date-time parameters as AwareDatetime`
 
 The parameter parity and the 18 new endpoints were implemented in parallel in separate worktrees and cherry-picked.
 
@@ -127,9 +131,10 @@ Migration"), which also serves as release notes for v0.3.0.
   no enum field defaults to a plain string, and the breaking changes of the API are documented.
 - `unittests/test_api_coverage.py`: every method calls a documented operation, no operation is wrapped twice, and the
   API coverage section of the README is up to date.
+- `unittests/test_client.py`: no parameter is annotated as a plain `datetime`.
 - Per method: aioresponses matches the full URL including the query, so the mocks verify the exact query keys; one
   test per method passes all parameters, and the POST tests assert the serialized request body.
-- Result: 131 → 197 tests, coverage 95 % → 97 %. Not verified against the live API (no API key available).
+- Result: 131 → 198 tests, coverage 95 % → 97 %. Not verified against the live API (no API key available).
 
 ## Follow-ups
 

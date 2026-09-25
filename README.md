@@ -78,7 +78,7 @@ if __name__ == "__main__":
 - Async HTTP client built on `aiohttp`
 - Type-safe request/response models using `pydantic`, generated from the OpenAPI spec of the Import API
 - Every public method of `DecidaloClient` wraps exactly one API operation (see [API Coverage](#api-coverage)): path, query parameters, request body and response type follow the spec, and the keyword arguments are the snake_case names of the query parameters (e.g. `created_on_or_after` for `CreatedOnOrAfter`)
-- Query parameters of format `date` take a `datetime.date`, those of format `date-time` a timezone-aware `datetime.datetime`
+- Query parameters of format `date` take a `datetime.date`, those of format `date-time` a timezone-aware `datetime.datetime` (annotated as pydantic's `AwareDatetime`; a naive datetime raises `ValueError`)
 - Fields the models don't know (e.g. fields the API added to a response) are ignored instead of failing the validation
 
 > [!TIP]
