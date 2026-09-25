@@ -1,3 +1,7 @@
+> **Historical document:** This is the implementation plan for the initial setup (January 2026).
+> The tooling (tox, pip-tools, black/isort/pylint) and parts of the client design have changed since;
+> the README describes the current state (see also the later plans in this folder).
+
 # decidalo_client Initial Setup Implementation Plan
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
