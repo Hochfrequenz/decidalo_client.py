@@ -54,6 +54,8 @@ spec had never been wrapped.
    parameter parity, 18 new endpoints). The 27 operations that were never wrapped are a follow-up.
 4. **Version:** v0.3.0, as a breaking change in 0.x is a minor bump. The version comes from the git tag (hatch-vcs);
    breaking changes and migration notes go into the GitHub release notes (no CHANGELOG.md).
+   Alternative (review feedback): v1.0.0, rejected because 27 operations are not wrapped yet and the API changes often,
+   so 1.0 would promise a stability the client does not have yet.
 5. **Long-standing bugs are fixed spec-conform**, including the return types (the import status methods return the
    documented lists with all filters instead of a convenience single object).
 6. **Every method maps its operation 1:1** (see [the rule below](#the-11-mapping-rule)).
@@ -123,6 +125,7 @@ Commits, in order (each green on its own):
 - `docs: add the plan of the Import API sync` (this document)
 - `refactor: annotate date-time parameters as AwareDatetime`
 - `docs: state whether the date filters include their bounds`
+- `docs: record v1.0.0 as the rejected alternative to v0.3.0`
 
 The parameter parity and the 18 new endpoints were implemented in parallel in separate worktrees and cherry-picked.
 
