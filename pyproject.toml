@@ -19,7 +19,7 @@ classifiers = [
     "Programming Language :: Python :: 3.14",
 ]
 dependencies = [
-    "aiohttp>=3.10,<3.14",
+    "aiohttp>=3.10,<3.15",
     "pydantic>=2.5",
 ]
 dynamic = ["readme", "version"]
