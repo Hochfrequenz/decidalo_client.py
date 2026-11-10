@@ -9,9 +9,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - uses: astral-sh/setup-uv@v9.0.0
+      - uses: astral-sh/setup-uv@v10.3.3
         with:
-          python-version: 3.14
+          python-version: "3.15"
       - name: Run Tests and Record Coverage
         working-directory: unittests
         env:
