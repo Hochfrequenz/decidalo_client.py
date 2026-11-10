@@ -1,11 +1,13 @@
 """Auth manual verification steps for decidalo_app_client.
 
 Device Code Flow and Token Refresh cannot be tested without a live OIDC server.
-This file is excluded from automated coverage (see tox.ini).
+The source module src/decidalo_app_client/auth.py is omitted from the CI
+coverage report via the workflow --omit flag; this test file itself is omitted
+only by the blanket unittests/* entry in that same flag.
 
 MANUAL VERIFICATION STEPS
 --------------------------
-1. Install the app extra: pip install -e ".[tests,app]"
+1. Install the test dependencies: uv sync --group tests
 
 2. Device Code Flow:
    import asyncio
